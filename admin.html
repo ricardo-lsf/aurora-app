@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Aurora Events V4</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+        @media (max-width: 1000px) { .container { grid-template-columns: 1fr; } }
+
+        h1, h2, h3 { color: #2c3e50; margin-top: 0; }
+        
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e1e4e8; }
+        .card-header { background: #f8f9fa; margin: -20px -20px 20px -20px; padding: 15px 20px; border-bottom: 1px solid #e1e4e8; border-radius: 8px 8px 0 0; font-weight: bold; }
+
+        /* Estilos Gerais */
+        .event-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .event-item:hover { background: #f1f1f1; }
+        .event-item.active { background: #e8f0fe; border-left: 4px solid #3498db; }
+        .badge-live { background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; }
+
+        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box; margin-bottom: 5px; }
+        button { cursor: pointer; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; }
+        
+        .btn-primary { background: #3498db; color: white; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-danger { background: #e74c3c; color: white; font-size: 0.8em; }
+        .btn-activate { background: #8e44ad; color: white; width: 100%; padding: 15px; font-size: 1.1em; margin-top: 20px; }
+
+        /* Checkboxes */
+        .checkbox-container { max-height: 200px; overflow-y: auto; border: 1px solid #ddd; background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 10px; }
+        .chk-item { display: flex; align-items: center; padding: 5px; border-bottom: 1px solid #f9f9f9; }
+        .chk-item input { width: auto; margin-right: 10px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #2c3e50; color: white; padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        img.thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; }
+        .input-table { border: 1px solid transparent; background: #f9f9f9; width: 80px; padding: 5px; }
+        .input-table:focus { border: 1px solid #3498db; background: white; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div>
+        <div class="card" style="border-left: 5px solid #f39c12;">
+            <div class="card-header">📚 Biblioteca Global</div>
+            <p style="font-size:0.85em; color:#666; margin-bottom:10px;">Cadastre drinks aqui para usar em futuros eventos.</p>
+            
+            <div style="display:grid; gap: 5px;">
+                <input type="text" id="globalName" placeholder="Nome do Drink">
+                <div style="display:flex; gap:5px;">
+                    <input type="number" id="globalPrice" placeholder="Preço (R$)">
+                    <input type="text" id="globalImg" placeholder="./imagens/foto.jpg">
+                </div>
+                <button onclick="adicionarAoGlobal()" class="btn-success">💾 Salvar na Biblioteca</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">📅 Meus Eventos</div>
+            <div style="display:flex; gap:5px; margin-bottom:15px;">
+                <input type="text" id="novoEventoNome" placeholder="Nome (ex: Festa 15 Anos)">
+                <button onclick="criarEvento()" class="btn-primary" style="width:auto;">+</button>
+            </div>
+            <div id="lista-eventos">Carregando...</div>
+        </div>
+    </div>
+
+    <div class="card" id="painel-detalhes" style="display:none;">
+        <div class="card-header">
+            <span id="titulo-evento">Nome do Evento</span>
+        </div>
+
+        <div style="background: #eef2f7; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+            <h3>📥 Montar Cardápio</h3>
+            <p style="margin:0 0 10px 0; font-size:0.9em; color:#666;">Selecione da biblioteca para adicionar a esta festa:</p>
+            
+            <div class="checkbox-container" id="lista-global-checkboxes"></div>
+
+            <div style="display:flex; justify-content:space-between;">
+                <button onclick="marcarTodos(true)" style="background:none; color:#3498db; text-decoration:underline;">Marcar Todos</button>
+                <button onclick="adicionarMuitos()" class="btn-primary">⬇️ Adicionar Selecionados</button>
+            </div>
+        </div>
+
+        <h3>📋 Cardápio deste Evento</h3>
+        <table>
+            <thead>
+                <tr><th width="50">Img</th><th>Nome</th><th width="100">Preço (R$)</th><th width="80">Estoque</th><th width="50"></th></tr>
+            </thead>
+            <tbody id="tabela-evento"></tbody>
+        </table>
+
+        <button onclick="ativarEvento()" class="btn-activate">🚀 ATIVAR ESTE EVENTO NO APP</button>
+    </div>
+
+    <div class="card" id="painel-vazio" style="text-align:center; padding:50px; color:#999;">
+        <h2>⬅️ Crie ou selecione um evento</h2>
+    </div>
+
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, query, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // ⚠️ COLE SUA CONFIGURAÇÃO AQUI ⚠️
+	const firebaseConfig = {
+	  apiKey: "AIzaSyBu8y9RQMv9fbxORcRLAZN4OlA1IEXyZUU",
+	  authDomain: "aurora-bar-system.firebaseapp.com",
+	  projectId: "aurora-bar-system",
+	  storageBucket: "aurora-bar-system.firebasestorage.app",
+	  messagingSenderId: "380441809814",
+	  appId: "1:380441809814:web:ad008f37d30a5b0abe03b7"
+	};
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let eventoID = null;
+    let bibliotecaGlobal = []; 
+    let eventoAtivoID = null;
+
+    // --- OUVINTES ---
+    onSnapshot(doc(db, "config", "geral"), (s) => {
+        if(s.exists()) eventoAtivoID = s.data().eventoAtivoID;
+        renderizarListaEventos();
+    });
+
+    onSnapshot(collection(db, "drinks"), (snap) => {
+        bibliotecaGlobal = [];
+        const divLista = document.getElementById('lista-global-checkboxes');
+        divLista.innerHTML = '';
+        snap.forEach(doc => {
+            const d = doc.data();
+            bibliotecaGlobal.push({ ...d, id: doc.id });
+            divLista.innerHTML += `
+                <div class="chk-item">
+                    <input type="checkbox" id="chk_${doc.id}" value="${doc.id}" class="chk-drink">
+                    <label for="chk_${doc.id}">${d.nome}</label>
+                </div>`;
+        });
+    });
+
+    let listaEventosCache = [];
+    onSnapshot(query(collection(db, "eventos"), orderBy("criadoEm", "desc")), (snap) => {
+        listaEventosCache = [];
+        snap.forEach(d => listaEventosCache.push({ ...d.data(), id: d.id }));
+        renderizarListaEventos();
+    });
+
+    function renderizarListaEventos() {
+        const div = document.getElementById('lista-eventos');
+        div.innerHTML = '';
+        listaEventosCache.forEach(ev => {
+            const item = document.createElement('div');
+            item.className = `event-item ${eventoID === ev.id ? 'active' : ''}`;
+            item.innerHTML = `
+                <div><strong>${ev.nome}</strong><br><small style="color:#888">${new Date(ev.criadoEm?.toDate()).toLocaleDateString()}</small></div>
+                ${eventoAtivoID === ev.id ? '<span class="badge-live">NO AR</span>' : ''}
+            `;
+            item.onclick = () => carregarEvento(ev.id, ev.nome);
+            div.appendChild(item);
+        });
+    }
+
+    // --- FUNÇÕES ---
+
+    // 1. ADICIONAR À BIBLIOTECA GLOBAL (INDEPENDENTE)
+    window.adicionarAoGlobal = async () => {
+        const nome = document.getElementById('globalName').value;
+        const preco = document.getElementById('globalPrice').value;
+        const img = document.getElementById('globalImg').value || "./imagens/";
+        
+        if(!nome || !preco) return alert("Preencha Nome e Preço!");
+
+        try {
+            await addDoc(collection(db, "drinks"), { 
+                nome, 
+                VlCusto: parseFloat(preco), 
+                imagem: img, 
+                estoque: 0 
+            });
+            alert("Salvo na Biblioteca! ✅");
+            document.getElementById('globalName').value = '';
+            document.getElementById('globalPrice').value = '';
+        } catch(e) { alert("Erro: " + e.message); }
+    };
+
+    // 2. EVENTOS
+    window.criarEvento = async () => {
+        const nome = document.getElementById('novoEventoNome').value;
+        if(!nome) return alert("Digite um nome!");
+        try {
+            const ref = await addDoc(collection(db, "eventos"), { nome, criadoEm: new Date() });
+            carregarEvento(ref.id, nome);
+            document.getElementById('novoEventoNome').value = '';
+        } catch(e) { alert(e.message); }
+    };
+
+    window.carregarEvento = (id, nome) => {
+        eventoID = id;
+        document.getElementById('painel-vazio').style.display = 'none';
+        document.getElementById('painel-detalhes').style.display = 'block';
+        document.getElementById('titulo-evento').innerText = nome;
+        renderizarListaEventos();
+        document.querySelectorAll('.chk-drink').forEach(c => c.checked = false);
+
+        const tb = document.getElementById('tabela-evento');
+        onSnapshot(collection(db, "eventos", id, "cardapio"), (snap) => {
+            tb.innerHTML = '';
+            const drinks = [];
+            snap.forEach(d => drinks.push({...d.data(), id: d.id}));
+            drinks.sort((a,b) => a.nome.localeCompare(b.nome));
+            drinks.forEach(d => {
+                tb.innerHTML += `
+                    <tr>
+                        <td><img src="${d.imagem||''}" class="thumb" onerror="this.style.display='none'"></td>
+                        <td>${d.nome}</td>
+                        <td><input type="number" class="input-table" value="${d.VlCusto}" onchange="window.atualizarItemEvento('${d.id}', 'VlCusto', this.value)"></td>
+                        <td><input type="number" class="input-table" value="${d.estoque}" style="width:60px; font-weight:bold; color:#27ae60" onchange="window.atualizarItemEvento('${d.id}', 'estoque', this.value)"></td>
+                        <td><button class="btn-danger" onclick="window.removerItem('${d.id}')">X</button></td>
+                    </tr>`;
+            });
+        });
+    };
+
+    window.ativarEvento = async () => {
+        if(confirm("Ativar este evento?")) {
+            await setDoc(doc(db, "config", "geral"), { 
+                eventoAtivoID: eventoID, 
+                eventoAtivoNome: document.getElementById('titulo-evento').innerText 
+            }, { merge: true });
+            alert("Evento Ativado! 🚀");
+        }
+    };
+
+    // 3. CARDÁPIO
+    window.marcarTodos = (marcar) => document.querySelectorAll('.chk-drink').forEach(c => c.checked = marcar);
+
+    window.adicionarMuitos = async () => {
+        const checks = document.querySelectorAll('.chk-drink:checked');
+        if(checks.length === 0) return alert("Selecione algum drink!");
+        const batch = writeBatch(db);
+        checks.forEach(chk => {
+            const dg = bibliotecaGlobal.find(d => d.id === chk.value);
+            if(dg) {
+                const ref = doc(collection(db, "eventos", eventoID, "cardapio"));
+                batch.set(ref, { nome: dg.nome, VlCusto: dg.VlCusto, imagem: dg.imagem, estoque: 50, idOriginal: dg.id });
+            }
+        });
+        await batch.commit();
+        document.querySelectorAll('.chk-drink').forEach(c => c.checked = false);
+    };
+
+    window.atualizarItemEvento = async (id, campo, val) => {
+        let v = val;
+        if(campo==='estoque') v = parseInt(v);
+        if(campo==='VlCusto') v = parseFloat(v);
+        await updateDoc(doc(db, "eventos", eventoID, "cardapio", id), { [campo]: v });
+    };
+
+    window.removerItem = async (id) => {
+        if(confirm("Remover?")) await deleteDoc(doc(db, "eventos", eventoID, "cardapio", id));
+    };
+
+</script>
+</body>
+</html>
