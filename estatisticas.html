@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora - Inteligência de Dados V2</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        h1 { text-align: center; color: #2c3e50; }
+        
+        /* Seletor */
+        .selector-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
+        select { padding: 10px; flex: 1; border: 1px solid #ddd; border-radius: 4px; font-size: 1em; }
+        button { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        
+        /* KPIs */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .kpi-card { background: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-bottom: 4px solid #ddd; }
+        .kpi-title { color: #7f8c8d; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; }
+        .kpi-value { font-size: 2em; font-weight: bold; color: #2c3e50; margin: 10px 0; }
+        .kpi-sub { font-size: 0.8em; color: #27ae60; font-weight: bold; }
+
+        .card-money { border-color: #f1c40f; }
+        .card-vol { border-color: #3498db; }
+        .card-drink { border-color: #e74c3c; }
+        .card-user { border-color: #8e44ad; }
+
+        /* CORREÇÃO DO GRÁFICO (CSS) */
+        .charts-area { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .charts-area { grid-template-columns: 1fr; } }
+        
+        .chart-box { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            /* ALTURA FIXA E POSIÇÃO RELATIVA SÃO OBRIGATÓRIAS PARA O CHART.JS NÃO ESTOURAR */
+            height: 350px; 
+            position: relative; 
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* Garante que o canvas respeite o pai */
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📈 Aurora Analytics</h1>
+
+    <div class="selector-box">
+        <label>Analisar Evento:</label>
+        <select id="select-evento">
+            <option value="">Carregando eventos...</option>
+        </select>
+        <button onclick="gerarRelatorio()">🔍 GERAR ESTATÍSTICAS</button>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi-card card-money">
+            <div class="kpi-title">Faturamento Total</div>
+            <div class="kpi-value" id="kpi-fat">R$ 0.00</div>
+            <div class="kpi-sub">Valor Bruto</div>
+        </div>
+        <div class="kpi-card card-vol">
+            <div class="kpi-title">Drinks Vendidos</div>
+            <div class="kpi-value" id="kpi-qtd">0</div>
+            <div class="kpi-sub">Unidades</div>
+        </div>
+        <div class="kpi-card card-drink">
+            <div class="kpi-title">Drink Campeão</div>
+            <div class="kpi-value" id="kpi-top-drink" style="font-size:1.5em">-</div>
+            <div class="kpi-sub" id="kpi-top-drink-qtd">-</div>
+        </div>
+        <div class="kpi-card card-user">
+            <div class="kpi-title">Melhor Bartender</div>
+            <div class="kpi-value" id="kpi-top-user" style="font-size:1.5em">-</div>
+            <div class="kpi-sub" id="kpi-top-user-qtd">-</div>
+        </div>
+    </div>
+
+    <div class="charts-area">
+        <div class="chart-box">
+            <h3>📊 Ranking de Drinks</h3>
+            <div style="position: relative; height: 280px; width: 100%;">
+                <canvas id="chartDrinks"></canvas>
+            </div>
+        </div>
+        <div class="chart-box">
+            <h3>⏱️ Vendas por Hora</h3>
+            <div style="position: relative; height: 280px; width: 100%;">
+                <canvas id="chartHorario"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // ⚠️ COLE SUA CONFIG AQUI ⚠️
+	const firebaseConfig = {
+	  apiKey: "AIzaSyBu8y9RQMv9fbxORcRLAZN4OlA1IEXyZUU",
+	  authDomain: "aurora-bar-system.firebaseapp.com",
+	  projectId: "aurora-bar-system",
+	  storageBucket: "aurora-bar-system.firebasestorage.app",
+	  messagingSenderId: "380441809814",
+	  appId: "1:380441809814:web:ad008f37d30a5b0abe03b7"
+	};
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Variáveis globais para guardar os gráficos e poder destruí-los
+    let chartD = null;
+    let chartH = null;
+
+    async function carregarListaEventos() {
+        const q = query(collection(db, "eventos"), orderBy("criadoEm", "desc"));
+        const snapshot = await getDocs(q);
+        const select = document.getElementById('select-evento');
+        select.innerHTML = '<option value="">-- Escolha um Evento --</option>';
+        snapshot.forEach(doc => {
+            const ev = doc.data();
+            const data = new Date(ev.criadoEm?.toDate()).toLocaleDateString();
+            const opt = document.createElement('option');
+            opt.value = doc.id;
+            opt.innerText = `${ev.nome} (${data})`;
+            select.appendChild(opt);
+        });
+    }
+    carregarListaEventos();
+
+    // --- FUNÇÃO PARA LIMPAR TUDO (CORREÇÃO 1) ---
+    function zerarTela() {
+        // Zera textos
+        document.getElementById('kpi-fat').innerText = 'R$ 0.00';
+        document.getElementById('kpi-qtd').innerText = '0';
+        document.getElementById('kpi-top-drink').innerText = '-';
+        document.getElementById('kpi-top-drink-qtd').innerText = '-';
+        document.getElementById('kpi-top-user').innerText = '-';
+        document.getElementById('kpi-top-user-qtd').innerText = '-';
+
+        // Destrói gráficos antigos se existirem
+        if (chartD) {
+            chartD.destroy();
+            chartD = null;
+        }
+        if (chartH) {
+            chartH.destroy();
+            chartH = null;
+        }
+    }
+
+    window.gerarRelatorio = async () => {
+        const eventoID = document.getElementById('select-evento').value;
+        if(!eventoID) return alert("Selecione um evento!");
+
+        // 1. LIMPA A TELA ANTES DE BUSCAR (CORREÇÃO 1)
+        zerarTela();
+
+        const vendasRef = collection(db, "eventos", eventoID, "vendas");
+        const snapshot = await getDocs(vendasRef);
+
+        if(snapshot.empty) {
+            alert("Este evento ainda não tem vendas registradas.");
+            return; // A tela já está zerada, então paramos aqui.
+        }
+
+        let totalFaturado = 0;
+        let totalVendas = 0;
+        let contagemDrinks = {}; 
+        let contagemUsers = {};  
+        let vendasPorHora = {};  
+
+        snapshot.forEach(doc => {
+            const venda = doc.data();
+            totalFaturado += parseFloat(venda.preco);
+            totalVendas++;
+
+            if(!contagemDrinks[venda.drink]) contagemDrinks[venda.drink] = 0;
+            contagemDrinks[venda.drink]++;
+
+            const user = venda.usuario || "Desconhecido";
+            if(!contagemUsers[user]) contagemUsers[user] = 0;
+            contagemUsers[user]++;
+
+            let dataVenda;
+            if(venda.hora && venda.hora.toDate) dataVenda = venda.hora.toDate();
+            else dataVenda = new Date(venda.hora);
+            
+            const horaChave = dataVenda.getHours() + ":00";
+            if(!vendasPorHora[horaChave]) vendasPorHora[horaChave] = 0;
+            vendasPorHora[horaChave]++;
+        });
+
+        // Atualiza KPIs
+        document.getElementById('kpi-fat').innerText = 'R$ ' + totalFaturado.toFixed(2);
+        document.getElementById('kpi-qtd').innerText = totalVendas;
+
+        const topDrink = Object.entries(contagemDrinks).sort((a,b) => b[1] - a[1])[0];
+        if(topDrink) {
+            document.getElementById('kpi-top-drink').innerText = topDrink[0];
+            document.getElementById('kpi-top-drink-qtd').innerText = topDrink[1] + " vendas";
+        }
+
+        const topUser = Object.entries(contagemUsers).sort((a,b) => b[1] - a[1])[0];
+        if(topUser) {
+            document.getElementById('kpi-top-user').innerText = topUser[0];
+            document.getElementById('kpi-top-user-qtd').innerText = topUser[1] + " vendas";
+        }
+
+        gerarGraficoDrinks(contagemDrinks);
+        gerarGraficoHoras(vendasPorHora);
+    };
+
+    function gerarGraficoDrinks(dados) {
+        const ctx = document.getElementById('chartDrinks').getContext('2d');
+        const sorted = Object.entries(dados).sort((a,b) => b[1] - a[1]);
+        
+        // CORREÇÃO 2: Configuração de responsividade segura
+        chartD = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: sorted.map(i => i[0]),
+                datasets: [{
+                    data: sorted.map(i => i[1]),
+                    backgroundColor: ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71', '#9b59b6', '#34495e']
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, // Permite ajustar ao div pai
+                plugins: {
+                    legend: { position: 'right' }
+                }
+            }
+        });
+    }
+
+    function gerarGraficoHoras(dados) {
+        const ctx = document.getElementById('chartHorario').getContext('2d');
+        const sortedKeys = Object.keys(dados).sort((a,b) => parseInt(a) - parseInt(b));
+        
+        chartH = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: sortedKeys,
+                datasets: [{
+                    label: 'Vendas',
+                    data: sortedKeys.map(k => dados[k]),
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false // Permite ajustar ao div pai
+            }
+        });
+    }
+
+</script>
+</body>
+</html>

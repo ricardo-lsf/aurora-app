@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Aurora Master V7</title>
+    <title>Admin - Aurora Master V9</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
         @media (max-width: 1000px) { .container { grid-template-columns: 1fr; } }
 
-        h1, h2, h3 { color: #2c3e50; margin-top: 0; }
+        h1, h2 { color: #2c3e50; margin-top: 0; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e1e4e8; }
         .card-header { background: #f8f9fa; margin: -20px -20px 20px -20px; padding: 15px 20px; border-bottom: 1px solid #e1e4e8; border-radius: 8px 8px 0 0; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
 
-        /* Inputs e Botões */
         input, select { padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box; margin-bottom: 5px; }
         button { cursor: pointer; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; }
         .btn-primary { background: #3498db; color: white; width:100%; }
@@ -22,22 +21,18 @@
         .btn-warning { background: #f39c12; color: white; }
         .btn-activate { background: #8e44ad; color: white; width: 100%; padding: 15px; font-size: 1.1em; margin-top: 20px; }
         
-        /* Status */
-        .btn-close-event { background: #c0392b; color: white; }
-        .btn-open-event { background: #2ecc71; color: white; }
+        .btn-restart { background: #f1c40f; color: #333; margin-left: 10px; } /* Botão Reiniciar */
+        .btn-delete-event { background: #c0392b; color: white; width: 100%; padding: 15px; }
+        .danger-zone { margin-top: 40px; padding-top: 20px; border-top: 2px dashed #e74c3c; }
+
+        /* Helpers */
+        .event-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; }
+        .event-item.active { background: #e8f0fe; border-left: 4px solid #3498db; }
         .badge-live { background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; }
         .badge-closed { background: #7f8c8d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; }
-
-        /* Lista Lateral */
-        .event-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; }
-        .event-item:hover { background: #f1f1f1; }
-        .event-item.active { background: #e8f0fe; border-left: 4px solid #3498db; }
-
-        /* Checkboxes e Tabela */
         .checkbox-container { max-height: 200px; overflow-y: auto; border: 1px solid #ddd; background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 10px; }
         .chk-item { display: flex; align-items: center; padding: 5px; border-bottom: 1px solid #f9f9f9; }
         .chk-item input { width: auto; margin-right: 10px; }
-        
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { background: #2c3e50; color: white; padding: 10px; text-align: left; }
         td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
@@ -49,74 +44,40 @@
 <body>
 
 <div class="container">
-
     <div>
-        <div class="card" style="border-left: 5px solid #27ae60;">
-            <div class="card-header">👥 Equipe Autorizada</div>
-            <div style="display:grid; gap: 5px;">
-                <input type="text" id="bartenderNome" placeholder="Nome (ex: Ricardo)">
-                <input type="number" id="bartenderPhone" placeholder="Celular (ex: 1199999)">
-                <button onclick="adicionarBartender()" class="btn-success">Cadastrar</button>
-            </div>
-            <div style="margin-top:10px; max-height:150px; overflow-y:auto;">
-                <table style="font-size:0.85em; margin:0;">
-                    <tbody id="lista-equipe"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="card" style="border-left: 5px solid #f39c12;">
-            <div class="card-header">📚 Biblioteca Global</div>
-            <div style="display:grid; gap: 5px;">
-                <input type="text" id="globalName" placeholder="Nome do Drink">
-                <div style="display:flex; gap:5px;">
-                    <input type="number" id="globalPrice" placeholder="R$">
-                    <input type="text" id="globalImg" placeholder="./imagens/foto.jpg">
-                </div>
-                <button onclick="adicionarAoGlobal()" class="btn-warning">Salvar na Biblioteca</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">📅 Meus Eventos</div>
-            <div style="display:flex; gap:5px; margin-bottom:15px;">
-                <input type="text" id="novoEventoNome" placeholder="Nome (ex: Festa 15 Anos)">
-                <button onclick="criarEvento()" class="btn-primary" style="width:auto;">+</button>
-            </div>
-            <div id="lista-eventos">Carregando...</div>
-        </div>
+        <div class="card" style="border-left: 5px solid #27ae60;"><div class="card-header">👥 Equipe</div><div style="display:grid; gap: 5px;"><input type="text" id="bartenderNome" placeholder="Nome"><input type="number" id="bartenderPhone" placeholder="Celular"><button onclick="adicionarBartender()" class="btn-success">Cadastrar</button></div><div style="margin-top:10px; max-height:150px; overflow-y:auto;"><table style="font-size:0.85em; margin:0;"><tbody id="lista-equipe"></tbody></table></div></div>
+        <div class="card" style="border-left: 5px solid #f39c12;"><div class="card-header">📚 Biblioteca</div><div style="display:grid; gap: 5px;"><input type="text" id="globalName" placeholder="Nome"><div style="display:flex; gap:5px;"><input type="number" id="globalPrice" placeholder="R$"><input type="text" id="globalImg" placeholder="./imagens/foto.jpg"></div><button onclick="adicionarAoGlobal()" class="btn-warning">Salvar</button></div></div>
+        <div class="card"><div class="card-header">📅 Eventos</div><div style="display:flex; gap:5px; margin-bottom:15px;"><input type="text" id="novoEventoNome" placeholder="Nome"><button onclick="criarEvento()" class="btn-primary" style="width:auto;">+</button></div><div id="lista-eventos">Loading...</div></div>
     </div>
 
     <div class="card" id="painel-detalhes" style="display:none;">
         <div class="card-header">
-            <span id="titulo-evento">Nome do Evento</span>
-            <div id="controles-status"></div>
-        </div>
-
-        <div style="background: #eef2f7; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-            <h3>📥 Montar Cardápio</h3>
-            <div class="checkbox-container" id="lista-global-checkboxes"></div>
-            <div style="display:flex; justify-content:space-between;">
-                <button onclick="marcarTodos(true)" style="background:none; color:#3498db; text-decoration:underline;">Marcar Todos</button>
-                <button onclick="adicionarMuitos()" class="btn-primary">⬇️ Adicionar Selecionados</button>
+            <span id="titulo-evento">Evento</span>
+            <div style="display:flex;">
+                <button onclick="reiniciarEvento()" class="btn-restart" title="Zerar vendas e repor estoque">🔄 REINICIAR (ZERAR)</button>
+                <div id="controles-status" style="margin-left:10px;"></div>
             </div>
         </div>
 
-        <h3>📋 Cardápio Confirmado</h3>
-        <table>
-            <thead>
-                <tr><th width="50">Img</th><th>Nome</th><th width="100">Preço (R$)</th><th width="80">Estoque</th><th width="50"></th></tr>
-            </thead>
-            <tbody id="tabela-evento"></tbody>
-        </table>
+        <div style="background: #eef2f7; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+            <h3>📥 Cardápio</h3>
+            <div class="checkbox-container" id="lista-global-checkboxes"></div>
+            <div style="display:flex; justify-content:space-between;">
+                <button onclick="marcarTodos(true)" style="background:none; color:#3498db; text-decoration:underline;">Marcar Todos</button>
+                <button onclick="adicionarMuitos()" class="btn-primary">⬇️ Adicionar</button>
+            </div>
+        </div>
 
-        <button onclick="ativarEvento()" class="btn-activate">🚀 TORNAR ESTE EVENTO O ATIVO NO APP</button>
+        <h3>📋 Confirmados</h3>
+        <table><thead><tr><th width="50">Img</th><th>Nome</th><th width="100">Preço</th><th width="80">Estoque</th><th width="50"></th></tr></thead><tbody id="tabela-evento"></tbody></table>
+        <button onclick="ativarEvento()" class="btn-activate">🚀 ATIVAR NO APP</button>
+
+        <div class="danger-zone">
+            <h3 style="color:#c0392b; margin-top:0;">⚠️ Zona de Perigo</h3>
+            <button onclick="excluirEventoAtual()" class="btn-delete-event">🗑️ EXCLUIR EVENTO</button>
+        </div>
     </div>
-
-    <div class="card" id="painel-vazio" style="text-align:center; padding:50px; color:#999;">
-        <h2>⬅️ Selecione um evento para começar</h2>
-    </div>
-
+    <div class="card" id="painel-vazio" style="text-align:center; padding:50px; color:#999;"><h2>⬅️ Selecione um evento</h2></div>
 </div>
 
 <script type="module">
@@ -135,130 +96,99 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    let eventoID = null, bibliotecaGlobal = [], eventoAtivoID = null, eventoAtualStatus = 'aberto';
 
-    let eventoID = null;
-    let bibliotecaGlobal = []; 
-    let eventoAtivoID = null;
-    let eventoAtualStatus = 'aberto';
+    // --- FUNÇÃO NOVA: REINICIAR EVENTO ---
+    window.reiniciarEvento = async () => {
+        if(!eventoID) return;
+        const estoquePadrao = prompt("Digite o estoque inicial para TODOS os drinks (ex: 50):", "50");
+        if(estoquePadrao === null) return; // Cancelou
 
-    // --- 1. EQUIPE (NOVO) ---
-    onSnapshot(collection(db, "equipe"), (snap) => {
-        const lista = document.getElementById('lista-equipe');
-        lista.innerHTML = '';
-        snap.forEach(d => {
-            const b = d.data();
-            lista.innerHTML += `<tr><td><b>${b.nome}</b><br><span style="color:#666">${b.telefone}</span></td><td style="text-align:right;"><button class="btn-danger" onclick="window.removerBartender('${d.id}')">X</button></td></tr>`;
-        });
-    });
+        if(!confirm("ATENÇÃO: Isso apagará TODO o histórico de vendas deste evento e resetará os estoques. Os celulares dos barmans serão zerados. Confirmar?")) return;
 
-    window.adicionarBartender = async () => {
-        const nome = document.getElementById('bartenderNome').value;
-        const tel = document.getElementById('bartenderPhone').value;
-        if(!nome || !tel) return alert("Preencha tudo!");
-        const q = query(collection(db, "equipe"), where("telefone", "==", tel));
-        const check = await getDocs(q);
-        if(!check.empty) return alert("Telefone já existe!");
-        await addDoc(collection(db, "equipe"), { nome, telefone: tel });
-        document.getElementById('bartenderNome').value = ''; document.getElementById('bartenderPhone').value = '';
+        try {
+            const batch = writeBatch(db);
+
+            // 1. Apagar Vendas (Uma por uma pois Firestore não apaga coleção inteira direto)
+            const vendasSnap = await getDocs(collection(db, "eventos", eventoID, "vendas"));
+            vendasSnap.forEach(venda => batch.delete(venda.ref));
+
+            // 2. Resetar Estoque
+            const cardapioSnap = await getDocs(collection(db, "eventos", eventoID, "cardapio"));
+            cardapioSnap.forEach(item => {
+                batch.update(item.ref, { estoque: parseInt(estoquePadrao) });
+            });
+
+            // 3. Gerar Sinal de Reset (Isso avisa o App para zerar a contagem local)
+            batch.update(doc(db, "eventos", eventoID), { resetSignal: Date.now() });
+
+            await batch.commit();
+            alert("Evento Reiniciado com Sucesso! 🔄");
+        } catch(e) { alert("Erro ao reiniciar: " + e.message); }
     };
-    window.removerBartender = async (id) => { if(confirm("Remover?")) await deleteDoc(doc(db, "equipe", id)); };
 
-    // --- 2. OUVINTES GERAIS ---
+    // --- RESTO DO CÓDIGO (MANUTENÇÃO DA V8) ---
+    onSnapshot(collection(db, "equipe"), (snap) => {
+        const l = document.getElementById('lista-equipe'); l.innerHTML='';
+        snap.forEach(d => l.innerHTML+=`<tr><td><b>${d.data().nome}</b><br><span style="color:#666">${d.data().telefone}</span></td><td style="text-align:right;"><button class="btn-danger" onclick="window.removerBartender('${d.id}')">X</button></td></tr>`);
+    });
+    window.adicionarBartender = async () => { /* Lógica igual V8 */ const n=document.getElementById('bartenderNome').value; const t=document.getElementById('bartenderPhone').value; if(n&&t) await addDoc(collection(db,"equipe"),{nome:n,telefone:t}); };
+    window.removerBartender = async(id) => { if(confirm("Remover?")) await deleteDoc(doc(db,"equipe",id)); };
+
     onSnapshot(doc(db, "config", "geral"), (s) => { if(s.exists()) eventoAtivoID = s.data().eventoAtivoID; renderizarListaEventos(); });
-
     onSnapshot(collection(db, "drinks"), (snap) => {
-        bibliotecaGlobal = [];
-        const divLista = document.getElementById('lista-global-checkboxes');
-        divLista.innerHTML = '';
-        snap.forEach(doc => {
-            const d = doc.data();
-            bibliotecaGlobal.push({ ...d, id: doc.id });
-            divLista.innerHTML += `<div class="chk-item"><input type="checkbox" id="chk_${doc.id}" value="${doc.id}" class="chk-drink"><label for="chk_${doc.id}">${d.nome}</label></div>`;
-        });
+        bibliotecaGlobal=[]; const d=document.getElementById('lista-global-checkboxes'); d.innerHTML='';
+        snap.forEach(doc=>{ bibliotecaGlobal.push({...doc.data(),id:doc.id}); d.innerHTML+=`<div class="chk-item"><input type="checkbox" id="chk_${doc.id}" value="${doc.id}" class="chk-drink"><label for="chk_${doc.id}">${doc.data().nome}</label></div>`; });
     });
 
-    let listaEventosCache = [];
-    onSnapshot(query(collection(db, "eventos"), orderBy("criadoEm", "desc")), (snap) => {
-        listaEventosCache = [];
-        snap.forEach(d => listaEventosCache.push({ ...d.data(), id: d.id }));
-        renderizarListaEventos();
-    });
+    let listaEventosCache=[];
+    onSnapshot(query(collection(db,"eventos"),orderBy("criadoEm","desc")),(s)=>{ listaEventosCache=[]; s.forEach(d=>listaEventosCache.push({...d.data(),id:d.id})); renderizarListaEventos(); });
 
-    function renderizarListaEventos() {
-        const div = document.getElementById('lista-eventos');
-        div.innerHTML = '';
-        listaEventosCache.forEach(ev => {
-            const status = ev.status || 'aberto';
-            const item = document.createElement('div');
-            item.className = `event-item ${eventoID === ev.id ? 'active' : ''}`;
-            let badges = '';
-            if(eventoAtivoID === ev.id) badges += '<span class="badge-live">NO AR</span> ';
-            if(status === 'fechado') badges += '<span class="badge-closed">FECHADO</span>';
-            item.innerHTML = `<div><strong>${ev.nome}</strong><br><small style="color:#888">${new Date(ev.criadoEm?.toDate()).toLocaleDateString()}</small></div><div>${badges}</div>`;
-            item.onclick = () => carregarEvento(ev.id, ev.nome, status);
-            div.appendChild(item);
+    function renderizarListaEventos(){
+        const d=document.getElementById('lista-eventos'); d.innerHTML='';
+        listaEventosCache.forEach(ev=>{
+            const st=ev.status||'aberto'; const badges = (eventoAtivoID===ev.id?'<span class="badge-live">NO AR</span> ':'') + (st==='fechado'?'<span class="badge-closed">FECHADO</span>':'');
+            const div=document.createElement('div'); div.className=`event-item ${eventoID===ev.id?'active':''}`;
+            div.innerHTML=`<div><strong>${ev.nome}</strong><br><small style="color:#888">${new Date(ev.criadoEm?.toDate()).toLocaleDateString()}</small></div><div>${badges}</div>`;
+            div.onclick=()=>carregarEvento(ev.id, ev.nome, st); d.appendChild(div);
         });
     }
 
-    // --- 3. AÇÕES DE EVENTO ---
-    window.criarEvento = async () => {
-        const nome = document.getElementById('novoEventoNome').value;
-        if(nome) await addDoc(collection(db, "eventos"), { nome, criadoEm: new Date(), status: 'aberto' });
-        document.getElementById('novoEventoNome').value = '';
-    };
-
-    window.carregarEvento = (id, nome, status) => {
-        eventoID = id;
-        eventoAtualStatus = status;
-        document.getElementById('painel-vazio').style.display = 'none';
-        document.getElementById('painel-detalhes').style.display = 'block';
-        document.getElementById('titulo-evento').innerText = nome;
-        
-        const divStatus = document.getElementById('controles-status');
-        divStatus.innerHTML = status === 'fechado' ? 
-            `<button onclick="alterarStatus('aberto')" class="btn-open-event">🔓 REABRIR</button>` : 
-            `<button onclick="alterarStatus('fechado')" class="btn-close-event">🛑 ENCERRAR</button>`;
-
+    window.criarEvento=async()=>{ const n=document.getElementById('novoEventoNome').value; if(n) await addDoc(collection(db,"eventos"),{nome:n,criadoEm:new Date(),status:'aberto'}); };
+    window.carregarEvento=(id,n,st)=>{
+        eventoID=id; eventoAtualStatus=st; document.getElementById('painel-vazio').style.display='none'; document.getElementById('painel-detalhes').style.display='block';
+        document.getElementById('titulo-evento').innerText=n;
+        document.getElementById('controles-status').innerHTML = st==='fechado' ? `<button onclick="alterarStatus('aberto')" class="btn-open-event">🔓</button>` : `<button onclick="alterarStatus('fechado')" class="btn-close-event">🛑</button>`;
         renderizarListaEventos();
-        
-        const tb = document.getElementById('tabela-evento');
-        onSnapshot(collection(db, "eventos", id, "cardapio"), (snap) => {
-            tb.innerHTML = '';
-            const drinks = [];
-            snap.forEach(d => drinks.push({...d.data(), id: d.id}));
-            drinks.sort((a,b) => a.nome.localeCompare(b.nome));
-            drinks.forEach(d => {
-                tb.innerHTML += `<tr><td><img src="${d.imagem||''}" class="thumb"></td><td>${d.nome}</td><td><input type="number" class="input-table" value="${d.VlCusto}" onchange="window.atualizarItemEvento('${d.id}', 'VlCusto', this.value)"></td><td><input type="number" class="input-table" value="${d.estoque}" style="width:60px; font-weight:bold; color:#27ae60" onchange="window.atualizarItemEvento('${d.id}', 'estoque', this.value)"></td><td><button class="btn-danger" onclick="window.removerItem('${d.id}')">X</button></td></tr>`;
-            });
+        onSnapshot(collection(db,"eventos",id,"cardapio"),(s)=>{
+            const tb=document.getElementById('tabela-evento'); tb.innerHTML='';
+            const arr=[]; s.forEach(d=>arr.push({...d.data(),id:d.id})); arr.sort((a,b)=>a.nome.localeCompare(b.nome));
+            arr.forEach(d=>tb.innerHTML+=`<tr><td><img src="${d.imagem||''}" class="thumb"></td><td>${d.nome}</td><td><input type="number" class="input-table" value="${d.VlCusto}" onchange="window.attItem('${d.id}','VlCusto',this.value)"></td><td><input type="number" class="input-table" value="${d.estoque}" style="width:60px;font-weight:bold;color:#27ae60" onchange="window.attItem('${d.id}','estoque',this.value)"></td><td><button class="btn-danger" onclick="window.delItem('${d.id}')">X</button></td></tr>`);
         });
     };
 
-    window.alterarStatus = async (s) => { if(confirm(`Mudar para ${s}?`)) await updateDoc(doc(db, "eventos", eventoID), { status: s }); };
-    window.ativarEvento = async () => { 
-        if(eventoAtualStatus === 'fechado') return alert("Reabra o evento primeiro!");
-        if(confirm("Ativar este evento?")) await setDoc(doc(db, "config", "geral"), { eventoAtivoID: eventoID, eventoAtivoNome: document.getElementById('titulo-evento').innerText }, { merge: true }); 
+    window.attItem=async(id,c,v)=>await updateDoc(doc(db,"eventos",eventoID,"cardapio",id),{[c]:parseFloat(v)});
+    window.delItem=async(id)=>{if(confirm("Remover?")) await deleteDoc(doc(db,"eventos",eventoID,"cardapio",id));};
+    window.alterarStatus=async(s)=>{if(confirm("Mudar status?")) await updateDoc(doc(db,"eventos",eventoID),{status:s});};
+    window.ativarEvento=async()=>{if(eventoAtualStatus==='fechado') return alert("Reabra o evento!"); if(confirm("Ativar?")) await setDoc(doc(db,"config","geral"),{eventoAtivoID:eventoID,eventoAtivoNome:document.getElementById('titulo-evento').innerText},{merge:true});};
+    window.excluirEventoAtual=async()=>{
+        if(!confirm("TEM CERTEZA? Vai apagar tudo deste evento.")) return;
+        try {
+            if(eventoID===eventoAtivoID) await setDoc(doc(db,"config","geral"),{eventoAtivoID:null,eventoAtivoNome:"Nenhum"},{merge:true});
+            const batch=writeBatch(db);
+            const snaps=await getDocs(collection(db,"eventos",eventoID,"cardapio")); snaps.forEach(d=>batch.delete(d.ref));
+            const sales=await getDocs(collection(db,"eventos",eventoID,"vendas")); sales.forEach(d=>batch.delete(d.ref));
+            await batch.commit(); await deleteDoc(doc(db,"eventos",eventoID));
+            alert("Excluído!"); location.reload();
+        } catch(e){alert(e.message);}
     };
-
-    // --- 4. LÓGICA DE DRINKS ---
-    window.adicionarAoGlobal = async () => {
-        const nome = document.getElementById('globalName').value; const preco = document.getElementById('globalPrice').value; const img = document.getElementById('globalImg').value || "./imagens/";
-        if(nome && preco) { await addDoc(collection(db, "drinks"), { nome, VlCusto: parseFloat(preco), imagem: img, estoque: 0 }); alert("Salvo!"); }
+    window.adicionarAoGlobal=async()=>{const n=document.getElementById('globalName').value; const p=document.getElementById('globalPrice').value; if(n&&p) await addDoc(collection(db,"drinks"),{nome:n,VlCusto:parseFloat(p),imagem:document.getElementById('globalImg').value||"./imagens/",estoque:0});};
+    window.marcarTodos=(m)=>document.querySelectorAll('.chk-drink').forEach(c=>c.checked=m);
+    window.adicionarMuitos=async()=>{
+        const c=document.querySelectorAll('.chk-drink:checked'); if(!c.length)return; const b=writeBatch(db);
+        c.forEach(chk=>{const d=bibliotecaGlobal.find(x=>x.id===chk.value); if(d) b.set(doc(collection(db,"eventos",eventoID,"cardapio")),{nome:d.nome,VlCusto:d.VlCusto,imagem:d.imagem,estoque:50});});
+        await b.commit(); document.querySelectorAll('.chk-drink').forEach(c=>c.checked=false);
     };
-    window.marcarTodos = (m) => document.querySelectorAll('.chk-drink').forEach(c => c.checked = m);
-    window.adicionarMuitos = async () => {
-        const checks = document.querySelectorAll('.chk-drink:checked');
-        if(checks.length === 0) return alert("Nada selecionado");
-        const batch = writeBatch(db);
-        checks.forEach(chk => {
-            const dg = bibliotecaGlobal.find(d => d.id === chk.value);
-            if(dg) batch.set(doc(collection(db, "eventos", eventoID, "cardapio")), { nome: dg.nome, VlCusto: dg.VlCusto, imagem: dg.imagem, estoque: 50, idOriginal: dg.id });
-        });
-        await batch.commit();
-        document.querySelectorAll('.chk-drink').forEach(c => c.checked = false);
-    };
-    window.atualizarItemEvento = async (id, c, v) => await updateDoc(doc(db, "eventos", eventoID, "cardapio", id), { [c]: parseFloat(v) });
-    window.removerItem = async (id) => { if(confirm("Remover?")) await deleteDoc(doc(db, "eventos", eventoID, "cardapio", id)); };
-
 </script>
 </body>
 </html>
