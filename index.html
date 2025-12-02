@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aurora App</title>
+    <title>Aurora App V7</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4CAF50">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,8 +12,10 @@
         .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
         @media (max-width: 600px) { .grid-container { grid-template-columns: 1fr 1fr; } }
         
-        .drink-card { background: #333; border-radius: 8px; padding: 10px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+        .drink-card { background: #333; border-radius: 8px; padding: 10px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
         .drink-img { width: 100%; height: 100px; object-fit: cover; border-radius: 4px; background: #555; }
+        
+        /* RESTAURADO: PREÇO E ESTOQUE VISUAIS */
         .price-tag { color: #FFD700; font-weight: bold; font-size: 1.1em; margin: 5px 0; }
         .stock-info { font-size: 0.85em; color: #bbb; }
 
@@ -21,9 +23,8 @@
         button { border: none; padding: 5px 15px; border-radius: 4px; font-size: 1.2em; cursor: pointer; color: white; transition: 0.2s; }
         .btn-add { background: #27ae60; }
         .btn-remove { background: #c0392b; }
+        button:disabled { background: #555 !important; opacity: 0.5; cursor: not-allowed; }
         
-        /* Estilo Desabilitado (Evento Fechado) */
-        button:disabled { background: #555 !important; cursor: not-allowed; opacity: 0.5; }
         .evento-fechado-banner { background: #c0392b; color: white; text-align: center; padding: 10px; font-weight: bold; margin-bottom: 10px; border-radius: 4px; display: none; }
 
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; border-top: 1px solid #444; padding-top: 20px; }
@@ -32,28 +33,29 @@
         .panel { background: #2c2c2c; padding: 15px; border-radius: 8px; }
         #log-list { max-height: 200px; overflow-y: auto; list-style: none; padding: 0; font-family: monospace; font-size: 0.85em; }
         #log-list li { border-bottom: 1px solid #444; padding: 4px 0; }
-        .export-btn { background: #2e7d32; width: 100%; margin-top: 10px; padding: 10px; }
+        .export-btn { background: #2e7d32; width: 100%; margin-top: 10px; padding: 10px; border-radius: 4px; color: white; border: none; font-weight: bold; }
         
-        /* LOGIN MODAL */
-        #login-overlay { position: fixed; inset: 0; background: #1a1a1a; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center; }
-        #login-overlay input { padding: 15px; font-size: 1.2em; border-radius: 5px; border: none; margin-bottom: 10px; width: 80%; max-width: 300px; text-align: center; }
-        .btn-login { background: #4CAF50; padding: 15px 30px; font-size: 1.2em; width: 80%; max-width: 300px; }
-
-        #loading { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 99; flex-direction: column; }
+        /* LOGIN */
+        #login-overlay { position: fixed; inset: 0; background: #111; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center; }
+        #login-overlay input { padding: 15px; font-size: 1.2em; border-radius: 5px; border: 1px solid #444; background: #222; color: white; margin-bottom: 15px; width: 80%; max-width: 300px; text-align: center; }
+        .btn-login { background: #4CAF50; padding: 15px 30px; font-size: 1.2em; width: 80%; max-width: 300px; font-weight: bold; border-radius: 5px; border: none; cursor: pointer; color: white; }
+        .error-msg { color: #ff6b6b; margin-top: 10px; font-weight: bold; display: none; }
+        
+        #loading { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 98; }
     </style>
 </head>
 <body>
 
     <div id="login-overlay">
-        <h1>👋 Bem-vindo(a)!</h1>
-        <p>Para começar, como se chama?</p>
-        <input type="text" id="bartenderName" placeholder="Seu Nome ou Apelido">
-        <button onclick="fazerLogin()" class="btn-login">Entrar no Bar</button>
+        <h1 style="color:#4CAF50">🔒 Acesso Restrito</h1>
+        <p>Digite seu celular cadastrado:</p>
+        <input type="number" id="loginPhone" placeholder="Ex: 1199999">
+        <button onclick="fazerLogin()" class="btn-login">ENTRAR</button>
+        <div id="login-error" class="error-msg">Não encontrado!</div>
     </div>
 
-    <div id="loading"><h2>🍸 Aurora Bartenders</h2><p>Conectando...</p></div>
-
-    <div id="evento-fechado-msg" class="evento-fechado-banner">🚫 ESTE EVENTO ESTÁ ENCERRADO</div>
+    <div id="loading"><h2>Conectando...</h2></div>
+    <div id="evento-fechado-msg" class="evento-fechado-banner">🚫 EVENTO ENCERRADO - APENAS LEITURA</div>
 
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <h1 style="margin:0">Aurora App</h1>
@@ -66,19 +68,19 @@
     <div class="dashboard">
         <div class="panel">
             <h3>Resumo</h3>
-            <p>Total: <span id="total-count">0</span> | Fat: <span id="total-valor">R$ 0.00</span></p>
+            <p>Total: <span id="total-count">0</span> | Fat: <span id="total-valor" style="color:#FFD700">R$ 0.00</span></p>
             <div style="height:250px"><canvas id="chart"></canvas></div>
             <button onclick="window.exportarCSV()" class="export-btn">📄 Baixar CSV</button>
         </div>
         <div class="panel">
-            <h3>Histórico (Tempo Real)</h3>
+            <h3>Histórico</h3>
             <ul id="log-list"></ul>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, increment, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ⚠️ COLE SUA CONFIG AQUI ⚠️
 		const firebaseConfig = {
@@ -94,85 +96,86 @@
         const db = getFirestore(app);
 
         let eventoID = null;
-        let eventoNome = "";
-        let eventoStatus = "aberto"; // Controle de Status
-        let usuarioAtual = localStorage.getItem('usuario_aurora');
+        let eventoStatus = "aberto";
+        let usuarioAtual = localStorage.getItem('aurora_user_name');
+        let telefoneAtual = localStorage.getItem('aurora_user_phone');
         let drinks = [];
         let counts = {};
         let localLogs = [];
         let chart = null;
 
         const loadingDiv = document.getElementById('loading');
-        const loginOverlay = document.getElementById('login-overlay');
-        const logList = document.getElementById('log-list');
-
-        // --- 0. SISTEMA DE LOGIN ---
-        if(usuarioAtual) {
-            loginOverlay.style.display = 'none';
+        
+        // --- LOGIN ---
+        if(usuarioAtual && telefoneAtual) {
+            document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('user-display').innerText = "👤 " + usuarioAtual;
         }
 
-        window.fazerLogin = () => {
-            const nome = document.getElementById('bartenderName').value;
-            if(!nome) return alert("Por favor, diga seu nome.");
-            usuarioAtual = nome;
-            localStorage.setItem('usuario_aurora', nome);
-            loginOverlay.style.display = 'none';
-            document.getElementById('user-display').innerText = "👤 " + usuarioAtual;
-        }
+        window.fazerLogin = async () => {
+            const tel = document.getElementById('loginPhone').value;
+            const btn = document.querySelector('.btn-login');
+            if(!tel) return;
+            btn.innerText = "...";
+            try {
+                const q = query(collection(db, "equipe"), where("telefone", "==", tel));
+                const snap = await getDocs(q);
+                if(snap.empty) {
+                    document.getElementById('login-error').style.display = 'block';
+                    btn.innerText = "ENTRAR";
+                } else {
+                    const dados = snap.docs[0].data();
+                    usuarioAtual = dados.nome;
+                    telefoneAtual = dados.telefone;
+                    localStorage.setItem('aurora_user_name', usuarioAtual);
+                    localStorage.setItem('aurora_user_phone', telefoneAtual);
+                    
+                    // Log de Acesso
+                    await addDoc(collection(db, "acessos_sistema"), { nome: usuarioAtual, tel: telefoneAtual, data: new Date() });
+                    
+                    document.getElementById('login-overlay').style.display = 'none';
+                    document.getElementById('user-display').innerText = "👤 " + usuarioAtual;
+                }
+            } catch(e) { alert("Erro de conexão"); btn.innerText = "ENTRAR"; }
+        };
 
-        // --- 1. ESCUTAR EVENTO ATIVO ---
+        // --- SISTEMA ---
         onSnapshot(doc(db, "config", "geral"), (snap) => {
             if(snap.exists() && snap.data().eventoAtivoID) {
                 const novoID = snap.data().eventoAtivoID;
-                eventoNome = snap.data().eventoAtivoNome;
-                document.getElementById('nome-evento').innerText = eventoNome;
-                
+                document.getElementById('nome-evento').innerText = snap.data().eventoAtivoNome;
                 if(novoID !== eventoID) {
                     eventoID = novoID;
-                    carregarDrinksDoEvento(novoID);
-                    carregarStatusEvento(novoID); // Nova função para ver se está aberto
+                    carregarDrinks(novoID);
+                    carregarStatus(novoID);
                     
                     const cacheCount = localStorage.getItem('counts_ev_'+eventoID);
-                    if(cacheCount) counts = JSON.parse(cacheCount);
-                    else counts = {};
+                    counts = cacheCount ? JSON.parse(cacheCount) : {};
                     carregarLogsAntigos();
                 }
-            } else {
-                loadingDiv.innerHTML = "<h2>Sem Evento Ativo</h2>";
-            }
+            } else { loadingDiv.innerHTML = "<h2>Sem Evento</h2>"; }
         });
 
-        // --- 2. ESCUTAR STATUS DO EVENTO (NOVO) ---
-        function carregarStatusEvento(id) {
-            onSnapshot(doc(db, "eventos", id), (snap) => {
-                if(snap.exists()) {
-                    eventoStatus = snap.data().status || 'aberto';
-                    atualizarInterfaceStatus();
+        function carregarStatus(id) {
+            onSnapshot(doc(db, "eventos", id), (s) => {
+                if(s.exists()) {
+                    eventoStatus = s.data().status || 'aberto';
+                    const banner = document.getElementById('evento-fechado-msg');
+                    const btns = document.querySelectorAll('button.btn-add, button.btn-remove');
+                    if(eventoStatus === 'fechado') {
+                        banner.style.display = 'block';
+                        btns.forEach(b => b.disabled = true);
+                    } else {
+                        banner.style.display = 'none';
+                        btns.forEach(b => b.disabled = false);
+                    }
                 }
             });
         }
 
-        function atualizarInterfaceStatus() {
-            const banner = document.getElementById('evento-fechado-msg');
-            const botoes = document.querySelectorAll('button.btn-add, button.btn-remove');
-            
-            if (eventoStatus === 'fechado') {
-                banner.style.display = 'block';
-                botoes.forEach(btn => btn.disabled = true); // Bloqueia tudo
-            } else {
-                banner.style.display = 'none';
-                botoes.forEach(btn => btn.disabled = false); // Libera
-            }
-        }
-
-        // --- 3. CARREGAR DRINKS ---
-        let unsubDrinks = null;
-        function carregarDrinksDoEvento(id) {
+        function carregarDrinks(id) {
             loadingDiv.style.display = 'none';
-            if(unsubDrinks) unsubDrinks();
-
-            unsubDrinks = onSnapshot(collection(db, "eventos", id, "cardapio"), (snap) => {
+            onSnapshot(collection(db, "eventos", id, "cardapio"), (snap) => {
                 drinks = [];
                 snap.forEach(d => drinks.push({...d.data(), id: d.id}));
                 drinks.sort((a,b) => a.nome.localeCompare(b.nome));
@@ -185,116 +188,96 @@
             grid.innerHTML = '';
             drinks.forEach(d => {
                 if(!counts[d.id]) counts[d.id] = 0;
-                
-                const card = document.createElement('div');
-                card.className = 'drink-card';
-                card.innerHTML = `
-                    <img src="${d.imagem || ''}" class="drink-img" onerror="this.style.opacity=0.3">
-                    <strong>${d.nome}</strong>
-                    <div class="price-tag">R$ ${parseFloat(d.VlCusto).toFixed(2)}</div>
-                    <div class="stock-info">Estoque: ${d.estoque}</div>
-                    <div class="controls">
-                        <button class="btn-remove" onclick="window.mudar('${d.id}', -1)">-</button>
-                        <span style="font-size:1.5em; font-weight:bold">${counts[d.id]}</span>
-                        <button class="btn-add" onclick="window.mudar('${d.id}', 1)">+</button>
-                    </div>
-                `;
-                grid.appendChild(card);
+                grid.innerHTML += `
+                    <div class="drink-card">
+                        <img src="${d.imagem || ''}" class="drink-img" onerror="this.style.opacity=0.3">
+                        <strong>${d.nome}</strong>
+                        <div class="price-tag">R$ ${parseFloat(d.VlCusto).toFixed(2)}</div>
+                        <div class="stock-info">Estoque: ${d.estoque}</div>
+                        <div class="controls">
+                            <button class="btn-remove" onclick="window.mudar('${d.id}', -1)" ${eventoStatus==='fechado'?'disabled':''}>-</button>
+                            <span style="font-size:1.5em; font-weight:bold">${counts[d.id]}</span>
+                            <button class="btn-add" onclick="window.mudar('${d.id}', 1)" ${eventoStatus==='fechado'?'disabled':''}>+</button>
+                        </div>
+                    </div>`;
             });
             atualizarTotais();
-            atualizarInterfaceStatus(); // Reaplica bloqueio se estiver fechado
         }
 
         window.mudar = async (id, qtd) => {
-            if(!eventoID) return;
-            // BLOQUEIO DE SEGURANÇA
-            if(eventoStatus === 'fechado') return alert("Evento Encerrado! Não é possível alterar.");
-
+            if(eventoStatus === 'fechado') return;
             const drink = drinks.find(d => d.id === id);
-            if(qtd > 0 && drink.estoque <= 0) return alert("Acabou na Nuvem!");
+            if(qtd > 0 && drink.estoque <= 0) return alert("Acabou!");
             if(qtd < 0 && (!counts[id] || counts[id] <= 0)) return;
 
             if(!counts[id]) counts[id] = 0;
             counts[id] += qtd;
             localStorage.setItem('counts_ev_'+eventoID, JSON.stringify(counts));
             renderizar();
-            
-            adicionarLogLocal(drink.nome, qtd > 0 ? "Vendido" : "Cancelado");
+            adicionarLogLocal(drink.nome, qtd);
 
             try {
-                const drinkRef = doc(db, "eventos", eventoID, "cardapio", id);
-                await updateDoc(drinkRef, { estoque: increment(-qtd) });
-
-                if(qtd > 0) {
-                    await addDoc(collection(db, "eventos", eventoID, "vendas"), {
-                        drink: drink.nome,
-                        preco: drink.VlCusto,
-                        hora: new Date(),
-                        usuario: usuarioAtual // <--- ENVIA O NOME DO BARTENDER
-                    });
-                }
+                const ref = doc(db, "eventos", eventoID, "cardapio", id);
+                await updateDoc(ref, { estoque: increment(-qtd) });
+                if(qtd > 0) await addDoc(collection(db, "eventos", eventoID, "vendas"), { drink: drink.nome, preco: drink.VlCusto, hora: new Date(), usuario: usuarioAtual });
             } catch(e) { console.error(e); }
         };
 
-        // --- LOGS ---
-        function adicionarLogLocal(nome, acao) {
-            const hora = new Date().toLocaleTimeString();
-            const logItem = { nome, acao, hora, user: usuarioAtual };
-            localLogs.unshift(logItem);
-            if(localLogs.length > 50) localLogs.pop(); 
+        // --- EXTRAS ---
+        function adicionarLogLocal(nome, qtd) {
+            const li = document.createElement('li');
+            li.innerHTML = `[${new Date().toLocaleTimeString()}] <b>${usuarioAtual}</b>: ${qtd>0?'✅':'❌'} ${nome}`;
+            const list = document.getElementById('log-list');
+            list.prepend(li);
+            
+            // Persistência
+            localLogs.unshift({nome, qtd, hora: new Date().toLocaleTimeString(), user: usuarioAtual});
+            if(localLogs.length > 50) localLogs.pop();
             localStorage.setItem('logs_ev_'+eventoID, JSON.stringify(localLogs));
-            renderizarUmLog(logItem);
         }
 
         function carregarLogsAntigos() {
+            const list = document.getElementById('log-list');
+            list.innerHTML = '';
             const saved = localStorage.getItem('logs_ev_'+eventoID);
-            logList.innerHTML = '';
             if(saved) {
                 localLogs = JSON.parse(saved);
-                localLogs.forEach(item => renderizarUmLog(item, false));
+                localLogs.forEach(l => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `[${l.hora}] <b>${l.user}</b>: ${l.qtd>0?'✅':'❌'} ${l.nome}`;
+                    list.appendChild(li);
+                });
             }
         }
 
-        function renderizarUmLog(item, prepend=true) {
-            const li = document.createElement('li');
-            // Mostra o nome do bartender no log também
-            li.innerHTML = `[${item.hora}] <b>${item.user || '?'}</b>: ${item.acao === 'Vendido' ? '✅' : '❌'} ${item.nome}`;
-            if(prepend) logList.prepend(li); else logList.appendChild(li);
-        }
-
-        // --- GRÁFICOS E CSV ---
         function atualizarTotais() {
-            let totalQtd = 0; let totalVal = 0;
-            drinks.forEach(d => { const q = counts[d.id]||0; totalQtd+=q; totalVal+=q*d.VlCusto; });
-            document.getElementById('total-count').innerText = totalQtd;
-            document.getElementById('total-valor').innerText = totalVal.toFixed(2);
-            desenharGrafico();
-        }
-
-        function desenharGrafico() {
+            let tQ=0, tV=0;
+            drinks.forEach(d => { const q = counts[d.id]||0; tQ+=q; tV+=q*d.VlCusto; });
+            document.getElementById('total-count').innerText = tQ;
+            document.getElementById('total-valor').innerText = 'R$ ' + tV.toFixed(2);
+            
             const ctx = document.getElementById('chart').getContext('2d');
-            const labels = drinks.map(d => d.nome);
-            const dataQtd = drinks.map(d => counts[d.id] || 0);
-            const dataVal = drinks.map(d => (counts[d.id] || 0) * d.VlCusto);
-
             if(chart) chart.destroy();
             chart = new Chart(ctx, {
                 type: 'bar',
-                data: { labels, datasets: [ { label: 'Qtd', data: dataQtd, backgroundColor: '#4CAF50', yAxisID: 'y' }, { label: 'R$', data: dataVal, backgroundColor: '#FFD700', yAxisID: 'y1' } ] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { x:{ticks:{color:'white'}}, y:{type:'linear',position:'left',ticks:{color:'#4CAF50'}}, y1:{type:'linear',position:'right',grid:{drawOnChartArea:false},ticks:{color:'#FFD700'}} }, plugins:{legend:{labels:{color:'white'}}} }
+                data: {
+                    labels: drinks.map(d => d.nome),
+                    datasets: [
+                        { label: 'Qtd', data: drinks.map(d => counts[d.id]||0), backgroundColor: '#4CAF50', yAxisID: 'y' },
+                        { label: 'R$', data: drinks.map(d => (counts[d.id]||0)*d.VlCusto), backgroundColor: '#FFD700', yAxisID: 'y1' }
+                    ]
+                },
+                options: { responsive:true, maintainAspectRatio:false, scales:{x:{ticks:{color:'white'}}, y:{position:'left',ticks:{color:'#4CAF50'}}, y1:{position:'right',ticks:{color:'#FFD700'}, grid:{drawOnChartArea:false}}}, plugins:{legend:{labels:{color:'white'}}} }
             });
         }
 
         window.exportarCSV = () => {
-            let csv = `\uFEFFEvento: ${eventoNome}\nBartender: ${usuarioAtual}\nData: ${new Date().toLocaleDateString()}\n\nBebida,Qtd Local,Preço Unit,Total\n`;
-            drinks.forEach(d => {
-                const qtd = counts[d.id] || 0;
-                if(qtd > 0) csv += `${d.nome},${qtd},${d.VlCusto.toFixed(2)},${(qtd*d.VlCusto).toFixed(2)}\n`;
-            });
+            let csv = `\uFEFFEvento: ${eventoNome}\nBartender: ${usuarioAtual}\nData: ${new Date().toLocaleDateString()}\n\nBebida,Qtd,Total\n`;
+            drinks.forEach(d => { if(counts[d.id]>0) csv += `${d.nome},${counts[d.id]},${(counts[d.id]*d.VlCusto).toFixed(2)}\n`; });
             csv += `\nTOTAL GERAL,,${document.getElementById('total-valor').innerText}`;
             const link = document.createElement("a");
             link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
-            link.download = `relatorio_${eventoNome}_${usuarioAtual}.csv`;
+            link.download = `relatorio_${eventoNome}.csv`;
             link.click();
         };
         

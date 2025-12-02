@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Aurora Events V5</title>
+    <title>Admin - Aurora Master V7</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
@@ -13,30 +13,31 @@
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e1e4e8; }
         .card-header { background: #f8f9fa; margin: -20px -20px 20px -20px; padding: 15px 20px; border-bottom: 1px solid #e1e4e8; border-radius: 8px 8px 0 0; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
 
-        /* Lista Lateral */
-        .event-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .event-item:hover { background: #f1f1f1; }
-        .event-item.active { background: #e8f0fe; border-left: 4px solid #3498db; }
-        .badge-live { background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; }
-        .badge-closed { background: #7f8c8d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; }
-
         /* Inputs e Botões */
         input, select { padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box; margin-bottom: 5px; }
         button { cursor: pointer; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; }
-        .btn-primary { background: #3498db; color: white; }
+        .btn-primary { background: #3498db; color: white; width:100%; }
         .btn-success { background: #27ae60; color: white; }
         .btn-danger { background: #e74c3c; color: white; font-size: 0.8em; }
+        .btn-warning { background: #f39c12; color: white; }
         .btn-activate { background: #8e44ad; color: white; width: 100%; padding: 15px; font-size: 1.1em; margin-top: 20px; }
         
-        /* Botões de Status */
+        /* Status */
         .btn-close-event { background: #c0392b; color: white; }
         .btn-open-event { background: #2ecc71; color: white; }
+        .badge-live { background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; }
+        .badge-closed { background: #7f8c8d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; }
 
-        /* Checkboxes */
+        /* Lista Lateral */
+        .event-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; }
+        .event-item:hover { background: #f1f1f1; }
+        .event-item.active { background: #e8f0fe; border-left: 4px solid #3498db; }
+
+        /* Checkboxes e Tabela */
         .checkbox-container { max-height: 200px; overflow-y: auto; border: 1px solid #ddd; background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 10px; }
         .chk-item { display: flex; align-items: center; padding: 5px; border-bottom: 1px solid #f9f9f9; }
         .chk-item input { width: auto; margin-right: 10px; }
-
+        
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { background: #2c3e50; color: white; padding: 10px; text-align: left; }
         td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
@@ -50,15 +51,29 @@
 <div class="container">
 
     <div>
+        <div class="card" style="border-left: 5px solid #27ae60;">
+            <div class="card-header">👥 Equipe Autorizada</div>
+            <div style="display:grid; gap: 5px;">
+                <input type="text" id="bartenderNome" placeholder="Nome (ex: Ricardo)">
+                <input type="number" id="bartenderPhone" placeholder="Celular (ex: 1199999)">
+                <button onclick="adicionarBartender()" class="btn-success">Cadastrar</button>
+            </div>
+            <div style="margin-top:10px; max-height:150px; overflow-y:auto;">
+                <table style="font-size:0.85em; margin:0;">
+                    <tbody id="lista-equipe"></tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="card" style="border-left: 5px solid #f39c12;">
             <div class="card-header">📚 Biblioteca Global</div>
             <div style="display:grid; gap: 5px;">
                 <input type="text" id="globalName" placeholder="Nome do Drink">
                 <div style="display:flex; gap:5px;">
-                    <input type="number" id="globalPrice" placeholder="Preço (R$)">
+                    <input type="number" id="globalPrice" placeholder="R$">
                     <input type="text" id="globalImg" placeholder="./imagens/foto.jpg">
                 </div>
-                <button onclick="adicionarAoGlobal()" class="btn-success">💾 Salvar na Biblioteca</button>
+                <button onclick="adicionarAoGlobal()" class="btn-warning">Salvar na Biblioteca</button>
             </div>
         </div>
 
@@ -75,17 +90,19 @@
     <div class="card" id="painel-detalhes" style="display:none;">
         <div class="card-header">
             <span id="titulo-evento">Nome do Evento</span>
-            <div id="controles-status">
-                </div>
+            <div id="controles-status"></div>
         </div>
 
-        <div class="checkbox-container" id="lista-global-checkboxes"></div>
-        <div style="display:flex; justify-content:space-between; margin-bottom: 20px;">
-            <button onclick="marcarTodos(true)" style="background:none; color:#3498db; text-decoration:underline;">Marcar Todos</button>
-            <button onclick="adicionarMuitos()" class="btn-primary">⬇️ Adicionar Selecionados</button>
+        <div style="background: #eef2f7; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+            <h3>📥 Montar Cardápio</h3>
+            <div class="checkbox-container" id="lista-global-checkboxes"></div>
+            <div style="display:flex; justify-content:space-between;">
+                <button onclick="marcarTodos(true)" style="background:none; color:#3498db; text-decoration:underline;">Marcar Todos</button>
+                <button onclick="adicionarMuitos()" class="btn-primary">⬇️ Adicionar Selecionados</button>
+            </div>
         </div>
 
-        <h3>📋 Cardápio deste Evento</h3>
+        <h3>📋 Cardápio Confirmado</h3>
         <table>
             <thead>
                 <tr><th width="50">Img</th><th>Nome</th><th width="100">Preço (R$)</th><th width="80">Estoque</th><th width="50"></th></tr>
@@ -97,14 +114,14 @@
     </div>
 
     <div class="card" id="painel-vazio" style="text-align:center; padding:50px; color:#999;">
-        <h2>⬅️ Crie ou selecione um evento</h2>
+        <h2>⬅️ Selecione um evento para começar</h2>
     </div>
 
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, query, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, query, orderBy, writeBatch, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // ⚠️ COLE SUA CONFIG AQUI ⚠️
 	const firebaseConfig = {
@@ -122,13 +139,32 @@
     let eventoID = null;
     let bibliotecaGlobal = []; 
     let eventoAtivoID = null;
-    let eventoAtualStatus = 'aberto'; // Variavel local para controle
+    let eventoAtualStatus = 'aberto';
 
-    // --- OUVINTES ---
-    onSnapshot(doc(db, "config", "geral"), (s) => {
-        if(s.exists()) eventoAtivoID = s.data().eventoAtivoID;
-        renderizarListaEventos();
+    // --- 1. EQUIPE (NOVO) ---
+    onSnapshot(collection(db, "equipe"), (snap) => {
+        const lista = document.getElementById('lista-equipe');
+        lista.innerHTML = '';
+        snap.forEach(d => {
+            const b = d.data();
+            lista.innerHTML += `<tr><td><b>${b.nome}</b><br><span style="color:#666">${b.telefone}</span></td><td style="text-align:right;"><button class="btn-danger" onclick="window.removerBartender('${d.id}')">X</button></td></tr>`;
+        });
     });
+
+    window.adicionarBartender = async () => {
+        const nome = document.getElementById('bartenderNome').value;
+        const tel = document.getElementById('bartenderPhone').value;
+        if(!nome || !tel) return alert("Preencha tudo!");
+        const q = query(collection(db, "equipe"), where("telefone", "==", tel));
+        const check = await getDocs(q);
+        if(!check.empty) return alert("Telefone já existe!");
+        await addDoc(collection(db, "equipe"), { nome, telefone: tel });
+        document.getElementById('bartenderNome').value = ''; document.getElementById('bartenderPhone').value = '';
+    };
+    window.removerBartender = async (id) => { if(confirm("Remover?")) await deleteDoc(doc(db, "equipe", id)); };
+
+    // --- 2. OUVINTES GERAIS ---
+    onSnapshot(doc(db, "config", "geral"), (s) => { if(s.exists()) eventoAtivoID = s.data().eventoAtivoID; renderizarListaEventos(); });
 
     onSnapshot(collection(db, "drinks"), (snap) => {
         bibliotecaGlobal = [];
@@ -155,48 +191,36 @@
             const status = ev.status || 'aberto';
             const item = document.createElement('div');
             item.className = `event-item ${eventoID === ev.id ? 'active' : ''}`;
-            
             let badges = '';
             if(eventoAtivoID === ev.id) badges += '<span class="badge-live">NO AR</span> ';
-            if(status === 'fechado') badges += '<span class="badge-closed">ENCERRADO</span>';
-
+            if(status === 'fechado') badges += '<span class="badge-closed">FECHADO</span>';
             item.innerHTML = `<div><strong>${ev.nome}</strong><br><small style="color:#888">${new Date(ev.criadoEm?.toDate()).toLocaleDateString()}</small></div><div>${badges}</div>`;
             item.onclick = () => carregarEvento(ev.id, ev.nome, status);
             div.appendChild(item);
         });
     }
 
-    // --- AÇÕES ---
-
+    // --- 3. AÇÕES DE EVENTO ---
     window.criarEvento = async () => {
         const nome = document.getElementById('novoEventoNome').value;
-        if(!nome) return alert("Digite um nome!");
-        try {
-            const ref = await addDoc(collection(db, "eventos"), { nome, criadoEm: new Date(), status: 'aberto' });
-            carregarEvento(ref.id, nome, 'aberto');
-            document.getElementById('novoEventoNome').value = '';
-        } catch(e) { alert(e.message); }
+        if(nome) await addDoc(collection(db, "eventos"), { nome, criadoEm: new Date(), status: 'aberto' });
+        document.getElementById('novoEventoNome').value = '';
     };
 
     window.carregarEvento = (id, nome, status) => {
         eventoID = id;
         eventoAtualStatus = status;
-        
         document.getElementById('painel-vazio').style.display = 'none';
         document.getElementById('painel-detalhes').style.display = 'block';
         document.getElementById('titulo-evento').innerText = nome;
         
-        // Atualiza Botões de Status
         const divStatus = document.getElementById('controles-status');
-        if(status === 'fechado') {
-            divStatus.innerHTML = `<button onclick="alterarStatus('aberto')" class="btn-open-event">🔓 REABRIR EVENTO</button>`;
-        } else {
-            divStatus.innerHTML = `<button onclick="alterarStatus('fechado')" class="btn-close-event">🛑 ENCERRAR EVENTO</button>`;
-        }
+        divStatus.innerHTML = status === 'fechado' ? 
+            `<button onclick="alterarStatus('aberto')" class="btn-open-event">🔓 REABRIR</button>` : 
+            `<button onclick="alterarStatus('fechado')" class="btn-close-event">🛑 ENCERRAR</button>`;
 
         renderizarListaEventos();
-
-        // Carrega Cardápio
+        
         const tb = document.getElementById('tabela-evento');
         onSnapshot(collection(db, "eventos", id, "cardapio"), (snap) => {
             tb.innerHTML = '';
@@ -209,28 +233,16 @@
         });
     };
 
-    window.alterarStatus = async (novoStatus) => {
-        if(!confirm(`Deseja alterar o status para: ${novoStatus.toUpperCase()}?`)) return;
-        await updateDoc(doc(db, "eventos", eventoID), { status: novoStatus });
-        // O onSnapshot da lista vai atualizar a tela automaticamente
-        eventoAtualStatus = novoStatus;
-        window.carregarEvento(eventoID, document.getElementById('titulo-evento').innerText, novoStatus);
+    window.alterarStatus = async (s) => { if(confirm(`Mudar para ${s}?`)) await updateDoc(doc(db, "eventos", eventoID), { status: s }); };
+    window.ativarEvento = async () => { 
+        if(eventoAtualStatus === 'fechado') return alert("Reabra o evento primeiro!");
+        if(confirm("Ativar este evento?")) await setDoc(doc(db, "config", "geral"), { eventoAtivoID: eventoID, eventoAtivoNome: document.getElementById('titulo-evento').innerText }, { merge: true }); 
     };
 
-    window.ativarEvento = async () => {
-        if(eventoAtualStatus === 'fechado') return alert("Você não pode ativar um evento ENCERRADO! Reabra-o primeiro.");
-        if(confirm("Ativar este evento para os Barmans?")) {
-            await setDoc(doc(db, "config", "geral"), { eventoAtivoID: eventoID, eventoAtivoNome: document.getElementById('titulo-evento').innerText }, { merge: true });
-            alert("Evento Ativado! 🚀");
-        }
-    };
-
-    // --- LÓGICA DE ITENS (Igual) ---
-    window.adicionarAoGlobal = async () => { /* Código igual ao anterior */ 
+    // --- 4. LÓGICA DE DRINKS ---
+    window.adicionarAoGlobal = async () => {
         const nome = document.getElementById('globalName').value; const preco = document.getElementById('globalPrice').value; const img = document.getElementById('globalImg').value || "./imagens/";
-        if(!nome || !preco) return alert("Falta dados");
-        await addDoc(collection(db, "drinks"), { nome, VlCusto: parseFloat(preco), imagem: img, estoque: 0 });
-        alert("Salvo!");
+        if(nome && preco) { await addDoc(collection(db, "drinks"), { nome, VlCusto: parseFloat(preco), imagem: img, estoque: 0 }); alert("Salvo!"); }
     };
     window.marcarTodos = (m) => document.querySelectorAll('.chk-drink').forEach(c => c.checked = m);
     window.adicionarMuitos = async () => {
@@ -239,15 +251,12 @@
         const batch = writeBatch(db);
         checks.forEach(chk => {
             const dg = bibliotecaGlobal.find(d => d.id === chk.value);
-            if(dg) {
-                const ref = doc(collection(db, "eventos", eventoID, "cardapio"));
-                batch.set(ref, { nome: dg.nome, VlCusto: dg.VlCusto, imagem: dg.imagem, estoque: 50, idOriginal: dg.id });
-            }
+            if(dg) batch.set(doc(collection(db, "eventos", eventoID, "cardapio")), { nome: dg.nome, VlCusto: dg.VlCusto, imagem: dg.imagem, estoque: 50, idOriginal: dg.id });
         });
         await batch.commit();
         document.querySelectorAll('.chk-drink').forEach(c => c.checked = false);
     };
-    window.atualizarItemEvento = async (id, c, v) => { await updateDoc(doc(db, "eventos", eventoID, "cardapio", id), { [c]: parseFloat(v) }); };
+    window.atualizarItemEvento = async (id, c, v) => await updateDoc(doc(db, "eventos", eventoID, "cardapio", id), { [c]: parseFloat(v) });
     window.removerItem = async (id) => { if(confirm("Remover?")) await deleteDoc(doc(db, "eventos", eventoID, "cardapio", id)); };
 
 </script>
