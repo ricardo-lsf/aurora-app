@@ -3,82 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Aurora Master V9</title>
+    <title>Aurora Admin V15 (Ultimate)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
-        @media (max-width: 1000px) { .container { grid-template-columns: 1fr; } }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f8; color: #333; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* --- SIDEBAR --- */
+        .sidebar { width: 260px; background: #2c3e50; color: white; display: flex; flex-direction: column; flex-shrink: 0; }
+        .logo-area { padding: 20px; font-size: 1.5em; font-weight: bold; text-align: center; background: #1a252f; border-bottom: 1px solid #34495e; }
+        .logo-area span { color: #2ecc71; }
+        
+        .menu { flex: 1; padding-top: 10px; overflow-y: auto; }
+        .menu-label { padding: 10px 20px; font-size: 0.75em; text-transform: uppercase; color: #7f8c8d; font-weight: bold; margin-top: 10px; }
+        .menu-item { padding: 12px 20px; cursor: pointer; display: flex; align-items: center; transition: 0.2s; color: #bdc3c7; text-decoration: none; }
+        .menu-item:hover { background: #34495e; color: white; }
+        .menu-item.active { background: #2980b9; color: white; border-left: 4px solid #3498db; }
+        .menu-icon { width: 25px; text-align: center; margin-right: 10px; }
 
-        h1, h2 { color: #2c3e50; margin-top: 0; }
+        /* --- CONTEÚDO --- */
+        .content { flex: 1; padding: 20px; overflow-y: auto; position: relative; }
+        .view-section { display: none; max-width: 1200px; margin: 0 auto; animation: fadeIn 0.3s; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity:0; transform: translateY(5px); } to { opacity:1; transform: translateY(0); } }
+
+        /* --- ESTILOS GERAIS --- */
+        h2 { border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top: 0; color: #2c3e50; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e1e4e8; }
-        .card-header { background: #f8f9fa; margin: -20px -20px 20px -20px; padding: 15px 20px; border-bottom: 1px solid #e1e4e8; border-radius: 8px 8px 0 0; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-
+        
         input, select { padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box; margin-bottom: 5px; }
-        button { cursor: pointer; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; }
-        .btn-primary { background: #3498db; color: white; width:100%; }
+        button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; }
+        button:hover { opacity: 0.9; }
+        
+        .btn-primary { background: #3498db; color: white; }
         .btn-success { background: #27ae60; color: white; }
         .btn-danger { background: #e74c3c; color: white; font-size: 0.8em; }
         .btn-warning { background: #f39c12; color: white; }
-        .btn-activate { background: #8e44ad; color: white; width: 100%; padding: 15px; font-size: 1.1em; margin-top: 20px; }
-        
-        .btn-restart { background: #f1c40f; color: #333; margin-left: 10px; } /* Botão Reiniciar */
-        .btn-delete-event { background: #c0392b; color: white; width: 100%; padding: 15px; }
-        .danger-zone { margin-top: 40px; padding-top: 20px; border-top: 2px dashed #e74c3c; }
+        .btn-activate { background: #8e44ad; color: white; width: 100%; padding: 15px; margin-top:10px; font-size: 1.1em; }
+        .btn-save-details { background: #27ae60; color: white; width: 100%; margin-top: 10px; }
+        .btn-purple { background: #9b59b6; color: white; }
 
-        /* Helpers */
+        /* --- MODAL (NOVO DA V14) --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+        .modal h3 { margin-top: 0; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .close-modal { float: right; cursor: pointer; font-size: 1.5em; color: #999; }
+
+        /* --- DETALHES DO EVENTO (NOVO DA V14) --- */
+        .event-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .details-box { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #e1e4e8; margin-bottom: 20px; }
+        .details-box label { font-size: 0.85em; font-weight: bold; color: #666; display: block; margin-top: 5px; }
+
+        /* --- LAYOUTS --- */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+        @media (max-width: 900px) { .grid-3, .grid-2 { grid-template-columns: 1fr; } }
+
+        /* Lista Lateral */
         .event-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; }
+        .event-item:hover { background: #f1f1f1; }
         .event-item.active { background: #e8f0fe; border-left: 4px solid #3498db; }
         .badge-live { background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; }
         .badge-closed { background: #7f8c8d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; }
-        .checkbox-container { max-height: 200px; overflow-y: auto; border: 1px solid #ddd; background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 10px; }
-        .chk-item { display: flex; align-items: center; padding: 5px; border-bottom: 1px solid #f9f9f9; }
-        .chk-item input { width: auto; margin-right: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #2c3e50; color: white; padding: 10px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        img.thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; }
-        .input-table { border: 1px solid transparent; background: #f9f9f9; width: 80px; padding: 5px; }
+
+        /* Checkboxes */
+        .checkbox-container { max-height: 250px; overflow-y: auto; border: 1px solid #ddd; background: #fff; padding: 0; border-radius: 4px; margin-bottom: 10px; }
+        .chk-item { display: flex; align-items: center; padding: 8px 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+        .chk-item input { width: 18px; height: 18px; margin: 0 12px 0 0; }
+        .chk-item.disabled { background-color: #f0f0f0; opacity: 0.6; pointer-events: none; }
+
+        /* Tabelas */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
+        th { background: #ecf0f1; color: #2c3e50; padding: 10px; text-align: left; }
+        td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        img.thumb { width: 35px; height: 35px; object-fit: cover; border-radius: 4px; }
+        .input-table { border: 1px solid transparent; background: #f9f9f9; width: 100%; padding: 5px; }
         .input-table:focus { border: 1px solid #3498db; background: white; }
+
+        /* Analytics KPIs */
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .kpi-card { background: white; padding: 15px; border-radius: 8px; text-align: center; border-bottom: 4px solid #ddd; }
+        .kpi-val { font-size: 1.5em; font-weight: bold; color: #2c3e50; display: block; }
+        .recipe-box { background: #f9f9f9; padding: 10px; border: 1px dashed #ccc; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div>
-        <div class="card" style="border-left: 5px solid #27ae60;"><div class="card-header">👥 Equipe</div><div style="display:grid; gap: 5px;"><input type="text" id="bartenderNome" placeholder="Nome"><input type="number" id="bartenderPhone" placeholder="Celular"><button onclick="adicionarBartender()" class="btn-success">Cadastrar</button></div><div style="margin-top:10px; max-height:150px; overflow-y:auto;"><table style="font-size:0.85em; margin:0;"><tbody id="lista-equipe"></tbody></table></div></div>
-        <div class="card" style="border-left: 5px solid #f39c12;"><div class="card-header">📚 Biblioteca</div><div style="display:grid; gap: 5px;"><input type="text" id="globalName" placeholder="Nome"><div style="display:flex; gap:5px;"><input type="number" id="globalPrice" placeholder="R$"><input type="text" id="globalImg" placeholder="./imagens/foto.jpg"></div><button onclick="adicionarAoGlobal()" class="btn-warning">Salvar</button></div></div>
-        <div class="card"><div class="card-header">📅 Eventos</div><div style="display:flex; gap:5px; margin-bottom:15px;"><input type="text" id="novoEventoNome" placeholder="Nome"><button onclick="criarEvento()" class="btn-primary" style="width:auto;">+</button></div><div id="lista-eventos">Loading...</div></div>
+    <div id="modalNovoEvento" class="modal-overlay">
+        <div class="modal">
+            <span class="close-modal" onclick="fecharModal()">×</span>
+            <h3>✨ Novo Evento</h3>
+            <div style="display:grid; gap: 10px;">
+                <div><label>Nome do Evento</label><input type="text" id="mNome" placeholder="Ex: Casamento Ana"></div>
+                <div><label>Responsável</label><input type="text" id="mResp" placeholder="Contratante"></div>
+                <div><label>Telefone</label><input type="text" id="mTel" placeholder="(XX) XXXXX-XXXX" onkeyup="mascaraTelefone(this)"></div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div><label>Data</label><input type="date" id="mData"></div>
+                    <div><label>Horário</label><input type="time" id="mHora"></div>
+                </div>
+                <div><label>Local</label><input type="text" id="mLocal" placeholder="Endereço"></div>
+                <button onclick="salvarNovoEvento()" class="btn-primary" style="margin-top:10px; padding:12px;">CRIAR EVENTO</button>
+            </div>
+        </div>
     </div>
 
-    <div class="card" id="painel-detalhes" style="display:none;">
-        <div class="card-header">
-            <span id="titulo-evento">Evento</span>
-            <div style="display:flex;">
-                <button onclick="reiniciarEvento()" class="btn-restart" title="Zerar vendas e repor estoque">🔄 REINICIAR (ZERAR)</button>
-                <div id="controles-status" style="margin-left:10px;"></div>
+    <nav class="sidebar">
+        <div class="logo-area">🍸 Aurora <span>Admin</span></div>
+        <div class="menu">
+            <div class="menu-label">Gestão Principal</div>
+            <a onclick="showView('view-eventos', this)" class="menu-item active"><span class="menu-icon">📅</span> Eventos</a>
+            <a onclick="showView('view-equipe', this)" class="menu-item"><span class="menu-icon">👥</span> Equipe</a>
+            
+            <div class="menu-label">Gestão de Drinks</div>
+            <a onclick="showView('view-biblioteca', this)" class="menu-item"><span class="menu-icon">🍹</span> Biblioteca & Ficha</a>
+            <a onclick="showView('view-despensa', this)" class="menu-item"><span class="menu-icon">📦</span> Despensa</a>
+            
+            <div class="menu-label">Inteligência</div>
+            <a onclick="showView('view-analytics', this)" class="menu-item"><span class="menu-icon">📈</span> Estatísticas</a>
+        </div>
+    </nav>
+
+    <main class="content">
+
+        <div id="view-eventos" class="view-section active">
+            <h2>📅 Gestão de Eventos</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>Meus Eventos</h3>
+                    <button onclick="abrirModalNovo()" class="btn-primary" style="width:100%; margin-bottom:15px;">+ NOVO EVENTO</button>
+                    <div id="lista-eventos" style="max-height:400px; overflow-y:auto;">Carregando...</div>
+                </div>
+
+                <div class="card" id="painel-detalhes" style="display:none;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3 id="titulo-evento" style="margin:0">Evento</h3>
+                        <div id="controles-status"></div>
+                    </div>
+
+                    <div class="details-box">
+                        <h4 style="margin-top:0; border-bottom:1px solid #ddd; padding-bottom:5px;">📝 Dados do Evento</h4>
+                        <div class="event-details-grid">
+                            <div><label>Responsável</label><input type="text" id="detResp"></div>
+                            <div><label>Telefone</label><input type="text" id="detTel" onkeyup="mascaraTelefone(this)"></div>
+                            <div><label>Data</label><input type="date" id="detData"></div>
+                            <div><label>Horário</label><input type="time" id="detHora"></div>
+                        </div>
+                        <div><label>Local</label><input type="text" id="detLocal"></div>
+                        <button onclick="atualizarDadosEvento()" class="btn-save-details">💾 Salvar Alterações nos Dados</button>
+                    </div>
+
+                    <div style="background:#eef2f7; padding:15px; border-radius:6px; margin:20px 0;">
+                        <h4>📥 Montar Cardápio</h4>
+                        <div class="checkbox-container" id="lista-global-checkboxes"></div>
+                        <div style="display:flex; justify-content:space-between;">
+                            <button onclick="marcarTodos(true)" style="background:none; color:#3498db; text-decoration:underline;">Marcar Todos</button>
+                            <button onclick="adicionarMuitos()" class="btn-primary">⬇️ Importar</button>
+                        </div>
+                    </div>
+
+                    <h4>📋 Cardápio Confirmado</h4>
+                    <table>
+                        <thead><tr><th width="40">Img</th><th>Nome</th><th>Venda</th><th>Custo</th><th>Est</th><th></th></tr></thead>
+                        <tbody id="tabela-evento"></tbody>
+                    </table>
+                    
+                    <div style="margin-top:20px; display:flex; gap:10px;">
+                        <button onclick="ativarEvento()" class="btn-activate" style="flex:1;">🚀 ATIVAR NO APP</button>
+                        <button onclick="reiniciarEvento()" class="btn-warning">🔄 ZERAR</button>
+                        <button onclick="excluirEventoAtual()" class="btn-danger">🗑️ EXCLUIR</button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div style="background: #eef2f7; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-            <h3>📥 Cardápio</h3>
-            <div class="checkbox-container" id="lista-global-checkboxes"></div>
-            <div style="display:flex; justify-content:space-between;">
-                <button onclick="marcarTodos(true)" style="background:none; color:#3498db; text-decoration:underline;">Marcar Todos</button>
-                <button onclick="adicionarMuitos()" class="btn-primary">⬇️ Adicionar</button>
+        <div id="view-equipe" class="view-section">
+            <h2>👥 Gestão de Equipe</h2>
+            <div class="card" style="max-width:600px;">
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <input type="text" id="bartenderNome" placeholder="Nome">
+                    <input type="number" id="bartenderPhone" placeholder="Celular">
+                    <button onclick="adicionarBartender()" class="btn-success">Cadastrar</button>
+                </div>
+                <table><tbody id="lista-equipe"></tbody></table>
             </div>
         </div>
 
-        <h3>📋 Confirmados</h3>
-        <table><thead><tr><th width="50">Img</th><th>Nome</th><th width="100">Preço</th><th width="80">Estoque</th><th width="50"></th></tr></thead><tbody id="tabela-evento"></tbody></table>
-        <button onclick="ativarEvento()" class="btn-activate">🚀 ATIVAR NO APP</button>
+        <div id="view-biblioteca" class="view-section">
+            <h2>🍹 Biblioteca Global</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Novo Drink / Ficha</h3>
+                    <label>Nome</label><input type="text" id="drinkNome">
+                    <label>Imagem</label><input type="text" id="drinkImg" placeholder="./imagens/">
+                    <div style="display:flex; gap:10px; margin-top:5px;">
+                        <div style="flex:1"><label style="color:#27ae60">Venda</label><input type="number" id="drinkVenda" oninput="calcCMV()"></div>
+                        <div style="flex:1"><label style="color:#e74c3c">Custo</label><input type="number" id="drinkCusto" readonly></div>
+                    </div>
+                    <div id="cmv-display" style="text-align:center; font-weight:bold; color:#777; margin:5px 0;">CMV: 0%</div>
 
-        <div class="danger-zone">
-            <h3 style="color:#c0392b; margin-top:0;">⚠️ Zona de Perigo</h3>
-            <button onclick="excluirEventoAtual()" class="btn-delete-event">🗑️ EXCLUIR EVENTO</button>
+                    <div class="recipe-box">
+                        <h4>Ficha Técnica</h4>
+                        <div style="display:flex; gap:5px;">
+                            <select id="selInsumo"><option>Carregando...</option></select>
+                            <input type="number" id="qtdInsumo" placeholder="Qtd" style="width:60px;">
+                            <button onclick="addIngrediente()" class="btn-purple">+</button>
+                        </div>
+                        <div id="lista-ingredientes" style="margin-top:10px; font-size:0.9em;"></div>
+                    </div>
+                    <button onclick="salvarDrinkGlobal()" class="btn-warning" style="width:100%; margin-top:15px;">💾 SALVAR</button>
+                </div>
+                <div class="card">
+                    <h3>Catálogo</h3>
+                    <div id="lista-biblioteca-visual" style="max-height:500px; overflow-y:auto;"></div>
+                </div>
+            </div>
         </div>
-    </div>
-    <div class="card" id="painel-vazio" style="text-align:center; padding:50px; color:#999;"><h2>⬅️ Selecione um evento</h2></div>
-</div>
+
+        <div id="view-despensa" class="view-section">
+            <h2>📦 Despensa</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Novo Insumo</h3>
+                    <input type="text" id="insNome" placeholder="Nome (ex: Gin)">
+                    <div style="display:flex; gap:10px;">
+                        <input type="number" id="insPreco" placeholder="Preço (R$)">
+                        <input type="number" id="insVol" placeholder="Volume">
+                    </div>
+                    <button onclick="salvarInsumo()" class="btn-primary" style="width:100%; margin-top:10px;">Guardar</button>
+                </div>
+                <div class="card"><h3>Estoque Insumos</h3><div id="lista-insumos"></div></div>
+            </div>
+        </div>
+
+        <div id="view-analytics" class="view-section">
+            <h2>📈 Analytics</h2>
+            <div class="card" style="display:flex; gap:10px; align-items:center;">
+                <select id="select-evento-analise" style="margin:0;"><option>Carregando...</option></select>
+                <button onclick="gerarRelatorio()" class="btn-primary" style="width:auto;">🔍 Analisar</button>
+            </div>
+            <div class="kpi-grid">
+                <div class="kpi-card" style="border-color:#f1c40f"><small>Faturamento</small><span class="kpi-val" id="kpi-fat">R$ 0.00</span></div>
+                <div class="kpi-card" style="border-color:#e74c3c"><small>Custo Prod.</small><span class="kpi-val" id="kpi-custo">R$ 0.00</span></div>
+                <div class="kpi-card" style="border-color:#27ae60"><small>Lucro Líquido</small><span class="kpi-val" id="kpi-lucro">R$ 0.00</span></div>
+                <div class="kpi-card" style="border-color:#8e44ad"><small>CMV Global</small><span class="kpi-val" id="kpi-cmv">0%</span></div>
+            </div>
+            <div class="grid-2">
+                <div class="card" style="height:300px;"><canvas id="chartDrinks"></canvas></div>
+                <div class="card" style="height:300px;"><canvas id="chartHorario"></canvas></div>
+            </div>
+        </div>
+
+    </main>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -96,98 +270,197 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    let eventoID = null, bibliotecaGlobal = [], eventoAtivoID = null, eventoAtualStatus = 'aberto';
 
-    // --- FUNÇÃO NOVA: REINICIAR EVENTO ---
-    window.reiniciarEvento = async () => {
-        if(!eventoID) return;
-        const estoquePadrao = prompt("Digite o estoque inicial para TODOS os drinks (ex: 50):", "50");
-        if(estoquePadrao === null) return; // Cancelou
+    // Variáveis
+    let eventoID = null, bibliotecaGlobal = [], insumosCache = [], receitaAtual = [], chartD = null, chartH = null, idsNoEvento = [];
 
-        if(!confirm("ATENÇÃO: Isso apagará TODO o histórico de vendas deste evento e resetará os estoques. Os celulares dos barmans serão zerados. Confirmar?")) return;
-
-        try {
-            const batch = writeBatch(db);
-
-            // 1. Apagar Vendas (Uma por uma pois Firestore não apaga coleção inteira direto)
-            const vendasSnap = await getDocs(collection(db, "eventos", eventoID, "vendas"));
-            vendasSnap.forEach(venda => batch.delete(venda.ref));
-
-            // 2. Resetar Estoque
-            const cardapioSnap = await getDocs(collection(db, "eventos", eventoID, "cardapio"));
-            cardapioSnap.forEach(item => {
-                batch.update(item.ref, { estoque: parseInt(estoquePadrao) });
-            });
-
-            // 3. Gerar Sinal de Reset (Isso avisa o App para zerar a contagem local)
-            batch.update(doc(db, "eventos", eventoID), { resetSignal: Date.now() });
-
-            await batch.commit();
-            alert("Evento Reiniciado com Sucesso! 🔄");
-        } catch(e) { alert("Erro ao reiniciar: " + e.message); }
+    // --- NAVEGAÇÃO ---
+    window.showView = (id, el) => {
+        document.querySelectorAll('.view-section').forEach(e=>e.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.menu-item').forEach(e=>e.classList.remove('active'));
+        el.classList.add('active');
+    };
+    window.mascaraTelefone = (input) => {
+        let v = input.value.replace(/\D/g, "").replace(/^(\d{2})(\d)/g, "($1) $2").replace(/(\d)(\d{4})$/, "$1-$2");
+        input.value = v;
     };
 
-    // --- RESTO DO CÓDIGO (MANUTENÇÃO DA V8) ---
-    onSnapshot(collection(db, "equipe"), (snap) => {
-        const l = document.getElementById('lista-equipe'); l.innerHTML='';
-        snap.forEach(d => l.innerHTML+=`<tr><td><b>${d.data().nome}</b><br><span style="color:#666">${d.data().telefone}</span></td><td style="text-align:right;"><button class="btn-danger" onclick="window.removerBartender('${d.id}')">X</button></td></tr>`);
+    // --- 1. EVENTOS ---
+    onSnapshot(query(collection(db, "eventos"), orderBy("criadoEm", "desc")), (snap) => {
+        const div = document.getElementById('lista-eventos');
+        const selA = document.getElementById('select-evento-analise');
+        div.innerHTML = ''; selA.innerHTML = '<option value="">-- Escolha --</option>';
+        
+        snap.forEach(d => {
+            const ev = d.data();
+            // Lista Lateral
+            const item = document.createElement('div');
+            item.className = `event-item ${eventoID === d.id ? 'active' : ''}`;
+            const badges = (ev.status === 'fechado' ? '<span class="badge-closed">FECHADO</span>' : '');
+            item.innerHTML = `<div><b>${ev.nome}</b><br><small>${new Date(ev.criadoEm?.toDate()).toLocaleDateString()}</small></div><div>${badges}</div>`;
+            item.onclick = () => carregarEvento(d.id, ev);
+            div.appendChild(item);
+            // Select Analytics
+            const opt = document.createElement('option'); opt.value = d.id; opt.innerText = ev.nome; selA.appendChild(opt);
+        });
     });
-    window.adicionarBartender = async () => { /* Lógica igual V8 */ const n=document.getElementById('bartenderNome').value; const t=document.getElementById('bartenderPhone').value; if(n&&t) await addDoc(collection(db,"equipe"),{nome:n,telefone:t}); };
-    window.removerBartender = async(id) => { if(confirm("Remover?")) await deleteDoc(doc(db,"equipe",id)); };
 
-    onSnapshot(doc(db, "config", "geral"), (s) => { if(s.exists()) eventoAtivoID = s.data().eventoAtivoID; renderizarListaEventos(); });
-    onSnapshot(collection(db, "drinks"), (snap) => {
-        bibliotecaGlobal=[]; const d=document.getElementById('lista-global-checkboxes'); d.innerHTML='';
-        snap.forEach(doc=>{ bibliotecaGlobal.push({...doc.data(),id:doc.id}); d.innerHTML+=`<div class="chk-item"><input type="checkbox" id="chk_${doc.id}" value="${doc.id}" class="chk-drink"><label for="chk_${doc.id}">${doc.data().nome}</label></div>`; });
+    // Modal
+    window.abrirModalNovo = () => { document.getElementById('modalNovoEvento').style.display = 'flex'; ['mNome','mResp','mTel','mData','mHora','mLocal'].forEach(i=>document.getElementById(i).value=''); };
+    window.fecharModal = () => document.getElementById('modalNovoEvento').style.display = 'none';
+    window.salvarNovoEvento = async () => {
+        const nome = document.getElementById('mNome').value;
+        if(!nome) return alert("Nome obrigatório!");
+        const dados = { nome, responsavel:document.getElementById('mResp').value, telefone:document.getElementById('mTel').value, dataEvento:document.getElementById('mData').value, horaEvento:document.getElementById('mHora').value, local:document.getElementById('mLocal').value, criadoEm:new Date(), status:'aberto' };
+        try { const ref = await addDoc(collection(db,"eventos"), dados); fecharModal(); carregarEvento(ref.id, dados); } catch(e){ alert(e.message); }
+    };
+
+    window.carregarEvento = (id, dados) => {
+        eventoID = id;
+        document.getElementById('painel-detalhes').style.display = 'block';
+        document.getElementById('titulo-evento').innerText = dados.nome;
+        
+        // Preenche Ficha
+        document.getElementById('detResp').value = dados.responsavel||'';
+        document.getElementById('detTel').value = dados.telefone||'';
+        document.getElementById('detData').value = dados.dataEvento||'';
+        document.getElementById('detHora').value = dados.horaEvento||'';
+        document.getElementById('detLocal').value = dados.local||'';
+
+        // Status
+        document.getElementById('controles-status').innerHTML = dados.status==='fechado' ? 
+            `<button onclick="mudarStatus('aberto')" class="btn-success">🔓 Reabrir</button>` : 
+            `<button onclick="mudarStatus('fechado')" class="btn-danger">🛑 Encerrar</button>`;
+
+        // Cardápio
+        onSnapshot(collection(db,"eventos",id,"cardapio"), (snap) => {
+            const tb = document.getElementById('tabela-evento'); tb.innerHTML = '';
+            idsNoEvento = [];
+            snap.forEach(doc => {
+                const d = doc.data();
+                idsNoEvento.push(d.idOriginal || doc.id);
+                tb.innerHTML += `<tr>
+                    <td><img src="${d.imagem||''}" class="thumb"></td>
+                    <td>${d.nome}</td>
+                    <td><input type="number" value="${d.precoVenda}" onchange="attItem('${doc.id}','precoVenda',this.value)" class="input-table" style="color:#27ae60"></td>
+                    <td><input type="number" value="${d.precoCusto}" onchange="attItem('${doc.id}','precoCusto',this.value)" class="input-table" style="color:#e74c3c"></td>
+                    <td><input type="number" value="${d.estoque}" onchange="attItem('${doc.id}','estoque',this.value)" class="input-table" style="width:50px"></td>
+                    <td><button onclick="delItem('${doc.id}')" style="color:red; background:none;">X</button></td>
+                </tr>`;
+            });
+            renderLib();
+        });
+    };
+
+    window.atualizarDadosEvento = async () => {
+        if(!eventoID) return;
+        await updateDoc(doc(db,"eventos",eventoID), {
+            responsavel: document.getElementById('detResp').value, telefone: document.getElementById('detTel').value,
+            dataEvento: document.getElementById('detData').value, horaEvento: document.getElementById('detHora').value, local: document.getElementById('detLocal').value
+        });
+        alert("Dados salvos!");
+    };
+
+    // --- 2. BIBLIOTECA & INSUMOS ---
+    onSnapshot(collection(db,"insumos"), (snap) => {
+        insumosCache = [];
+        const l = document.getElementById('lista-insumos'); const s = document.getElementById('selInsumo');
+        if(l) l.innerHTML=''; if(s) s.innerHTML='<option value="">Selecione...</option>';
+        snap.forEach(doc => {
+            const i = doc.data(); i.id=doc.id; i.custoUnit = i.preco/i.volume; insumosCache.push(i);
+            if(l) l.innerHTML += `<div style="padding:5px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;"><span>${i.nome}</span><button onclick="delInsumo('${i.id}')" style="color:red;border:none;">x</button></div>`;
+            if(s) { const o=document.createElement('option'); o.value=i.id; o.innerText=i.nome; s.appendChild(o); }
+        });
+    });
+    
+    window.salvarInsumo = async () => {
+        const n=document.getElementById('insNome').value, p=document.getElementById('insPreco').value, v=document.getElementById('insVol').value;
+        if(n) await addDoc(collection(db,"insumos"),{nome:n, preco:parseFloat(p), volume:parseFloat(v)});
+    };
+    window.delInsumo = async(id) => await deleteDoc(doc(db,"insumos",id));
+
+    window.addIngrediente = () => {
+        const id = document.getElementById('selInsumo').value; const qtd = document.getElementById('qtdInsumo').value;
+        if(!id) return;
+        const i = insumosCache.find(x=>x.id===id);
+        receitaAtual.push({nome:i.nome, custo:i.custoUnit*qtd, qtd:qtd});
+        renderReceita();
+    };
+    function renderReceita(){
+        let t=0; document.getElementById('lista-ingredientes').innerHTML = receitaAtual.map(i=>{t+=i.custo; return `<div>${i.qtd}x ${i.nome} (R$ ${i.custo.toFixed(2)})</div>`}).join('');
+        document.getElementById('drinkCusto').value = t.toFixed(2); window.calcCMV();
+    }
+    window.calcCMV = () => {
+        const v = parseFloat(document.getElementById('drinkVenda').value)||0; const c = parseFloat(document.getElementById('drinkCusto').value)||0;
+        if(v>0) document.getElementById('cmv-display').innerText = `CMV: ${((c/v)*100).toFixed(1)}% | Lucro: R$ ${(v-c).toFixed(2)}`;
+    };
+    window.salvarDrinkGlobal = async () => {
+        const n=document.getElementById('drinkNome').value;
+        if(n) await addDoc(collection(db,"drinks"),{
+            nome:n, imagem:document.getElementById('drinkImg').value||"./imagens/",
+            precoVenda:parseFloat(document.getElementById('drinkVenda').value),
+            precoCusto:parseFloat(document.getElementById('drinkCusto').value),
+            receita:receitaAtual, estoque:0
+        });
+        alert("Salvo!"); receitaAtual=[]; renderReceita();
+    };
+
+    // --- 3. MONTAGEM CARDÁPIO ---
+    onSnapshot(collection(db,"drinks"), (s) => {
+        bibliotecaGlobal=[]; 
+        s.forEach(d => bibliotecaGlobal.push({...d.data(), id:d.id}));
+        const l = document.getElementById('lista-biblioteca-visual');
+        if(l) { l.innerHTML=''; bibliotecaGlobal.forEach(d => l.innerHTML+=`<div style="padding:10px; border-bottom:1px solid #eee;">${d.nome}</div>`); }
+        renderLib();
     });
 
-    let listaEventosCache=[];
-    onSnapshot(query(collection(db,"eventos"),orderBy("criadoEm","desc")),(s)=>{ listaEventosCache=[]; s.forEach(d=>listaEventosCache.push({...d.data(),id:d.id})); renderizarListaEventos(); });
-
-    function renderizarListaEventos(){
-        const d=document.getElementById('lista-eventos'); d.innerHTML='';
-        listaEventosCache.forEach(ev=>{
-            const st=ev.status||'aberto'; const badges = (eventoAtivoID===ev.id?'<span class="badge-live">NO AR</span> ':'') + (st==='fechado'?'<span class="badge-closed">FECHADO</span>':'');
-            const div=document.createElement('div'); div.className=`event-item ${eventoID===ev.id?'active':''}`;
-            div.innerHTML=`<div><strong>${ev.nome}</strong><br><small style="color:#888">${new Date(ev.criadoEm?.toDate()).toLocaleDateString()}</small></div><div>${badges}</div>`;
-            div.onclick=()=>carregarEvento(ev.id, ev.nome, st); d.appendChild(div);
+    function renderLib(){
+        const div = document.getElementById('lista-global-checkboxes'); if(!div)return;
+        div.innerHTML='';
+        bibliotecaGlobal.sort((a,b)=>a.nome.localeCompare(b.nome));
+        bibliotecaGlobal.forEach(d=>{
+            const ja = idsNoEvento.includes(d.id);
+            div.innerHTML+=`<div class="chk-item ${ja?'disabled':''}"><input type="checkbox" id="chk_${d.id}" value="${d.id}" class="chk-drink" ${ja?'disabled':''}><label for="chk_${d.id}"><b>${d.nome}</b> ${ja?'(Já add)':''}</label></div>`;
         });
     }
-
-    window.criarEvento=async()=>{ const n=document.getElementById('novoEventoNome').value; if(n) await addDoc(collection(db,"eventos"),{nome:n,criadoEm:new Date(),status:'aberto'}); };
-    window.carregarEvento=(id,n,st)=>{
-        eventoID=id; eventoAtualStatus=st; document.getElementById('painel-vazio').style.display='none'; document.getElementById('painel-detalhes').style.display='block';
-        document.getElementById('titulo-evento').innerText=n;
-        document.getElementById('controles-status').innerHTML = st==='fechado' ? `<button onclick="alterarStatus('aberto')" class="btn-open-event">🔓</button>` : `<button onclick="alterarStatus('fechado')" class="btn-close-event">🛑</button>`;
-        renderizarListaEventos();
-        onSnapshot(collection(db,"eventos",id,"cardapio"),(s)=>{
-            const tb=document.getElementById('tabela-evento'); tb.innerHTML='';
-            const arr=[]; s.forEach(d=>arr.push({...d.data(),id:d.id})); arr.sort((a,b)=>a.nome.localeCompare(b.nome));
-            arr.forEach(d=>tb.innerHTML+=`<tr><td><img src="${d.imagem||''}" class="thumb"></td><td>${d.nome}</td><td><input type="number" class="input-table" value="${d.VlCusto}" onchange="window.attItem('${d.id}','VlCusto',this.value)"></td><td><input type="number" class="input-table" value="${d.estoque}" style="width:60px;font-weight:bold;color:#27ae60" onchange="window.attItem('${d.id}','estoque',this.value)"></td><td><button class="btn-danger" onclick="window.delItem('${d.id}')">X</button></td></tr>`);
-        });
-    };
-
-    window.attItem=async(id,c,v)=>await updateDoc(doc(db,"eventos",eventoID,"cardapio",id),{[c]:parseFloat(v)});
-    window.delItem=async(id)=>{if(confirm("Remover?")) await deleteDoc(doc(db,"eventos",eventoID,"cardapio",id));};
-    window.alterarStatus=async(s)=>{if(confirm("Mudar status?")) await updateDoc(doc(db,"eventos",eventoID),{status:s});};
-    window.ativarEvento=async()=>{if(eventoAtualStatus==='fechado') return alert("Reabra o evento!"); if(confirm("Ativar?")) await setDoc(doc(db,"config","geral"),{eventoAtivoID:eventoID,eventoAtivoNome:document.getElementById('titulo-evento').innerText},{merge:true});};
-    window.excluirEventoAtual=async()=>{
-        if(!confirm("TEM CERTEZA? Vai apagar tudo deste evento.")) return;
-        try {
-            if(eventoID===eventoAtivoID) await setDoc(doc(db,"config","geral"),{eventoAtivoID:null,eventoAtivoNome:"Nenhum"},{merge:true});
-            const batch=writeBatch(db);
-            const snaps=await getDocs(collection(db,"eventos",eventoID,"cardapio")); snaps.forEach(d=>batch.delete(d.ref));
-            const sales=await getDocs(collection(db,"eventos",eventoID,"vendas")); sales.forEach(d=>batch.delete(d.ref));
-            await batch.commit(); await deleteDoc(doc(db,"eventos",eventoID));
-            alert("Excluído!"); location.reload();
-        } catch(e){alert(e.message);}
-    };
-    window.adicionarAoGlobal=async()=>{const n=document.getElementById('globalName').value; const p=document.getElementById('globalPrice').value; if(n&&p) await addDoc(collection(db,"drinks"),{nome:n,VlCusto:parseFloat(p),imagem:document.getElementById('globalImg').value||"./imagens/",estoque:0});};
-    window.marcarTodos=(m)=>document.querySelectorAll('.chk-drink').forEach(c=>c.checked=m);
+    window.marcarTodos=(m)=>document.querySelectorAll('.chk-drink:not([disabled])').forEach(c=>c.checked=m);
     window.adicionarMuitos=async()=>{
         const c=document.querySelectorAll('.chk-drink:checked'); if(!c.length)return; const b=writeBatch(db);
-        c.forEach(chk=>{const d=bibliotecaGlobal.find(x=>x.id===chk.value); if(d) b.set(doc(collection(db,"eventos",eventoID,"cardapio")),{nome:d.nome,VlCusto:d.VlCusto,imagem:d.imagem,estoque:50});});
+        c.forEach(chk=>{ 
+            const d=bibliotecaGlobal.find(x=>x.id===chk.value);
+            if(d) b.set(doc(collection(db,"eventos",eventoID,"cardapio")),{nome:d.nome, imagem:d.imagem, precoVenda:d.precoVenda, precoCusto:d.precoCusto, estoque:50, idOriginal:d.id});
+        });
         await b.commit(); document.querySelectorAll('.chk-drink').forEach(c=>c.checked=false);
+    };
+
+    // --- 4. EQUIPE & HELPERS ---
+    window.attItem = async(id,c,v) => await updateDoc(doc(db,"eventos",eventoID,"cardapio",id),{[c]:parseFloat(v)});
+    window.delItem = async(id) => await deleteDoc(doc(db,"eventos",eventoID,"cardapio",id));
+    window.mudarStatus = async(s) => await updateDoc(doc(db,"eventos",eventoID),{status:s});
+    window.ativarEvento = async() => { if(confirm("Ativar?")) await setDoc(doc(db,"config","geral"),{eventoAtivoID:eventoID, eventoAtivoNome:document.getElementById('titulo-evento').innerText},{merge:true}); };
+    window.reiniciarEvento=async()=>{if(confirm("ZERAR?")){const b=writeBatch(db); (await getDocs(collection(db,"eventos",eventoID,"vendas"))).forEach(d=>b.delete(d.ref)); (await getDocs(collection(db,"eventos",eventoID,"cardapio"))).forEach(d=>b.update(d.ref,{estoque:50})); b.update(doc(db,"eventos",eventoID),{resetSignal:Date.now()}); await b.commit(); alert("Zerado!");}};
+    window.excluirEventoAtual=async()=>{if(confirm("Apagar?")){await deleteDoc(doc(db,"eventos",eventoID)); location.reload();}};
+    
+    onSnapshot(collection(db,"equipe"),(s)=>{const l=document.getElementById('lista-equipe');if(l){l.innerHTML='';s.forEach(d=>l.innerHTML+=`<tr><td>${d.data().nome}</td><td><button onclick="delEq('${d.id}')" style="color:red;border:none;">x</button></td></tr>`)}});
+    window.adicionarBartender=async()=>{const n=document.getElementById('bartenderNome').value, t=document.getElementById('bartenderPhone').value; if(n&&t)await addDoc(collection(db,"equipe"),{nome:n,telefone:t});};
+    window.delEq=async(id)=>await deleteDoc(doc(db,"equipe",id));
+
+    // --- 5. ANALYTICS ---
+    window.gerarRelatorio = async () => {
+        const eid = document.getElementById('select-evento-analise').value;
+        if(!eid) return;
+        const s = await getDocs(collection(db,"eventos",eid,"vendas"));
+        let fat=0, custo=0; const dc={}, hc={};
+        s.forEach(d=>{
+            const v=d.data(); fat+=parseFloat(v.preco||0); custo+=parseFloat(v.custo||0);
+            dc[v.drink]=(dc[v.drink]||0)+1; 
+            const h = v.hora.toDate ? v.hora.toDate().getHours()+":00" : new Date(v.hora).getHours()+":00"; hc[h]=(hc[h]||0)+1;
+        });
+        document.getElementById('kpi-fat').innerText='R$ '+fat.toFixed(2); document.getElementById('kpi-custo').innerText='R$ '+custo.toFixed(2);
+        document.getElementById('kpi-lucro').innerText='R$ '+(fat-custo).toFixed(2); document.getElementById('kpi-cmv').innerText=fat>0?((custo/fat)*100).toFixed(1)+'%':'0%';
+        const ctxD = document.getElementById('chartDrinks').getContext('2d'); if(chartD) chartD.destroy(); chartD = new Chart(ctxD, { type:'doughnut', data:{labels:Object.keys(dc), datasets:[{data:Object.values(dc), backgroundColor:['#e74c3c','#3498db','#f1c40f']}]} });
+        const ctxH = document.getElementById('chartHorario').getContext('2d'); if(chartH) chartH.destroy(); const sortedH = Object.keys(hc).sort((a,b)=>parseInt(a)-parseInt(b)); chartH = new Chart(ctxH, { type:'line', data:{labels:sortedH, datasets:[{label:'Vendas', data:sortedH.map(h=>hc[h]), borderColor:'#3498db', fill:true}]} });
     };
 </script>
 </body>

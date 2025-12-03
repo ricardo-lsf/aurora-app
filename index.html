@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aurora App</title>
+    <title>Aurora App V11</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4CAF50">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,34 +11,72 @@
         body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
         .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
         @media (max-width: 600px) { .grid-container { grid-template-columns: 1fr 1fr; } }
-        .drink-card { background: #333; border-radius: 8px; padding: 10px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
-        .drink-img { width: 100%; height: 100px; object-fit: cover; border-radius: 4px; background: #555; }
-        .price-tag { color: #FFD700; font-weight: bold; margin: 5px 0; }
-        .controls { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
-        button { border: none; padding: 5px 15px; border-radius: 4px; font-size: 1.2em; cursor: pointer; color: white; }
-        .btn-add { background: #27ae60; } .btn-remove { background: #c0392b; }
-        button:disabled { background: #555 !important; opacity: 0.5; }
         
-        .evento-fechado-banner { background: #c0392b; color: white; text-align: center; padding: 10px; font-weight: bold; margin-bottom: 10px; display: none; }
+        .drink-card { background: #333; border-radius: 8px; padding: 10px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+        .drink-img { width: 100%; height: 100px; object-fit: cover; border-radius: 4px; background: #555; }
+        
+        /* Preço de Venda em Destaque */
+        .price-tag { color: #FFD700; font-weight: bold; font-size: 1.1em; margin: 5px 0; }
+        .stock-info { font-size: 0.85em; color: #bbb; }
+
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        button { border: none; padding: 5px 15px; border-radius: 4px; font-size: 1.2em; cursor: pointer; color: white; transition: 0.2s; }
+        .btn-add { background: #27ae60; }
+        .btn-remove { background: #c0392b; }
+        button:disabled { background: #555 !important; opacity: 0.5; cursor: not-allowed; }
+        
+        .evento-fechado-banner { background: #c0392b; color: white; text-align: center; padding: 10px; font-weight: bold; margin-bottom: 10px; border-radius: 4px; display: none; }
+
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; border-top: 1px solid #444; padding-top: 20px; }
+        @media (max-width: 700px) { .dashboard { grid-template-columns: 1fr; } }
+        
         .panel { background: #2c2c2c; padding: 15px; border-radius: 8px; }
         #log-list { max-height: 200px; overflow-y: auto; list-style: none; padding: 0; font-family: monospace; font-size: 0.85em; }
+        #log-list li { border-bottom: 1px solid #444; padding: 4px 0; }
         .export-btn { background: #2e7d32; width: 100%; margin-top: 10px; padding: 10px; border-radius: 4px; color: white; border: none; font-weight: bold; }
         
+        /* LOGIN */
         #login-overlay { position: fixed; inset: 0; background: #111; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center; }
-        #login-overlay input { padding: 15px; font-size: 1.2em; border-radius: 5px; background: #222; color: white; border: 1px solid #444; margin-bottom: 15px; text-align: center; }
-        .btn-login { background: #4CAF50; padding: 15px 30px; font-size: 1.2em; border-radius: 5px; border: none; color: white; font-weight: bold; }
+        #login-overlay input { padding: 15px; font-size: 1.2em; border-radius: 5px; border: 1px solid #444; background: #222; color: white; margin-bottom: 15px; width: 80%; max-width: 300px; text-align: center; }
+        .btn-login { background: #4CAF50; padding: 15px 30px; font-size: 1.2em; width: 80%; max-width: 300px; font-weight: bold; border-radius: 5px; border: none; cursor: pointer; color: white; }
+        .error-msg { color: #ff6b6b; margin-top: 10px; font-weight: bold; display: none; }
+        
         #loading { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 98; }
     </style>
 </head>
 <body>
-    <div id="login-overlay"><h1>🔒 Acesso</h1><input type="number" id="loginPhone" placeholder="Celular"><button onclick="fazerLogin()" class="btn-login">ENTRAR</button><div id="login-error" style="color:red;display:none;margin-top:10px">Não encontrado</div></div>
+
+    <div id="login-overlay">
+        <h1 style="color:#4CAF50">🔒 Acesso Restrito</h1>
+        <p>Digite seu celular cadastrado:</p>
+        <input type="number" id="loginPhone" placeholder="Ex: 1199999">
+        <button onclick="fazerLogin()" class="btn-login">ENTRAR</button>
+        <div id="login-error" class="error-msg">Não encontrado!</div>
+    </div>
+
     <div id="loading"><h2>Conectando...</h2></div>
-    <div id="evento-fechado-msg" class="evento-fechado-banner">🚫 EVENTO ENCERRADO</div>
-    <div style="display:flex; justify-content:space-between; align-items:center;"><h1 style="margin:0">Aurora App</h1><small id="user-display" style="color:#4CAF50">...</small></div>
+    <div id="evento-fechado-msg" class="evento-fechado-banner">🚫 EVENTO ENCERRADO - APENAS LEITURA</div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h1 style="margin:0">Aurora App</h1>
+        <small id="user-display" style="color:#4CAF50">...</small>
+    </div>
     <div style="text-align:center; color:#4CAF50; font-weight:bold; margin-bottom:20px;" id="nome-evento">...</div>
+
     <div class="grid-container" id="grid"></div>
-    <div class="dashboard"><div class="panel"><h3>Resumo</h3><p>Total: <span id="total-count">0</span> | Fat: <span id="total-valor" style="color:#FFD700">R$ 0.00</span></p><div style="height:250px"><canvas id="chart"></canvas></div><button onclick="window.exportarCSV()" class="export-btn">📄 CSV</button></div><div class="panel"><h3>Histórico</h3><ul id="log-list"></ul></div></div>
+
+    <div class="dashboard">
+        <div class="panel">
+            <h3>Resumo</h3>
+            <p>Total: <span id="total-count">0</span> | Fat: <span id="total-valor" style="color:#FFD700">R$ 0.00</span></p>
+            <div style="height:250px"><canvas id="chart"></canvas></div>
+            <button onclick="window.exportarCSV()" class="export-btn">📄 Baixar CSV</button>
+        </div>
+        <div class="panel">
+            <h3>Histórico</h3>
+            <ul id="log-list"></ul>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -56,124 +94,225 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        let eventoID = null, eventoStatus = "aberto", usuarioAtual = localStorage.getItem('aurora_user_name'), drinks = [], counts = {}, localLogs = [], chart = null;
+
+        let eventoID = null;
+        let eventoNome = "";
+        let eventoStatus = "aberto";
+        let usuarioAtual = localStorage.getItem('aurora_user_name');
+        let telefoneAtual = localStorage.getItem('aurora_user_phone');
+        let drinks = [];
+        let counts = {};
+        let localLogs = [];
+        let chart = null;
         let ultimoResetSignal = localStorage.getItem('last_reset_signal');
 
-        if(usuarioAtual) { document.getElementById('login-overlay').style.display='none'; document.getElementById('user-display').innerText="👤 "+usuarioAtual; }
+        const loadingDiv = document.getElementById('loading');
         
+        // --- LOGIN ---
+        if(usuarioAtual && telefoneAtual) {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('user-display').innerText = "👤 " + usuarioAtual;
+        }
+
         window.fazerLogin = async () => {
-            const tel=document.getElementById('loginPhone').value; if(!tel)return;
+            const tel = document.getElementById('loginPhone').value;
+            const btn = document.querySelector('.btn-login');
+            if(!tel) return;
+            btn.innerText = "...";
             try {
-                const q=query(collection(db,"equipe"),where("telefone","==",tel)); const s=await getDocs(q);
-                if(s.empty) document.getElementById('login-error').style.display='block';
-                else {
-                    const d=s.docs[0].data(); usuarioAtual=d.nome; localStorage.setItem('aurora_user_name',d.nome); localStorage.setItem('aurora_user_phone',d.telefone);
-                    await addDoc(collection(db,"acessos_sistema"),{nome:d.nome,tel:d.telefone,data:new Date()});
-                    document.getElementById('login-overlay').style.display='none'; document.getElementById('user-display').innerText="👤 "+d.nome;
+                const q = query(collection(db, "equipe"), where("telefone", "==", tel));
+                const snap = await getDocs(q);
+                if(snap.empty) {
+                    document.getElementById('login-error').style.display = 'block';
+                    btn.innerText = "ENTRAR";
+                } else {
+                    const dados = snap.docs[0].data();
+                    usuarioAtual = dados.nome;
+                    telefoneAtual = dados.telefone;
+                    localStorage.setItem('aurora_user_name', usuarioAtual);
+                    localStorage.setItem('aurora_user_phone', telefoneAtual);
+                    await addDoc(collection(db, "acessos_sistema"), { nome: usuarioAtual, tel: telefoneAtual, data: new Date() });
+                    document.getElementById('login-overlay').style.display = 'none';
+                    document.getElementById('user-display').innerText = "👤 " + usuarioAtual;
                 }
-            } catch(e){alert("Erro conexão");}
+            } catch(e) { alert("Erro de conexão"); btn.innerText = "ENTRAR"; }
         };
 
+        // --- MONITORAMENTO ---
         onSnapshot(doc(db, "config", "geral"), (snap) => {
             if(snap.exists() && snap.data().eventoAtivoID) {
                 const novoID = snap.data().eventoAtivoID;
-                document.getElementById('nome-evento').innerText = snap.data().eventoAtivoNome;
+                eventoNome = snap.data().eventoAtivoNome;
+                document.getElementById('nome-evento').innerText = eventoNome;
+                
                 if(novoID !== eventoID) {
                     eventoID = novoID;
                     carregarDrinks(novoID);
-                    monitorarEvento(novoID); // Monitora status e resets
-                    const c = localStorage.getItem('counts_ev_'+eventoID); counts = c ? JSON.parse(c) : {}; carregarLogsAntigos();
+                    monitorarStatus(novoID);
+                    
+                    const cacheCount = localStorage.getItem('counts_ev_'+eventoID);
+                    counts = cacheCount ? JSON.parse(cacheCount) : {};
+                    carregarLogsAntigos();
                 }
-            } else { document.getElementById('loading').innerHTML = "<h2>Sem Evento</h2>"; }
+            } else { loadingDiv.innerHTML = "<h2>Sem Evento Ativo</h2>"; }
         });
 
-        // --- MONITORAR SINAL DE RESET E STATUS ---
-        function monitorarEvento(id) {
-            onSnapshot(doc(db, "eventos", id), (snap) => {
-                if(snap.exists()) {
-                    const dados = snap.data();
+        function monitorarStatus(id) {
+            onSnapshot(doc(db, "eventos", id), (s) => {
+                if(s.exists()) {
+                    const dados = s.data();
                     eventoStatus = dados.status || 'aberto';
-                    
-                    // Lógica de Bloqueio
                     const ban = document.getElementById('evento-fechado-msg');
                     const btns = document.querySelectorAll('button.btn-add, button.btn-remove');
-                    if(eventoStatus === 'fechado') { ban.style.display='block'; btns.forEach(b=>b.disabled=true); }
-                    else { ban.style.display='none'; btns.forEach(b=>b.disabled=false); }
+                    
+                    if(eventoStatus === 'fechado') {
+                        ban.style.display = 'block';
+                        btns.forEach(b => b.disabled = true);
+                    } else {
+                        ban.style.display = 'none';
+                        btns.forEach(b => b.disabled = false);
+                    }
 
-                    // Lógica de Reset (Zerar Local)
+                    // Reset Remoto
                     if(dados.resetSignal && dados.resetSignal != ultimoResetSignal) {
                         ultimoResetSignal = dados.resetSignal;
                         localStorage.setItem('last_reset_signal', dados.resetSignal);
-                        
-                        // ZERAR TUDO LOCALMENTE
-                        counts = {};
-                        localLogs = [];
+                        counts = {}; localLogs = [];
                         localStorage.removeItem('counts_ev_'+eventoID);
                         localStorage.removeItem('logs_ev_'+eventoID);
-                        
-                        renderizar();
-                        carregarLogsAntigos(); // Vai limpar a lista
-                        alert("O Evento foi REINICIADO pelo Administrador. Sua contagem foi zerada.");
+                        renderizar(); carregarLogsAntigos();
+                        alert("Evento Reiniciado pelo Admin!");
                     }
                 }
             });
         }
 
         function carregarDrinks(id) {
-            document.getElementById('loading').style.display='none';
-            onSnapshot(collection(db,"eventos",id,"cardapio"), (s)=>{
-                drinks=[]; s.forEach(d=>drinks.push({...d.data(),id:d.id})); drinks.sort((a,b)=>a.nome.localeCompare(b.nome)); renderizar();
+            loadingDiv.style.display = 'none';
+            onSnapshot(collection(db, "eventos", id, "cardapio"), (snap) => {
+                drinks = [];
+                snap.forEach(d => drinks.push({...d.data(), id: d.id}));
+                drinks.sort((a,b) => a.nome.localeCompare(b.nome));
+                renderizar();
             });
         }
 
+        // --- RENDERIZAÇÃO (ATUALIZADA PARA PREÇO DE VENDA) ---
         function renderizar() {
-            const g=document.getElementById('grid'); g.innerHTML='';
-            drinks.forEach(d=>{
-                if(!counts[d.id]) counts[d.id]=0;
-                g.innerHTML+=`<div class="drink-card"><img src="${d.imagem||''}" class="drink-img" onerror="this.style.opacity=0.3"><strong>${d.nome}</strong><div class="price-tag">R$ ${parseFloat(d.VlCusto).toFixed(2)}</div><div class="stock-info">Estoque: ${d.estoque}</div><div class="controls"><button class="btn-remove" onclick="window.mudar('${d.id}',-1)" ${eventoStatus==='fechado'?'disabled':''}>-</button><span style="font-size:1.5em;font-weight:bold">${counts[d.id]}</span><button class="btn-add" onclick="window.mudar('${d.id}',1)" ${eventoStatus==='fechado'?'disabled':''}>+</button></div></div>`;
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            drinks.forEach(d => {
+                if(!counts[d.id]) counts[d.id] = 0;
+                
+                // LÓGICA IMPORTANTE: Compatibilidade Venda vs Custo
+                const precoVenda = parseFloat(d.precoVenda || d.VlCusto || 0);
+
+                grid.innerHTML += `
+                    <div class="drink-card">
+                        <img src="${d.imagem || ''}" class="drink-img" onerror="this.style.opacity=0.3">
+                        <strong>${d.nome}</strong>
+                        <div class="price-tag">R$ ${precoVenda.toFixed(2)}</div>
+                        <div class="stock-info">Estoque: ${d.estoque}</div>
+                        <div class="controls">
+                            <button class="btn-remove" onclick="window.mudar('${d.id}', -1)" ${eventoStatus==='fechado'?'disabled':''}>-</button>
+                            <span style="font-size:1.5em; font-weight:bold">${counts[d.id]}</span>
+                            <button class="btn-add" onclick="window.mudar('${d.id}', 1)" ${eventoStatus==='fechado'?'disabled':''}>+</button>
+                        </div>
+                    </div>`;
             });
             atualizarTotais();
         }
 
-        window.mudar=async(id,q)=>{
-            if(eventoStatus==='fechado')return; const d=drinks.find(x=>x.id===id);
-            if(q>0&&d.estoque<=0)return alert("Acabou!"); if(q<0&&(!counts[id]||counts[id]<=0))return;
-            if(!counts[id])counts[id]=0; counts[id]+=q; localStorage.setItem('counts_ev_'+eventoID,JSON.stringify(counts));
-            renderizar(); adicionarLog(d.nome,q);
-            try{ 
-                await updateDoc(doc(db,"eventos",eventoID,"cardapio",id),{estoque:increment(-q)});
-                if(q>0) await addDoc(collection(db,"eventos",eventoID,"vendas"),{drink:d.nome,preco:d.VlCusto,hora:new Date(),usuario:usuarioAtual});
-            }catch(e){console.error(e);}
+        // --- VENDA (COM CUSTO) ---
+        window.mudar = async (id, qtd) => {
+            if(!eventoID || eventoStatus === 'fechado') return;
+            const drink = drinks.find(d => d.id === id);
+            if(qtd > 0 && drink.estoque <= 0) return alert("Acabou!");
+            if(qtd < 0 && (!counts[id] || counts[id] <= 0)) return;
+
+            // Otimista
+            if(!counts[id]) counts[id] = 0;
+            counts[id] += qtd;
+            localStorage.setItem('counts_ev_'+eventoID, JSON.stringify(counts));
+            renderizar();
+            adicionarLogLocal(drink.nome, qtd);
+
+            try {
+                // Atualiza Estoque
+                await updateDoc(doc(db, "eventos", eventoID, "cardapio", id), { estoque: increment(-qtd) });
+
+                // Registra Venda Completa (Venda + Custo para o CMV)
+                if(qtd > 0) {
+                    await addDoc(collection(db, "eventos", eventoID, "vendas"), {
+                        drink: drink.nome,
+                        preco: parseFloat(drink.precoVenda || drink.VlCusto || 0), // O que entrou
+                        custo: parseFloat(drink.precoCusto || drink.custoProducao || 0), // O que custou
+                        hora: new Date(),
+                        usuario: usuarioAtual
+                    });
+                }
+            } catch(e) { console.error(e); }
         };
 
-        function adicionarLog(n,q){ 
-            const i={n,q,h:new Date().toLocaleTimeString(),u:usuarioAtual}; localLogs.unshift(i); if(localLogs.length>50)localLogs.pop();
-            localStorage.setItem('logs_ev_'+eventoID,JSON.stringify(localLogs)); renderLog(i,true);
+        // --- EXTRAS ---
+        function adicionarLogLocal(nome, qtd) {
+            const i = { nome, qtd, hora: new Date().toLocaleTimeString(), user: usuarioAtual };
+            localLogs.unshift(i); if(localLogs.length>50) localLogs.pop();
+            localStorage.setItem('logs_ev_'+eventoID, JSON.stringify(localLogs));
+            renderLog(i, true);
         }
-        function carregarLogsAntigos(){
-            const l=document.getElementById('log-list'); l.innerHTML=''; const s=localStorage.getItem('logs_ev_'+eventoID);
-            if(s){ localLogs=JSON.parse(s); localLogs.forEach(i=>renderLog(i,false)); }
+        function carregarLogsAntigos() {
+            document.getElementById('log-list').innerHTML = '';
+            const s = localStorage.getItem('logs_ev_'+eventoID);
+            if(s) { localLogs = JSON.parse(s); localLogs.forEach(i => renderLog(i, false)); }
         }
-        function renderLog(i,pre){ 
-            const li=document.createElement('li'); li.innerHTML=`[${i.h}] <b>${i.u}</b>: ${i.q>0?'✅':'❌'} ${i.n}`; 
-            const l=document.getElementById('log-list'); if(pre)l.prepend(li); else l.appendChild(li);
+        function renderLog(i, pre) {
+            const li = document.createElement('li');
+            li.innerHTML = `[${i.hora}] <b>${i.user}</b>: ${i.qtd>0?'✅':'❌'} ${i.nome}`;
+            const l = document.getElementById('log-list');
+            if(pre) l.prepend(li); else l.appendChild(li);
         }
 
-        function atualizarTotais(){
-            let tQ=0, tV=0; drinks.forEach(d=>{const q=counts[d.id]||0; tQ+=q; tV+=q*d.VlCusto;});
-            document.getElementById('total-count').innerText=tQ; document.getElementById('total-valor').innerText='R$ '+tV.toFixed(2);
-            const ctx=document.getElementById('chart').getContext('2d'); if(chart)chart.destroy();
-            chart=new Chart(ctx,{type:'bar',data:{labels:drinks.map(d=>d.nome),datasets:[{label:'Qtd',data:drinks.map(d=>counts[d.id]||0),backgroundColor:'#4CAF50',yAxisID:'y'},{label:'R$',data:drinks.map(d=>(counts[d.id]||0)*d.VlCusto),backgroundColor:'#FFD700',yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{ticks:{color:'white'}},y:{position:'left',ticks:{color:'#4CAF50'}},y1:{position:'right',ticks:{color:'#FFD700'},grid:{drawOnChartArea:false}}},plugins:{legend:{labels:{color:'white'}}}}});
+        function atualizarTotais() {
+            let tQ=0, tV=0;
+            drinks.forEach(d => {
+                const q = counts[d.id] || 0;
+                const p = parseFloat(d.precoVenda || d.VlCusto || 0);
+                tQ += q; tV += q * p;
+            });
+            document.getElementById('total-count').innerText = tQ;
+            document.getElementById('total-valor').innerText = 'R$ ' + tV.toFixed(2);
+            
+            // Gráfico
+            const ctx = document.getElementById('chart').getContext('2d');
+            if(chart) chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: drinks.map(d => d.nome),
+                    datasets: [
+                        { label: 'Qtd', data: drinks.map(d => counts[d.id]||0), backgroundColor: '#4CAF50', yAxisID: 'y' },
+                        { label: 'R$', data: drinks.map(d => (counts[d.id]||0) * (d.precoVenda||d.VlCusto||0)), backgroundColor: '#FFD700', yAxisID: 'y1' }
+                    ]
+                },
+                options: { responsive:true, maintainAspectRatio:false, scales:{x:{ticks:{color:'white'}}, y:{position:'left',ticks:{color:'#4CAF50'}}, y1:{position:'right',ticks:{color:'#FFD700'}, grid:{drawOnChartArea:false}}}, plugins:{legend:{labels:{color:'white'}}} }
+            });
         }
 
-        window.exportarCSV=()=>{
-            let c=`\uFEFFEvento: ${document.getElementById('nome-evento').innerText}\nBartender: ${usuarioAtual}\nData: ${new Date().toLocaleDateString()}\n\nBebida,Qtd,Total\n`;
-            drinks.forEach(d=>{if(counts[d.id]>0)c+=`${d.nome},${counts[d.id]},${(counts[d.id]*d.VlCusto).toFixed(2)}\n`;});
-            c+=`\nTOTAL,,${document.getElementById('total-valor').innerText}`;
-            const l=document.createElement("a"); l.href=URL.createObjectURL(new Blob([c],{type:'text/csv;charset=utf-8;'})); l.download=`relatorio_${usuarioAtual}.csv`; l.click();
+        window.exportarCSV = () => {
+            let csv = `\uFEFFEvento: ${eventoNome}\nBartender: ${usuarioAtual}\nData: ${new Date().toLocaleDateString()}\n\nBebida,Qtd,Preço Venda,Total\n`;
+            drinks.forEach(d => {
+                const q = counts[d.id] || 0;
+                if(q > 0) {
+                    const p = parseFloat(d.precoVenda || d.VlCusto || 0);
+                    csv += `${d.nome},${q},${p.toFixed(2)},${(q*p).toFixed(2)}\n`;
+                }
+            });
+            csv += `\nTOTAL GERAL,,${document.getElementById('total-valor').innerText}`;
+            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})); l.download = `relatorio_${usuarioAtual}.csv`; l.click();
         };
         
-        if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
     </script>
 </body>
 </html>
