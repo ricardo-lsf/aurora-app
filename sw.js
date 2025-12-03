@@ -1,4 +1,4 @@
-const cacheName = 'bar-app-v5'; // <--- MUDANÇA IMPORTANTE: v13
+const cacheName = 'bar-app-v5'; // <--- MUDANÇA IMPORTANTE: v14
 const assets = [
   './',
   './index.html',

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aurora App V15 (Premium)</title>
+    <title>Aurora App V16 (Final Layout)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e1e1e">
     
@@ -14,129 +14,100 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Inter', sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; padding-bottom: 40px; }
 
-        /* --- HEADER --- */
-        header { 
-            background: rgba(30,30,30,0.95); 
-            backdrop-filter: blur(10px); 
-            position: sticky; top: 0; z-index: 100; 
-            padding: 12px 15px; 
-            border-bottom: 1px solid #333; 
-            display: flex; justify-content: space-between; align-items: center; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        h1 { margin: 0; font-size: 1.1rem; color: #2ecc71; font-weight: 800; letter-spacing: -0.5px; }
-        .user-badge { font-size: 0.8rem; background: #333; padding: 4px 12px; border-radius: 20px; color: #fff; border: 1px solid #444; font-weight: 600; }
+        /* HEADER */
+        header { background: rgba(30,30,30,0.95); position: sticky; top: 0; z-index: 100; padding: 12px 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        h1 { margin: 0; font-size: 1.1rem; color: #2ecc71; font-weight: 800; }
+        .user-badge { font-size: 0.8rem; background: #333; padding: 4px 10px; border-radius: 20px; color: #fff; border: 1px solid #444; }
 
-        .event-bar { text-align: center; padding: 10px; background: #1e1e1e; margin-bottom: 15px; border-bottom: 1px solid #222; }
+        .event-bar { text-align: center; padding: 8px; background: #1e1e1e; margin-bottom: 15px; border-bottom: 1px solid #222; font-size: 0.9rem; color: #888; }
         .event-name { color: #fff; font-weight: 700; font-size: 1rem; display: block; }
 
-        /* --- GRID (2 COLUNAS NO MOBILE) --- */
-        .grid-container { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); /* Garante 2 colunas */
-            gap: 12px; 
-            padding: 0 12px;
-        }
+        /* GRID */
+        .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 10px; }
         @media (min-width: 600px) { .grid-container { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
         
-        /* --- CARTÕES DE DRINK --- */
-        .drink-card { 
-            background: #252525; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            border: 1px solid #333; 
-            position: relative; 
-            transition: 0.2s; 
-            display: flex; flex-direction: column;
-        }
-        
-        /* Estados de Estoque */
+        .drink-card { background: #252525; border-radius: 12px; overflow: hidden; border: 1px solid #333; position: relative; transition: 0.2s; display: flex; flex-direction: column; }
         .drink-card.stock-low { border: 1px solid #e67e22; box-shadow: inset 0 0 5px rgba(230, 126, 34, 0.2); }
-        .drink-card.stock-out { border: 1px solid #c0392b; opacity: 0.6; filter: grayscale(0.8); }
-        
-        .sold-out-overlay { 
-            position: absolute; top: 35%; left: 0; width: 100%; 
-            background: rgba(192, 57, 43, 0.9); color: white; 
-            text-align: center; padding: 5px; font-weight: bold; 
-            transform: rotate(-5deg); z-index: 10; display: none; 
-            text-shadow: 1px 1px 2px black; pointer-events: none; 
-        }
+        .drink-card.stock-out { border: 1px solid #c0392b; opacity: 0.7; filter: grayscale(0.5); }
+        .sold-out-overlay { position: absolute; top: 35%; left: 0; width: 100%; background: rgba(192, 57, 43, 0.9); color: white; text-align: center; padding: 5px; font-weight: bold; transform: rotate(-5deg); z-index: 10; display: none; text-shadow: 1px 1px 2px black; pointer-events: none; }
         .drink-card.stock-out .sold-out-overlay { display: block; }
 
-        .drink-img { width: 100%; height: 110px; object-fit: cover; border-bottom: 1px solid #333; background: #333; }
+        .drink-img { width: 100%; height: 100px; object-fit: cover; border-bottom: 1px solid #333; }
         .card-body { padding: 10px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        
-        .drink-name { 
-            font-weight: 700; font-size: 0.9rem; margin-bottom: 6px; color: #fff; 
-            line-height: 1.2; height: 34px; overflow: hidden; 
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; 
-        }
-        
-        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .drink-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; color: #fff; line-height: 1.2; height: 35px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .price-tag { color: #f1c40f; font-weight: 700; font-size: 0.9rem; }
-        .stock-badge { font-size: 0.7rem; color: #bbb; background: #333; padding: 2px 6px; border-radius: 4px; border: 1px solid #444; }
+        .stock-badge { font-size: 0.7rem; color: #bbb; background: #333; padding: 2px 5px; border-radius: 4px; border: 1px solid #444; }
         .stock-low .stock-badge { color: #e67e22; border-color: #e67e22; }
         .stock-out .stock-badge { color: #c0392b; border-color: #c0392b; }
 
-        /* --- CONTROLES --- */
-        .controls { display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; padding: 4px; border-radius: 25px; border: 1px solid #333; }
-        .btn-circle { width: 32px; height: 32px; border-radius: 50%; border: none; color: white; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.1s; }
-        .btn-circle:active { transform: scale(0.9); }
-        .btn-add { background: #27ae60; } 
-        .btn-remove { background: #c0392b; }
-        
+        .controls { display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; padding: 4px; border-radius: 20px; }
+        .btn-circle { width: 30px; height: 30px; border-radius: 50%; border: none; color: white; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .btn-add { background: #27ae60; } .btn-remove { background: #c0392b; }
         .drink-count { font-size: 1.1rem; font-weight: 700; color: #fff; min-width: 20px; text-align: center; }
         button:disabled { background: #444 !important; opacity: 0.3; cursor: not-allowed; }
 
-        /* --- DASHBOARD --- */
-        .dashboard { padding: 20px 12px; display: grid; grid-template-columns: 1fr; gap: 20px; }
-        @media (min-width: 700px) { .dashboard { grid-template-columns: 1fr 1fr; } }
-        
-        .panel { background: #1e1e1e; padding: 15px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
-        .panel h3 { margin: 0 0 15px 0; color: #888; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        
-        .total-row { display: flex; justify-content: space-between; margin-bottom: 15px; }
-        .total-item { text-align: center; }
-        .total-display { font-size: 1.6rem; font-weight: 800; color: #fff; }
-        .total-label { font-size: 0.8rem; color: #666; }
-        
-        .chart-wrapper { position: relative; height: 250px; width: 100%; }
-        .export-btn { background: #27ae60; width: 100%; padding: 12px; border-radius: 8px; color: white; border: none; font-weight: bold; margin-top: 15px; font-size: 1rem; }
+        /* --- DASHBOARD (LAYOUT AJUSTADO PC vs MOBILE) --- */
+        .dashboard { 
+            padding: 20px 10px; 
+            display: grid; 
+            grid-template-columns: 1fr; /* Mobile: 1 coluna */
+            gap: 20px; 
+        }
 
-        /* --- LOGS --- */
-        #log-list { max-height: 300px; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
-        #log-list li { padding: 10px 0; border-bottom: 1px solid #2a2a2a; font-size: 0.85rem; color: #ccc; display: flex; justify-content: space-between; align-items: center; }
+        /* No PC, o gráfico ganha mais espaço (3 partes para 1 parte) */
+        @media (min-width: 900px) { 
+            .dashboard { grid-template-columns: 3fr 1fr; } 
+        }
+        
+        .panel { background: #1e1e1e; padding: 15px; border-radius: 12px; border: 1px solid #333; }
+        .chart-wrapper { position: relative; height: 300px; width: 100%; margin-top: 10px; }
+        .total-display { font-size: 1.5rem; font-weight: 800; color: #fff; }
+        .export-btn { background: #27ae60; width: 100%; padding: 12px; border-radius: 8px; color: white; border: none; font-weight: bold; margin-top: 15px; }
+
+        /* LOGS (AJUSTE DE ALINHAMENTO) */
+        #log-list { 
+            max-height: 300px; 
+            overflow-y: auto; 
+            list-style: none; 
+            padding: 0; 
+            margin: 0; 
+            border: 1px solid #333; 
+            border-radius: 6px; 
+            background: #181818; 
+        }
+        
+        #log-list li { 
+            padding: 8px 10px; 
+            border-bottom: 1px solid #2a2a2a; 
+            font-size: 0.8rem; 
+            color: #ccc; 
+            /* VOLTAR AO ALINHAMENTO ESQUERDA */
+            display: flex; 
+            justify-content: flex-start; 
+            align-items: center; 
+            gap: 8px; 
+        }
         #log-list li:last-child { border-bottom: none; }
-        .log-time { color: #666; font-size: 0.75rem; width: 45px; }
-        .log-user { color: #2980b9; font-weight: bold; margin-right: 5px; }
-
-        /* --- LOGIN & ALERTS --- */
-        #login-overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; background: radial-gradient(circle at center, #222 0%, #000 100%); }
-        .login-box { width: 100%; max-width: 300px; text-align: center; }
-        .login-input { background: #222; border: 1px solid #444; color: white; padding: 15px; border-radius: 8px; width: 100%; font-size: 1.2rem; text-align: center; margin-bottom: 15px; outline: none; }
-        .login-input:focus { border-color: #2ecc71; }
-        .login-btn { background: #2ecc71; color: #000; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem; border: none; cursor: pointer; }
-        .error-msg { color: #e74c3c; margin-top: 15px; display: none; font-weight: bold; }
         
-        #evento-fechado-msg { background: #c0392b; color: white; text-align: center; padding: 12px; position: fixed; bottom: 0; left: 0; width: 100%; z-index: 90; display: none; font-weight: bold; box-shadow: 0 -4px 10px rgba(0,0,0,0.5); letter-spacing: 1px; }
+        /* Cores do Log */
+        .log-time { color: #666; font-family: monospace; }
+        .log-user { color: #3498db; font-weight: bold; }
+        .log-action-pos { color: #27ae60; font-weight: bold; }
+        .log-action-neg { color: #c0392b; font-weight: bold; }
+
+        /* LOGIN & ALERTS */
+        #login-overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        .login-input { background: #222; border: 1px solid #444; color: white; padding: 15px; border-radius: 8px; width: 100%; max-width: 250px; font-size: 1.2rem; text-align: center; margin-bottom: 15px; }
+        .login-btn { background: #2ecc71; color: #000; width: 100%; max-width: 250px; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1.1rem; border: none; }
+        .error-msg { color: #e74c3c; margin-top: 10px; display: none; }
+        #evento-fechado-msg { background: #c0392b; color: white; text-align: center; padding: 10px; position: fixed; bottom: 0; left: 0; width: 100%; z-index: 90; display: none; font-weight: bold; }
         #loading { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 98; color:#2ecc71; flex-direction: column; }
     </style>
 </head>
 <body>
-
-    <div id="login-overlay">
-        <div class="login-box">
-            <div style="font-size:3rem; margin-bottom:10px;">🍸</div>
-            <h2 style="color:#fff; margin:0 0 5px 0;">Aurora App</h2>
-            <p style="color:#777; margin:0 0 30px 0;">Acesso da Equipe</p>
-            <input type="tel" id="loginPhone" class="login-input" placeholder="Seu Celular (DDD+Num)">
-            <button onclick="fazerLogin()" class="login-btn">ENTRAR</button>
-            <p id="login-error" class="error-msg">Número não cadastrado!</p>
-        </div>
-    </div>
-
+    <div id="login-overlay"><h2 style="color:#2ecc71;">Aurora Bartenders</h2><p style="color:#777;">Equipe</p><input type="tel" id="loginPhone" class="login-input" placeholder="Celular"><button onclick="fazerLogin()" class="login-btn">ENTRAR</button><p id="login-error" class="error-msg">Não encontrado!</p></div>
     <div id="loading"><h3>Conectando...</h3></div>
-    
     <div id="evento-fechado-msg">🚫 EVENTO ENCERRADO</div>
 
     <header>
@@ -144,36 +115,22 @@
         <div class="user-badge" id="user-display">...</div>
     </header>
 
-    <div class="event-bar">
-        <span class="event-name" id="nome-evento">...</span>
-    </div>
-
-    <div class="grid-container" id="grid">
-        </div>
+    <div class="event-bar"><span class="event-name" id="nome-evento">...</span></div>
+    <div class="grid-container" id="grid"></div>
 
     <div class="dashboard">
         <div class="panel">
-            <h3>PERFORMANCE</h3>
-            <div class="total-row">
-                <div class="total-item">
-                    <div class="total-display" id="total-count">0</div>
-                    <span class="total-label">Drinks</span>
-                </div>
-                <div class="total-item">
-                    <div class="total-display" id="total-valor" style="color:#f1c40f;">R$ 0</div>
-                    <span class="total-label">Vendas</span>
-                </div>
+            <h3 style="margin:0;color:#888;font-size:0.8rem">PERFORMANCE</h3>
+            <div style="display:flex;justify-content:space-between;margin-top:10px;">
+                <div><div class="total-display" id="total-count">0</div><small style="color:#666">Drinks</small></div>
+                <div style="text-align:right;"><div class="total-display" id="total-valor" style="color:#f1c40f;">R$ 0</div><small style="color:#666">Fat</small></div>
             </div>
-            
-            <div class="chart-wrapper">
-                <canvas id="chart"></canvas>
-            </div>
-            
+            <div class="chart-wrapper"><canvas id="chart"></canvas></div>
             <button onclick="window.exportarCSV()" class="export-btn">Baixar Relatório</button>
         </div>
 
         <div class="panel">
-            <h3>HISTÓRICO</h3>
+            <h3 style="margin:0 0 10px 0;color:#888;font-size:0.8rem">HISTÓRICO</h3>
             <ul id="log-list"></ul>
         </div>
     </div>
@@ -194,263 +151,106 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        let eventoID=null, eventoStatus="aberto", usuarioAtual=localStorage.getItem('aurora_user_name'), drinks=[], counts={}, localLogs=[], chart=null, ultimoReset=localStorage.getItem('last_reset_signal');
 
-        let eventoID = null, eventoStatus = "aberto", usuarioAtual = localStorage.getItem('aurora_user_name'), drinks = [], counts = {}, localLogs = [], chart = null;
-        let ultimoReset = localStorage.getItem('last_reset_signal');
-
-        // --- 1. LOGIN AUTOMÁTICO ---
-        if(usuarioAtual) {
-            document.getElementById('login-overlay').style.display='none';
-            document.getElementById('user-display').innerText = usuarioAtual.split(' ')[0];
-        }
-
-        window.fazerLogin = async () => {
-            const tel = document.getElementById('loginPhone').value;
-            const btn = document.querySelector('.login-btn');
-            if(!tel) return;
-            btn.innerText = "Verificando...";
-            
-            try {
-                // Busca na coleção 'equipe' pelo telefone
-                const q = query(collection(db,"equipe"), where("telefone", "==", tel));
-                const snap = await getDocs(q);
-                
-                if(snap.empty) {
-                    document.getElementById('login-error').style.display='block';
-                    btn.innerText = "ENTRAR";
-                } else {
-                    const d = snap.docs[0].data();
-                    usuarioAtual = d.nome;
-                    localStorage.setItem('aurora_user_name', d.nome);
-                    localStorage.setItem('aurora_user_phone', d.telefone);
-                    
-                    // Registra acesso
-                    await addDoc(collection(db,"acessos_sistema"), {nome:d.nome, tel:d.telefone, data:new Date()});
-                    
-                    location.reload();
-                }
-            } catch(e) { alert("Erro de conexão"); btn.innerText="ENTRAR"; }
+        if(usuarioAtual) { document.getElementById('login-overlay').style.display='none'; document.getElementById('user-display').innerText=usuarioAtual.split(' ')[0]; }
+        window.fazerLogin=async()=>{
+            const tel=document.getElementById('loginPhone').value; const btn=document.querySelector('.login-btn'); if(!tel)return; btn.innerText="...";
+            try { const q=query(collection(db,"equipe"),where("telefone","==",tel)); const snap=await getDocs(q);
+                if(snap.empty) { document.getElementById('login-error').style.display='block'; btn.innerText="ENTRAR"; }
+                else { const d=snap.docs[0].data(); usuarioAtual=d.nome; localStorage.setItem('aurora_user_name',d.nome); localStorage.setItem('aurora_user_phone',d.telefone); await addDoc(collection(db,"acessos_sistema"),{nome:d.nome,tel:d.telefone,data:new Date()}); location.reload(); }
+            } catch(e){alert("Erro");btn.innerText="ENTRAR";}
         };
 
-        // --- 2. ESCUTAR EVENTO ATIVO ---
-        onSnapshot(doc(db,"config","geral"), (snap) => {
+        onSnapshot(doc(db,"config","geral"),(snap)=>{
             if(snap.exists() && snap.data().eventoAtivoID) {
-                const novoID = snap.data().eventoAtivoID;
-                document.getElementById('nome-evento').innerText = snap.data().eventoAtivoNome;
-                if(usuarioAtual) document.getElementById('loading').style.display='none';
-                
-                if(novoID !== eventoID) {
-                    eventoID = novoID;
-                    carregarDrinks(novoID);
-                    monitorarEvento(novoID);
-                    
-                    // Carrega contagem local antiga (se existir)
-                    const c = localStorage.getItem('counts_ev_'+eventoID);
-                    counts = c ? JSON.parse(c) : {};
-                    carregarLogsAntigos();
-                }
-            } else {
-                document.getElementById('nome-evento').innerText = "Aguardando Evento...";
-                document.getElementById('loading').style.display='none';
-                document.getElementById('grid').innerHTML = '<p style="text-align:center;color:#666;width:100%;margin-top:30px">Nenhum evento ativo pelo administrador.</p>';
-            }
+                const novoID=snap.data().eventoAtivoID; document.getElementById('nome-evento').innerText=snap.data().eventoAtivoNome; if(usuarioAtual)document.getElementById('loading').style.display='none';
+                if(novoID!==eventoID) { eventoID=novoID; carregarDrinks(novoID); monitorarEvento(novoID); const c=localStorage.getItem('counts_ev_'+eventoID); counts=c?JSON.parse(c):{}; carregarLogsAntigos(); }
+            } else { document.getElementById('nome-evento').innerText="Sem Evento"; document.getElementById('loading').style.display='none'; document.getElementById('grid').innerHTML='<p style="text-align:center;color:#666;width:100%;margin-top:20px">Nenhum evento ativo.</p>'; }
         });
 
-        // --- 3. MONITORAR ESTADO E RESET ---
         function monitorarEvento(id) {
-            onSnapshot(doc(db,"eventos",id), (s) => {
+            onSnapshot(doc(db,"eventos",id),(s)=>{
                 if(s.exists()) {
-                    const d = s.data();
-                    eventoStatus = d.status || 'aberto';
-                    
-                    // Bloqueio Visual
-                    const ban = document.getElementById('evento-fechado-msg');
-                    const btns = document.querySelectorAll('.btn-circle');
-                    
-                    if(eventoStatus === 'fechado') {
-                        ban.style.display='block';
-                        btns.forEach(b => b.disabled=true);
-                    } else {
-                        ban.style.display='none';
-                        btns.forEach(b => b.disabled=false);
-                    }
-
-                    // Sinal de Reset (Zerar Tudo)
-                    if(d.resetSignal && d.resetSignal != localStorage.getItem('last_reset_signal')) {
-                        localStorage.setItem('last_reset_signal', d.resetSignal);
-                        counts = {}; localLogs = [];
-                        localStorage.removeItem('counts_ev_'+eventoID);
-                        localStorage.removeItem('logs_ev_'+eventoID);
-                        renderizar(); 
-                        carregarLogsAntigos();
-                        alert("O evento foi reiniciado pelo Admin!");
+                    const d=s.data(); eventoStatus=d.status||'aberto';
+                    const ban=document.getElementById('evento-fechado-msg'); const btns=document.querySelectorAll('.btn-circle');
+                    if(eventoStatus==='fechado') { ban.style.display='block'; btns.forEach(b=>b.disabled=true); } else { ban.style.display='none'; btns.forEach(b=>b.disabled=false); }
+                    if(d.resetSignal && d.resetSignal!=localStorage.getItem('last_reset_signal')) {
+                        localStorage.setItem('last_reset_signal',d.resetSignal); counts={}; localLogs=[];
+                        localStorage.removeItem('counts_ev_'+eventoID); localStorage.removeItem('logs_ev_'+eventoID);
+                        renderizar(); carregarLogsAntigos(); alert("Reiniciado!");
                     }
                 }
             });
         }
 
-        // --- 4. CARREGAR DRINKS E RENDERIZAR ---
-        function carregarDrinks(id) {
-            onSnapshot(collection(db,"eventos",id,"cardapio"), (s) => {
-                drinks = [];
-                s.forEach(d => drinks.push({...d.data(), id:d.id}));
-                drinks.sort((a,b) => a.nome.localeCompare(b.nome));
-                renderizar();
-            });
-        }
+        function carregarDrinks(id) { onSnapshot(collection(db,"eventos",id,"cardapio"),(s)=>{ drinks=[]; s.forEach(d=>drinks.push({...d.data(),id:d.id})); drinks.sort((a,b)=>a.nome.localeCompare(b.nome)); renderizar(); }); }
 
         function renderizar() {
-            const grid = document.getElementById('grid');
-            grid.innerHTML = '';
-            
-            drinks.forEach(d => {
-                if(!counts[d.id]) counts[d.id] = 0;
-                
-                // Lógica de Preço (Novo vs Antigo)
-                const preco = d.precoVenda || d.VlCusto || 0;
-                
-                // Lógica de Estoque
-                const isSoldOut = d.estoque <= 0;
-                const isLow = d.estoque < 10 && !isSoldOut;
-                let cardClass = 'drink-card';
-                if(isLow) cardClass += ' stock-low';
-                if(isSoldOut) cardClass += ' stock-out';
-                
-                grid.innerHTML += `
-                    <div class="${cardClass}">
-                        <div class="sold-out-overlay">ESGOTADO</div>
-                        <img src="${d.imagem || ''}" class="drink-img" onerror="this.style.opacity=0.3">
-                        <div class="card-body">
-                            <div class="drink-name">${d.nome}</div>
-                            <div class="info-row">
-                                <span class="price-tag">R$ ${parseFloat(preco).toFixed(2)}</span>
-                                <span class="stock-badge ${isLow?'stock-low':''} ${isSoldOut?'stock-out':''}">${d.estoque} un</span>
-                            </div>
-                            <div class="controls">
-                                <button class="btn-circle btn-remove" onclick="window.mudar('${d.id}', -1)" ${eventoStatus==='fechado'?'disabled':''}>-</button>
-                                <span class="drink-count">${counts[d.id]}</span>
-                                <button class="btn-circle btn-add" onclick="window.mudar('${d.id}', 1)" ${eventoStatus==='fechado'||isSoldOut?'disabled':''}>+</button>
-                            </div>
-                        </div>
-                    </div>`;
+            const grid=document.getElementById('grid'); grid.innerHTML='';
+            drinks.forEach(d=>{
+                if(!counts[d.id])counts[d.id]=0;
+                const preco=d.precoVenda||d.VlCusto||0; const isSoldOut=d.estoque<=0; const isLow=d.estoque<10&&!isSoldOut;
+                let cardClass='drink-card'; if(isLow)cardClass+=' stock-low'; if(isSoldOut)cardClass+=' stock-out';
+                grid.innerHTML+=`<div class="${cardClass}"><div class="sold-out-overlay">ESGOTADO</div><img src="${d.imagem||''}" class="drink-img" onerror="this.style.opacity=0.3"><div class="card-body"><div class="drink-name">${d.nome}</div><div class="info-row"><span class="price-tag">R$ ${parseFloat(preco).toFixed(2)}</span><span class="stock-badge">${d.estoque} un</span></div><div class="controls"><button class="btn-circle btn-remove" onclick="window.mudar('${d.id}',-1)" ${eventoStatus==='fechado'?'disabled':''}>-</button><span class="drink-count">${counts[d.id]}</span><button class="btn-circle btn-add" onclick="window.mudar('${d.id}',1)" ${eventoStatus==='fechado'||isSoldOut?'disabled':''}>+</button></div></div></div>`;
             });
             atualizarTotais();
         }
 
-        // --- 5. AÇÃO DE VENDA ---
-        window.mudar = async (id, qtd) => {
-            if(!eventoID || eventoStatus === 'fechado') return;
-            const drink = drinks.find(d => d.id === id);
-            
-            // Bloqueio Local
-            if(qtd > 0 && drink.estoque <= 0) return navigator.vibrate(200); 
-            if(qtd < 0 && (!counts[id] || counts[id] <= 0)) return;
-
-            // Atualiza UI (Otimista)
-            if(!counts[id]) counts[id] = 0;
-            counts[id] += qtd;
-            localStorage.setItem('counts_ev_'+eventoID, JSON.stringify(counts));
-            renderizar();
-            if(qtd > 0) navigator.vibrate(50); 
-            
-            adicionarLog(drink.nome, qtd);
-
-            try {
-                // Atualiza Nuvem
-                const ref = doc(db,"eventos",eventoID,"cardapio",id);
-                await updateDoc(ref, { estoque: increment(-qtd) });
-                
-                // Registra Venda (Compatível com o Analytics novo)
-                if(qtd > 0) {
-                    await addDoc(collection(db,"eventos",eventoID,"vendas"), {
-                        drink: drink.nome,
-                        preco: parseFloat(drink.precoVenda || drink.VlCusto || 0),
-                        custo: parseFloat(drink.precoCusto || drink.custoProducao || 0),
-                        hora: new Date(),
-                        usuario: usuarioAtual
-                    });
-                }
-            } catch(e) { console.error(e); }
+        window.mudar=async(id,qtd)=>{
+            if(!eventoID||eventoStatus==='fechado')return; const drink=drinks.find(d=>d.id===id);
+            if(qtd>0&&drink.estoque<=0)return alert("Esgotado!"); if(qtd<0&&(!counts[id]||counts[id]<=0))return;
+            if(!counts[id])counts[id]=0; counts[id]+=qtd; localStorage.setItem('counts_ev_'+eventoID,JSON.stringify(counts));
+            renderizar(); adicionarLog(drink.nome,qtd);
+            try{ const ref=doc(db,"eventos",eventoID,"cardapio",id); await updateDoc(ref,{estoque:increment(-qtd)}); if(qtd>0)await addDoc(collection(db,"eventos",eventoID,"vendas"),{drink:drink.nome,preco:parseFloat(drink.precoVenda||drink.VlCusto||0),custo:parseFloat(drink.precoCusto||drink.custoProducao||0),hora:new Date(),usuario:usuarioAtual}); }catch(e){console.error(e);}
         };
 
-        // --- 6. GRÁFICO, LOGS E EXPORTAR ---
         function atualizarTotais() {
-            let tQ=0, tV=0;
-            drinks.forEach(d => {
-                const q = counts[d.id]||0;
-                tQ += q;
-                tV += q * parseFloat(d.precoVenda || d.VlCusto || 0);
-            });
-            document.getElementById('total-count').innerText = tQ;
-            document.getElementById('total-valor').innerText = 'R$ ' + tV.toFixed(2);
+            let tQ=0, tV=0; drinks.forEach(d=>{const q=counts[d.id]||0; tQ+=q; tV+=q*parseFloat(d.precoVenda||d.VlCusto||0);});
+            document.getElementById('total-count').innerText=tQ; document.getElementById('total-valor').innerText='R$ '+tV.toFixed(2);
             
-            const ctx = document.getElementById('chart').getContext('2d');
-            if(chart) chart.destroy();
+            const ctx=document.getElementById('chart').getContext('2d'); if(chart)chart.destroy();
+            const vend=drinks.filter(d=>(counts[d.id]||0)>0);
             
-            // Filtra apenas o que vendeu para o gráfico não ficar cheio de zeros
-            const activeDrinks = drinks.filter(d => (counts[d.id]||0) > 0);
-            
-            chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: activeDrinks.map(d => d.nome.substring(0,10)+'...'),
-                    datasets: [
-                        { 
-                            label: 'Qtd', 
-                            data: activeDrinks.map(d => counts[d.id]), 
-                            backgroundColor: '#2ecc71', 
-                            borderRadius: 4,
-                            yAxisID: 'y'
-                        },
-                        { 
-                            label: 'Valor (R$)', 
-                            data: activeDrinks.map(d => counts[d.id] * (d.precoVenda||d.VlCusto||0)), 
-                            backgroundColor: 'rgba(241, 196, 15, 0.3)', 
-                            borderColor: '#f1c40f',
-                            borderWidth: 1,
-                            yAxisID: 'y1'
-                        }
+            // GRÁFICO COM NOME COMPLETO E ROTAÇÃO AUTOMÁTICA
+            chart=new Chart(ctx,{
+                type:'bar',
+                data:{
+                    labels:vend.map(d=>d.nome), // Nome completo
+                    datasets:[
+                        {label:'Qtd',data:vend.map(d=>counts[d.id]),backgroundColor:'#2ecc71',yAxisID:'y'},
+                        {label:'R$',data:vend.map(d=>counts[d.id]*(d.precoVenda||0)),backgroundColor:'#f1c40f',yAxisID:'y1'}
                     ]
                 },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { 
-                        x: { ticks: { color: '#888', font: {size:10} }, grid: { display: false } }, 
-                        y: { type: 'linear', position: 'left', ticks: { color: '#2ecc71' }, grid: { color: '#333' } },
-                        y1: { type: 'linear', position: 'right', ticks: { color: '#f1c40f' }, grid: { display: false } }
-                    } 
+                options:{
+                    responsive:true, 
+                    maintainAspectRatio:false,
+                    plugins:{legend:{display:true,labels:{color:'#ccc'}}},
+                    scales:{
+                        x:{
+                            ticks:{color:'#888', autoSkip:false, maxRotation:90, minRotation:45}, // Força rotação para caber nomes
+                            grid:{display:false}
+                        },
+                        y:{type:'linear',position:'left',ticks:{color:'#2ecc71'},grid:{color:'#333'}},
+                        y1:{type:'linear',position:'right',ticks:{color:'#f1c40f'},grid:{display:false}}
+                    }
                 }
             });
         }
 
-        function adicionarLog(n, q) {
-            const i = { n, q, h: new Date().toLocaleTimeString().substring(0,5), u: usuarioAtual };
-            localLogs.unshift(i); if(localLogs.length>30) localLogs.pop();
-            localStorage.setItem('logs_ev_'+eventoID, JSON.stringify(localLogs));
-            renderLog(i, true);
-        }
-        function carregarLogsAntigos() {
-            document.getElementById('log-list').innerHTML = '';
-            const s = localStorage.getItem('logs_ev_'+eventoID);
-            if(s) { localLogs = JSON.parse(s); localLogs.forEach(i => renderLog(i, false)); }
-        }
-        function renderLog(i, pre) {
-            const li = document.createElement('li');
-            li.innerHTML = `<span class="log-time">${i.h}</span> <span><span class="log-user">${i.u.split(' ')[0]}</span> ${i.n}</span> <b style="color:${i.q>0?'#2ecc71':'#c0392b'}">${i.q>0?'+1':'-1'}</b>`;
-            const l = document.getElementById('log-list');
-            if(pre) l.prepend(li); else l.appendChild(li);
-        }
-
-        window.exportarCSV = () => {
-            let csv = `\uFEFFEvento: ${document.getElementById('nome-evento').innerText}\nBartender: ${usuarioAtual}\nData: ${new Date().toLocaleDateString()}\n\nBebida,Qtd,Total\n`;
-            drinks.forEach(d => { if(counts[d.id]>0) csv += `${d.nome},${counts[d.id]},${(counts[d.id]*parseFloat(d.precoVenda||d.VlCusto||0)).toFixed(2)}\n`; });
-            csv += `\nTOTAL,,${document.getElementById('total-valor').innerText}`;
-            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})); l.download = `fechamento_${usuarioAtual}.csv`; l.click();
-        };
+        function adicionarLog(n,q){const i={n,q,h:new Date().toLocaleTimeString().substring(0,5),u:usuarioAtual};localLogs.unshift(i);if(localLogs.length>30)localLogs.pop();localStorage.setItem('logs_ev_'+eventoID,JSON.stringify(localLogs));renderLog(i,true);}
+        function carregarLogsAntigos(){document.getElementById('log-list').innerHTML='';const s=localStorage.getItem('logs_ev_'+eventoID);if(s){localLogs=JSON.parse(s);localLogs.forEach(i=>renderLog(i,false));}}
         
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+        // LOG ALINHADO À ESQUERDA
+        function renderLog(i,pre){
+            const li=document.createElement('li');
+            // Formato: [Hora] Nome: Ação Drink
+            li.innerHTML=`<span class="log-time">[${i.h}]</span> <span class="log-user">${i.u.split(' ')[0]}:</span> ${i.q>0?'<span class="log-action-pos">Venda</span>':'<span class="log-action-neg">Canc</span>'} ${i.n}`;
+            const l=document.getElementById('log-list'); if(pre)l.prepend(li); else l.appendChild(li);
+        }
+        
+        window.exportarCSV=()=>{let c=`\uFEFFEvento: ${document.getElementById('nome-evento').innerText}\nBartender: ${usuarioAtual}\nData: ${new Date().toLocaleDateString()}\n\nBebida,Qtd,Total\n`;drinks.forEach(d=>{if(counts[d.id]>0)c+=`${d.nome},${counts[d.id]},${(counts[d.id]*parseFloat(d.precoVenda||d.VlCusto||0)).toFixed(2)}\n`;});c+=`\nTOTAL,,${document.getElementById('total-valor').innerText}`;const l=document.createElement("a");l.href=URL.createObjectURL(new Blob([c],{type:'text/csv;charset=utf-8;'}));l.download=`fechamento_${usuarioAtual}.csv`;l.click();};
+        if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
     </script>
 </body>
 </html>
