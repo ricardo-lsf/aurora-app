@@ -2,16 +2,16 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Aurora Admin V17 (Completo)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora Admin V21 (UI Fix)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f6f8; color: #333; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* --- SIDEBAR (MENU LATERAL) --- */
+        /* --- SIDEBAR --- */
         .sidebar { width: 260px; background: #2c3e50; color: white; display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.3s ease; z-index: 1000; }
         .logo-area { padding: 20px; font-size: 1.5em; font-weight: bold; text-align: center; background: #1a252f; border-bottom: 1px solid #34495e; }
         .logo-area span { color: #2ecc71; }
-        
         .menu { flex: 1; padding-top: 10px; overflow-y: auto; }
         .menu-label { padding: 10px 20px; font-size: 0.75em; text-transform: uppercase; color: #7f8c8d; font-weight: bold; margin-top: 10px; }
         .menu-item { padding: 12px 20px; cursor: pointer; display: flex; align-items: center; transition: 0.2s; color: #bdc3c7; text-decoration: none; }
@@ -34,63 +34,124 @@
         h2 { border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top: 0; color: #2c3e50; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e1e4e8; }
         
-        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box; margin-bottom: 5px; }
-        button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; }
+        input, select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box; height: 38px; }
+        label { font-size: 0.8em; font-weight: bold; color: #666; display: block; margin-bottom: 2px; }
+        button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; height: 38px; }
         button:hover { opacity: 0.9; }
         
         .btn-primary { background: #3498db; color: white; }
         .btn-success { background: #27ae60; color: white; }
         .btn-danger { background: #e74c3c; color: white; font-size: 0.8em; }
         .btn-warning { background: #f39c12; color: white; }
-        .btn-activate { background: #8e44ad; color: white; width: 100%; padding: 15px; margin-top:10px; font-size: 1.1em; }
+        .btn-activate { background: #8e44ad; color: white; width: 100%; padding: 15px; margin-top:10px; font-size: 1.1em; height: auto; }
         .btn-save-details { background: #27ae60; color: white; width: 100%; margin-top: 10px; }
         .btn-purple { background: #9b59b6; color: white; }
 
-        /* --- MODAL --- */
+        /* BOTÃO DE DELETAR PROFISSIONAL (LIXEIRA) */
+        .btn-trash { 
+            background: transparent; 
+            color: #c0392b; 
+            border: 1px solid #eccscs; 
+            font-size: 1.2em; 
+            padding: 5px 10px; 
+            height: auto; 
+            border-radius: 4px;
+        }
+        .btn-trash:hover { background: #fadbd8; }
+
+        /* TIME GRID */
+        .time-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; background: #e8f4fd; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #d6eaf8; align-items: end; }
+        .split-input { display: flex; gap: 5px; align-items: center; }
+        .time-grid input[readonly] { background: #e0e0e0; color: #555; cursor: not-allowed; }
+
+        /* --- CHECKBOXES (CORREÇÃO DE ALINHAMENTO) --- */
+        .checkbox-container { 
+            max-height: 250px; 
+            overflow-y: auto; 
+            border: 1px solid #ddd; 
+            background: #fff; 
+            border-radius: 4px; 
+            margin-bottom: 10px; 
+        }
+        .chk-item { 
+            display: flex; 
+            align-items: center; /* Centraliza verticalmente */
+            padding: 8px 12px; 
+            border-bottom: 1px solid #f0f0f0; 
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .chk-item:hover { background: #f9f9f9; }
+        
+        /* Checkbox maior e com margem certa */
+        .chk-item input { 
+            width: 18px; 
+            height: 18px; 
+            margin: 0 10px 0 0; 
+            cursor: pointer; 
+            flex-shrink: 0; /* Não esmaga o checkbox */
+        }
+        .chk-item label { 
+            flex: 1; 
+            cursor: pointer; 
+            font-size: 0.95em; 
+            margin: 0; 
+            padding-top: 2px; /* Ajuste fino */
+        }
+        
+        /* Item Já Selecionado */
+        .chk-item.disabled { background-color: #f8f9fa; opacity: 0.6; cursor: default; }
+        .chk-item.disabled label { color: #999; text-decoration: line-through; }
+        .chk-item.disabled input { pointer-events: none; }
+
+        /* --- TABELA (AJUSTE DE LARGURA) --- */
+        .table-responsive { overflow-x: auto; border: 1px solid #eee; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; min-width: 650px; /* Garante que não esmaga */ }
+        
+        th { background: #34495e; color: white; padding: 12px; text-align: left; font-size: 0.9em; white-space: nowrap; }
+        td { padding: 8px 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        
+        img.thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
+        .input-table { border: 1px solid #ddd; background: #fff; width: 100%; padding: 5px; height: 32px; border-radius: 4px; }
+        .input-table:focus { border-color: #3498db; outline: none; }
+
+        /* HEADER DO CARD */
+        .card-header { background: #f8f9fa; margin: -20px -20px 20px -20px; padding: 10px 20px; border-bottom: 1px solid #e1e4e8; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .header-actions { display: flex; gap: 8px; }
+        .cmd-btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; font-size: 0.9em; display: flex; align-items: center; gap: 5px; }
+        .btn-live { background: #8e44ad; }
+        .btn-reset { background: #f1c40f; color: #333; }
+        .btn-lock { background: #c0392b; }
+        .btn-unlock { background: #27ae60; }
+
+        /* MODAL */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; }
-        .modal { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+        .modal { background: white; padding: 25px; border-radius: 8px; width: 95%; max-width: 600px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 95vh; overflow-y: auto; }
         .close-modal { float: right; cursor: pointer; font-size: 1.5em; color: #999; }
 
-        /* --- LAYOUTS --- */
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        /* OUTROS */
+        .event-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .event-item.active { background: #e8f0fe; border-left: 4px solid #3498db; }
+        .badge-live { background: #27ae60; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.75em; margin-left: 5px; }
+        .badge-closed { background: #7f8c8d; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.75em; }
+        .danger-zone { margin-top: 30px; border-top: 2px dashed #e74c3c; padding-top: 20px; }
+        .btn-delete-event { background: #c0392b; color: white; width: 100%; padding: 15px; }
+
         .grid-3 { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .event-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
-
-        /* --- TABELAS RESPONSIVAS --- */
-        .table-responsive { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; min-width: 600px; }
-        th { background: #ecf0f1; color: #2c3e50; padding: 10px; text-align: left; }
-        td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        img.thumb { width: 35px; height: 35px; object-fit: cover; border-radius: 4px; }
-        
-        .input-table { border: 1px solid transparent; background: #f9f9f9; width: 100%; padding: 5px; }
-        .input-table:focus { border: 1px solid #3498db; background: white; }
-
-        /* Componentes Específicos */
-        .event-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; }
-        .event-item.active { background: #e8f0fe; border-left: 4px solid #3498db; }
-        .badge-live { background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; }
-        .badge-closed { background: #7f8c8d; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; }
-        
-        .checkbox-container { max-height: 250px; overflow-y: auto; border: 1px solid #ddd; background: #fff; padding: 0; border-radius: 4px; margin-bottom: 10px; }
-        .chk-item { display: flex; align-items: center; padding: 8px 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
-        .chk-item:hover { background: #f9f9f9; }
-        .chk-item input { width: 18px; height: 18px; margin: 0 12px 0 0; }
-        .chk-item.disabled { background-color: #f0f0f0; opacity: 0.6; pointer-events: none; }
-
         .kpi-card { background: white; padding: 15px; border-radius: 8px; text-align: center; border-bottom: 4px solid #ddd; }
         .kpi-val { font-size: 1.5em; font-weight: bold; color: #2c3e50; display: block; }
         .recipe-box { background: #f9f9f9; padding: 10px; border: 1px dashed #ccc; border-radius: 4px; }
 
-        /* --- RESPONSIVIDADE MOBILE --- */
         @media (max-width: 900px) {
             body { flex-direction: column; }
             .sidebar { position: fixed; top: 0; left: 0; height: 100%; transform: translateX(-100%); width: 280px; }
             .sidebar.active { transform: translateX(0); }
             .mobile-header { display: flex; }
             .content { padding: 80px 15px 20px 15px; }
-            .grid-3, .grid-2, .event-details-grid, .kpi-grid { grid-template-columns: 1fr !important; }
+            .grid-3, .grid-2, .event-details-grid, .kpi-grid, .time-grid { grid-template-columns: 1fr !important; }
             .sidebar-overlay.active { display: block; }
         }
     </style>
@@ -110,18 +171,15 @@
             <div class="menu-label">Gestão Principal</div>
             <a onclick="showView('view-eventos', this)" class="menu-item active"><span class="menu-icon">📅</span> Eventos</a>
             <a onclick="showView('view-equipe', this)" class="menu-item"><span class="menu-icon">👥</span> Equipe</a>
-            
-            <div class="menu-label">Gestão de Drinks</div>
+            <div class="menu-label">Cadastros</div>
             <a onclick="showView('view-biblioteca', this)" class="menu-item"><span class="menu-icon">🍹</span> Biblioteca & Ficha</a>
             <a onclick="showView('view-despensa', this)" class="menu-item"><span class="menu-icon">📦</span> Despensa</a>
-            
             <div class="menu-label">Inteligência</div>
             <a onclick="showView('view-analytics', this)" class="menu-item"><span class="menu-icon">📈</span> Estatísticas</a>
         </div>
     </nav>
 
     <main class="content">
-
         <div id="view-eventos" class="view-section active">
             <h2>📅 Gestão de Eventos</h2>
             <div class="grid-3">
@@ -132,46 +190,61 @@
                 </div>
 
                 <div class="card" id="painel-detalhes" style="display:none;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                        <h3 id="titulo-evento" style="margin:0">Evento</h3>
-                        <div id="controles-status"></div>
+                    <div class="card-header">
+                        <h3 class="card-title" id="titulo-evento">Evento</h3>
+                        <div class="header-actions">
+                            <button onclick="ativarEvento()" class="cmd-btn btn-live" title="Enviar para o App">🚀 ATIVAR NO APP</button>
+                            <button onclick="reiniciarEvento()" class="cmd-btn btn-reset" title="Limpar Vendas">🔄 ZERAR</button>
+                            <div id="controles-status"></div>
+                        </div>
                     </div>
 
-                    <div class="details-box" style="margin-top:15px; background:#f8f9fa; padding:15px; border:1px solid #ddd; border-radius:4px;">
+                    <div class="details-box">
                         <h4 style="margin:0 0 10px 0;">📝 Dados do Evento</h4>
                         <div class="event-details-grid">
                             <div><label>Responsável</label><input type="text" id="detResp"></div>
                             <div><label>Telefone</label><input type="text" id="detTel" onkeyup="mascaraTelefone(this)"></div>
                             <div><label>Data</label><input type="date" id="detData"></div>
-                            <div><label>Horário</label><input type="time" id="detHora"></div>
+                            <div><label>Local</label><input type="text" id="detLocal"></div>
                         </div>
-                        <div><label>Local</label><input type="text" id="detLocal"></div>
-                        <button onclick="atualizarDadosEvento()" class="btn-save-details">💾 Salvar Dados</button>
+                        <div class="time-grid">
+                            <div><label>Início</label><input type="time" id="detHora" onchange="calcTermino('det')"></div>
+                            <div><label>Duração</label><div class="split-input"><input type="number" id="detDurH" value="4" onchange="calcTermino('det')"><span>:</span><input type="number" id="detDurM" value="0" step="15" onchange="calcTermino('det')"></div></div>
+                            <div><label>Extra</label><div class="split-input"><input type="number" id="detExtH" value="0" onchange="calcTermino('det')" style="color:#2980b9;"><span>:</span><input type="number" id="detExtM" value="0" step="15" onchange="calcTermino('det')" style="color:#2980b9;"></div></div>
+                            <div><label>Término</label><input type="time" id="detTermino" readonly></div>
+                        </div>
+                        <button onclick="atualizarDadosEvento()" class="btn-save-details">💾 Salvar Alterações</button>
                     </div>
 
-                    <div style="background:#eef2f7; padding:15px; border-radius:6px; margin:20px 0;">
-                        <h4>📥 Montar Cardápio</h4>
+                    <div style="background:#eef2f7; padding:15px; border-radius:6px; margin:20px 0; border:1px solid #dde2e6;">
+                        <h4 style="margin-top:0">📥 Montar Cardápio</h4>
                         <div class="checkbox-container" id="lista-global-checkboxes"></div>
                         <div style="display:flex; justify-content:space-between; margin-top:10px;">
                             <button onclick="marcarTodos(true)" style="background:none; color:#3498db; text-decoration:underline;">Marcar Todos</button>
-                            <button onclick="adicionarMuitos()" class="btn-primary">⬇️ Importar</button>
+                            <button onclick="adicionarMuitos()" class="btn-primary">⬇️ Importar Selecionados</button>
                         </div>
                     </div>
 
-                    <h4>📋 Confirmados</h4>
+                    <h4>📋 Cardápio Confirmado</h4>
                     <div class="table-responsive">
                         <table>
-                            <thead><tr><th width="40">Img</th><th>Nome</th><th>Venda</th><th>Custo</th><th>Est</th><th></th></tr></thead>
+                            <thead>
+                                <tr>
+                                    <th width="50">Img</th>
+                                    <th>Nome do Drink</th>
+                                    <th width="80">Venda</th>
+                                    <th width="80">Custo</th>
+                                    <th width="60">Est.</th>
+                                    <th width="40"></th>
+                                </tr>
+                            </thead>
                             <tbody id="tabela-evento"></tbody>
                         </table>
                     </div>
 
-                    <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
-                        <button onclick="ativarEvento()" class="btn-activate">🚀 ATIVAR NO APP</button>
-                        <div style="display:flex; gap:10px;">
-                            <button onclick="reiniciarEvento()" class="btn-warning" style="flex:1">🔄 ZERAR</button>
-                            <button onclick="excluirEventoAtual()" class="btn-danger" style="flex:1">🗑️ APAGAR</button>
-                        </div>
+                    <div class="danger-zone">
+                        <h4 style="color:#c0392b; margin-top:0;">⚠️ Zona de Perigo</h4>
+                        <button onclick="excluirEventoAtual()" class="btn-delete-event">🗑️ EXCLUIR EVENTO PERMANENTEMENTE</button>
                     </div>
                 </div>
             </div>
@@ -179,20 +252,17 @@
 
         <div id="view-equipe" class="view-section">
             <h2>👥 Equipe</h2>
-            <div class="card">
-                <div style="display:grid; grid-template-columns: 2fr 1fr auto; gap:10px; margin-bottom:10px;">
-                    <input type="text" id="bartenderNome" placeholder="Nome">
-                    <input type="number" id="bartenderPhone" placeholder="Celular">
+            <div class="card" style="max-width:600px;">
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <input type="text" id="bartenderNome" placeholder="Nome"><input type="number" id="bartenderPhone" placeholder="Celular">
                     <button onclick="adicionarBartender()" class="btn-success">Add</button>
                 </div>
-                <div class="table-responsive">
-                    <table><thead><tr><th>Nome</th><th>Login</th><th></th></tr></thead><tbody id="lista-equipe"></tbody></table>
-                </div>
+                <div class="table-responsive"><table><tbody id="lista-equipe"></tbody></table></div>
             </div>
         </div>
 
         <div id="view-biblioteca" class="view-section">
-            <h2>🍹 Biblioteca & Ficha</h2>
+            <h2>🍹 Biblioteca</h2>
             <div class="grid-2">
                 <div class="card">
                     <h3>Novo Drink Global</h3>
@@ -203,58 +273,22 @@
                         <div style="flex:1"><label style="color:#e74c3c">Custo</label><input type="number" id="globalCusto" readonly></div>
                     </div>
                     <div id="cmv-display" style="text-align:center; font-weight:bold; color:#7f8c8d; margin:5px 0;">CMV: 0%</div>
-
                     <div class="recipe-box">
                         <h4>📝 Ficha Técnica</h4>
                         <div style="display:flex; gap:5px;">
-                            <select id="selInsumo"><option>Carregando...</option></select>
-                            <input type="number" id="qtdInsumo" placeholder="Qtd" style="width:60px;">
-                            <button onclick="addIngrediente()" class="btn-purple">+</button>
+                            <select id="selInsumo"><option>Carregando...</option></select><input type="number" id="qtdInsumo" placeholder="Qtd" style="width:60px;"><button onclick="addIngrediente()" class="btn-purple">+</button>
                         </div>
                         <div id="lista-ingredientes" style="margin-top:10px; font-size:0.9em;"></div>
                     </div>
-                    <button onclick="adicionarAoGlobal()" class="btn-warning" style="width:100%; margin-top:15px;">Salvar na Biblioteca</button>
+                    <button onclick="adicionarAoGlobal()" class="btn-warning" style="width:100%; margin-top:15px;">Salvar</button>
                 </div>
-                <div class="card">
-                    <h3>Catálogo</h3>
-                    <div id="lista-biblioteca-visual" style="max-height:400px; overflow-y:auto;"></div>
-                </div>
+                <div class="card"><h3>Catálogo</h3><div id="lista-biblioteca-visual" style="max-height:400px; overflow-y:auto;"></div></div>
             </div>
         </div>
 
-        <div id="view-despensa" class="view-section">
-            <h2>📦 Despensa (Insumos)</h2>
-            <div class="grid-2">
-                <div class="card">
-                    <h3>Novo Insumo</h3>
-                    <input type="text" id="insNome" placeholder="Nome (ex: Gin)">
-                    <div style="display:flex; gap:10px;">
-                        <input type="number" id="insPreco" placeholder="Preço Pago"><input type="number" id="insVol" placeholder="Volume Total">
-                    </div>
-                    <button onclick="salvarInsumo()" class="btn-primary" style="width:100%; margin-top:10px;">Guardar</button>
-                </div>
-                <div class="card"><h3>Estoque</h3><div id="lista-insumos" style="max-height:300px; overflow-y:auto;"></div></div>
-            </div>
-        </div>
+        <div id="view-despensa" class="view-section"><h2>📦 Despensa</h2><div class="grid-2"><div class="card"><h3>Novo Insumo</h3><input type="text" id="insNome" placeholder="Nome"><div style="display:flex; gap:10px;"><input type="number" id="insPreco" placeholder="R$"><input type="number" id="insVol" placeholder="Vol"></div><button onclick="salvarInsumo()" class="btn-primary" style="width:100%; margin-top:10px;">Guardar</button></div><div class="card"><h3>Estoque</h3><div id="lista-insumos" style="max-height:300px; overflow-y:auto;"></div></div></div></div>
 
-        <div id="view-analytics" class="view-section">
-            <h2>📈 Analytics</h2>
-            <div class="card" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                <select id="select-evento-analise" style="margin:0; min-width:200px;"><option>Carregando...</option></select>
-                <button onclick="gerarRelatorio()" class="btn-primary">🔍 Analisar</button>
-            </div>
-            <div class="kpi-grid">
-                <div class="kpi-card" style="border-color:#f1c40f"><small>Faturamento</small><span class="kpi-val" id="kpi-fat">R$ 0.00</span></div>
-                <div class="kpi-card" style="border-color:#e74c3c"><small>Custo Prod.</small><span class="kpi-val" id="kpi-custo">R$ 0.00</span></div>
-                <div class="kpi-card" style="border-color:#27ae60"><small>Lucro Líquido</small><span class="kpi-val" id="kpi-lucro">R$ 0.00</span></div>
-                <div class="kpi-card" style="border-color:#8e44ad"><small>CMV Global</small><span class="kpi-val" id="kpi-cmv">0%</span></div>
-            </div>
-            <div class="grid-2">
-                <div class="card" style="height:300px;"><canvas id="chartDrinks"></canvas></div>
-                <div class="card" style="height:300px;"><canvas id="chartHorario"></canvas></div>
-            </div>
-        </div>
-
+        <div id="view-analytics" class="view-section"><h2>📈 Analytics</h2><div class="card" style="display:flex; gap:10px;"><select id="select-evento-analise"><option>Carregando...</option></select><button onclick="gerarRelatorio()" class="btn-primary">Analisar</button></div><div class="kpi-grid" style="margin-top:20px; display:grid; grid-template-columns: repeat(4,1fr); gap:15px;"><div class="kpi-card" style="border-color:gold"><small>Fat</small><span class="kpi-val" id="kpi-fat">0</span></div><div class="kpi-card" style="border-color:red"><small>Custo</small><span class="kpi-val" id="kpi-custo">0</span></div><div class="kpi-card" style="border-color:green"><small>Lucro</small><span class="kpi-val" id="kpi-lucro">0</span></div><div class="kpi-card" style="border-color:purple"><small>CMV</small><span class="kpi-val" id="kpi-cmv">0%</span></div></div><div class="grid-2" style="margin-top:20px;"><div class="card" style="height:300px"><canvas id="chartDrinks"></canvas></div><div class="card" style="height:300px"><canvas id="chartHorario"></canvas></div></div></div>
     </main>
 
     <div id="modalNovoEvento" class="modal-overlay">
@@ -265,12 +299,14 @@
                 <div><label>Nome</label><input type="text" id="mNome"></div>
                 <div><label>Responsável</label><input type="text" id="mResp"></div>
                 <div><label>Telefone</label><input type="text" id="mTel" onkeyup="mascaraTelefone(this)"></div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <div><label>Data</label><input type="date" id="mData"></div>
-                    <div><label>Horário</label><input type="time" id="mHora"></div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;"><div><label>Data</label><input type="date" id="mData"></div><div><label>Local</label><input type="text" id="mLocal"></div></div>
+                <div class="time-grid">
+                    <div><label>Início</label><input type="time" id="mHora" onchange="calcTermino('m')"></div>
+                    <div><label>Duração</label><div class="split-input"><input type="number" id="mDurH" value="4" onchange="calcTermino('m')"><span>:</span><input type="number" id="mDurM" value="0" step="15" onchange="calcTermino('m')"></div></div>
+                    <div><label>Extra</label><div class="split-input"><input type="number" id="mExtH" value="0" onchange="calcTermino('m')" style="color:#2980b9;"><span>:</span><input type="number" id="mExtM" value="0" step="15" onchange="calcTermino('m')" style="color:#2980b9;"></div></div>
+                    <div><label>Término</label><input type="time" id="mTermino" readonly></div>
                 </div>
-                <div><label>Local</label><input type="text" id="mLocal"></div>
-                <button onclick="salvarNovoEvento()" class="btn-primary" style="margin-top:10px; padding:12px;">CRIAR EVENTO</button>
+                <button onclick="salvarNovoEvento()" class="btn-primary" style="margin-top:10px; padding:12px; width:100%;">CRIAR EVENTO</button>
             </div>
         </div>
     </div>
@@ -292,149 +328,96 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- LÓGICA DE MENU MOBILE ---
-    window.toggleMenu = () => {
-        document.getElementById('mainSidebar').classList.toggle('active');
-        document.querySelector('.sidebar-overlay').style.display = 
-            document.getElementById('mainSidebar').classList.contains('active') ? 'block' : 'none';
-    };
-    
-    window.showView = (id, el) => {
-        document.querySelectorAll('.view-section').forEach(e=>e.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.querySelectorAll('.menu-item').forEach(e=>e.classList.remove('active'));
-        el.classList.add('active');
-        if(window.innerWidth <= 900) window.toggleMenu();
+    // --- TIME CALC ---
+    window.calcTermino = (p) => {
+        const inicio = document.getElementById(p+'Hora').value;
+        const durH = parseInt(document.getElementById(p+'DurH').value)||0;
+        const durM = parseInt(document.getElementById(p+'DurM').value)||0;
+        const extH = parseInt(document.getElementById(p+'ExtH').value)||0;
+        const extM = parseInt(document.getElementById(p+'ExtM').value)||0;
+        if(inicio) {
+            const [h, m] = inicio.split(':').map(Number);
+            let totalMin = (h*60) + m + (durH*60) + durM + (extH*60) + extM;
+            let newH = Math.floor(totalMin/60)%24; let newM = totalMin%60;
+            document.getElementById(p+'Termino').value = `${String(newH).padStart(2,'0')}:${String(newM).padStart(2,'0')}`;
+        }
     };
 
-    // --- VARIÁVEIS DO SISTEMA ---
-    let eventoID = null, bibliotecaGlobal = [], insumosCache = [], receitaAtual = [], chartD = null, chartH = null, idsNoEvento = [], eventoAtivoID = null;
-
+    window.toggleMenu = () => { document.getElementById('mainSidebar').classList.toggle('active'); document.querySelector('.sidebar-overlay').style.display = document.getElementById('mainSidebar').classList.contains('active') ? 'block' : 'none'; };
+    window.showView = (id, el) => { document.querySelectorAll('.view-section').forEach(e=>e.classList.remove('active')); document.getElementById(id).classList.add('active'); document.querySelectorAll('.menu-item').forEach(e=>e.classList.remove('active')); el.classList.add('active'); if(window.innerWidth<=900)window.toggleMenu(); };
     window.mascaraTelefone = (input) => { let v=input.value.replace(/\D/g,"").replace(/^(\d{2})(\d)/g,"($1) $2").replace(/(\d)(\d{4})$/,"$1-$2"); input.value=v; };
 
-    // ========================
-    // 1. GESTÃO DE EVENTOS
-    // ========================
+    let eventoID = null, bibliotecaGlobal = [], insumosCache = [], receitaAtual = [], chartD = null, chartH = null, idsNoEvento = [], eventoAtivoID = null;
+
+    // EVENTOS
+    onSnapshot(doc(db,"config","geral"), (s) => { if(s.exists()) { eventoAtivoID = s.data().eventoAtivoID; renderizarListaEventos(); }});
+    let listaEventosCache = [];
     onSnapshot(query(collection(db, "eventos"), orderBy("criadoEm", "desc")), (snap) => {
+        listaEventosCache = []; snap.forEach(d => listaEventosCache.push({ ...d.data(), id: d.id })); renderizarListaEventos();
+    });
+    function renderizarListaEventos() {
         const div = document.getElementById('lista-eventos'); const selA = document.getElementById('select-evento-analise');
         div.innerHTML = ''; selA.innerHTML = '<option value="">-- Escolha --</option>';
-        
-        snap.forEach(d => {
-            const ev = d.data();
-            const item = document.createElement('div');
-            item.className = `event-item ${eventoID === d.id ? 'active' : ''}`;
-            const badges = (ev.status === 'fechado' ? '<span class="badge-closed">FECHADO</span>' : '') + (eventoAtivoID === d.id ? ' <span class="badge-live">NO AR</span>' : '');
+        listaEventosCache.forEach(ev => {
+            const item = document.createElement('div'); item.className = `event-item ${eventoID === ev.id ? 'active' : ''}`;
+            const isLive = eventoAtivoID === ev.id;
+            const badges = (ev.status === 'fechado' ? '<span class="badge-closed">FECHADO</span>' : '') + (isLive ? '<span class="badge-live">NO AR</span>' : '');
             item.innerHTML = `<div><b>${ev.nome}</b><br><small>${new Date(ev.criadoEm?.toDate()).toLocaleDateString()}</small></div><div>${badges}</div>`;
-            item.onclick = () => carregarEvento(d.id, ev, ev.status||'aberto');
+            item.onclick = () => carregarEvento(ev.id, ev, ev.status||'aberto');
             div.appendChild(item);
-            const opt = document.createElement('option'); opt.value = d.id; opt.innerText = ev.nome; selA.appendChild(opt);
+            const opt = document.createElement('option'); opt.value = ev.id; opt.innerText = ev.nome; selA.appendChild(opt);
         });
-    });
+    }
 
-    window.abrirModalNovo=()=>{document.getElementById('modalNovoEvento').style.display='flex'; ['mNome','mResp','mTel','mData','mHora','mLocal'].forEach(i=>document.getElementById(i).value='');};
+    window.abrirModalNovo=()=>{document.getElementById('modalNovoEvento').style.display='flex'; ['mNome','mResp','mTel','mData','mHora','mLocal','mTermino'].forEach(i=>document.getElementById(i).value='');};
     window.fecharModal=()=>{document.getElementById('modalNovoEvento').style.display='none';};
     window.salvarNovoEvento=async()=>{
         const n=document.getElementById('mNome').value; if(!n)return alert("Nome!");
-        const d={nome:n,responsavel:document.getElementById('mResp').value,telefone:document.getElementById('mTel').value,dataEvento:document.getElementById('mData').value,horaEvento:document.getElementById('mHora').value,local:document.getElementById('mLocal').value,criadoEm:new Date(),status:'aberto'};
+        const d={ nome:n, responsavel:document.getElementById('mResp').value, telefone:document.getElementById('mTel').value, dataEvento:document.getElementById('mData').value, horaEvento:document.getElementById('mHora').value, durH:document.getElementById('mDurH').value, durM:document.getElementById('mDurM').value, extH:document.getElementById('mExtH').value, extM:document.getElementById('mExtM').value, termino:document.getElementById('mTermino').value, local:document.getElementById('mLocal').value, criadoEm:new Date(), status:'aberto' };
         try{const r=await addDoc(collection(db,"eventos"),d); fecharModal(); carregarEvento(r.id,d,'aberto');}catch(e){alert(e.message);}
     };
 
     window.carregarEvento = (id, dados, status) => {
         eventoID = id; document.getElementById('painel-detalhes').style.display='block'; document.getElementById('titulo-evento').innerText=dados.nome;
         document.getElementById('detResp').value=dados.responsavel||''; document.getElementById('detTel').value=dados.telefone||''; document.getElementById('detData').value=dados.dataEvento||''; document.getElementById('detHora').value=dados.horaEvento||''; document.getElementById('detLocal').value=dados.local||'';
-        document.getElementById('controles-status').innerHTML = status==='fechado'?`<button onclick="mudarStatus('aberto')" class="btn-success">🔓</button>`:`<button onclick="mudarStatus('fechado')" class="btn-danger">🛑</button>`;
+        document.getElementById('detDurH').value=dados.durH||'4'; document.getElementById('detDurM').value=dados.durM||'0'; document.getElementById('detExtH').value=dados.extH||'0'; document.getElementById('detExtM').value=dados.extM||'0'; document.getElementById('detTermino').value=dados.termino||'';
+        document.getElementById('controles-status').innerHTML = status==='fechado'?`<button onclick="mudarStatus('aberto')" class="cmd-btn btn-unlock">🔓 REABRIR</button>`:`<button onclick="mudarStatus('fechado')" class="cmd-btn btn-lock">🔒 ENCERRAR</button>`;
+        renderizarListaEventos();
         
         onSnapshot(collection(db,"eventos",id,"cardapio"), (snap) => {
             const tb = document.getElementById('tabela-evento'); tb.innerHTML=''; idsNoEvento=[];
-            snap.forEach(doc => { const d=doc.data(); idsNoEvento.push(d.idOriginal||doc.id); tb.innerHTML+=`<tr><td><img src="${d.imagem||''}" class="thumb"></td><td>${d.nome}</td><td><input type="number" value="${d.precoVenda}" onchange="attItem('${doc.id}','precoVenda',this.value)" class="input-table" style="color:#27ae60"></td><td><input type="number" value="${d.precoCusto}" onchange="attItem('${doc.id}','precoCusto',this.value)" class="input-table" style="color:#e74c3c"></td><td><input type="number" value="${d.estoque}" onchange="attItem('${doc.id}','estoque',this.value)" class="input-table" style="width:50px"></td><td><button onclick="delItem('${doc.id}')" style="color:red;background:none">X</button></td></tr>`; });
+            snap.forEach(doc => { const d=doc.data(); idsNoEvento.push(d.idOriginal||doc.id); tb.innerHTML+=`<tr><td><img src="${d.imagem||''}" class="thumb"></td><td>${d.nome}</td><td><input type="number" value="${d.precoVenda}" onchange="attItem('${doc.id}','precoVenda',this.value)" class="input-table" style="color:#27ae60"></td><td><input type="number" value="${d.precoCusto}" onchange="attItem('${doc.id}','precoCusto',this.value)" class="input-table" style="color:#e74c3c"></td><td><input type="number" value="${d.estoque}" onchange="attItem('${doc.id}','estoque',this.value)" class="input-table" style="width:50px"></td><td><button onclick="delItem('${doc.id}','${d.nome}')" class="btn-trash">🗑️</button></td></tr>`; });
             renderLib();
         });
     };
 
-    window.atualizarDadosEvento=async()=>{if(eventoID)await updateDoc(doc(db,"eventos",eventoID),{responsavel:document.getElementById('detResp').value,telefone:document.getElementById('detTel').value,dataEvento:document.getElementById('detData').value,horaEvento:document.getElementById('detHora').value,local:document.getElementById('detLocal').value}); alert("Salvo!");};
+    window.atualizarDadosEvento=async()=>{ if(eventoID)await updateDoc(doc(db,"eventos",eventoID),{ responsavel:document.getElementById('detResp').value, telefone:document.getElementById('detTel').value, dataEvento:document.getElementById('detData').value, horaEvento:document.getElementById('detHora').value, durH:document.getElementById('detDurH').value, durM:document.getElementById('detDurM').value, extH:document.getElementById('detExtH').value, extM:document.getElementById('detExtM').value, termino:document.getElementById('detTermino').value, local:document.getElementById('detLocal').value }); alert("Salvo!"); };
 
-    onSnapshot(doc(db,"config","geral"),(s)=>{if(s.exists())eventoAtivoID=s.data().eventoAtivoID;});
-    
-    // --- 2. BIBLIOTECA & INSUMOS ---
-    onSnapshot(collection(db,"drinks"),(s)=>{
-        bibliotecaGlobal=[]; const l=document.getElementById('lista-biblioteca-visual'); if(l)l.innerHTML='';
-        s.forEach(doc=>{ const d=doc.data(); bibliotecaGlobal.push({...d,id:doc.id}); if(l)l.innerHTML+=`<div style="padding:10px;border-bottom:1px solid #eee"><b>${d.nome}</b></div>`; });
-        renderLib();
-    });
-    function renderLib(){
-        const d=document.getElementById('lista-global-checkboxes'); if(!d)return; d.innerHTML='';
-        bibliotecaGlobal.sort((a,b)=>a.nome.localeCompare(b.nome));
-        bibliotecaGlobal.forEach(x=>{ const ja=idsNoEvento.includes(x.id); d.innerHTML+=`<div class="chk-item ${ja?'disabled':''}"><input type="checkbox" id="chk_${x.id}" value="${x.id}" class="chk-drink" ${ja?'disabled':''}><label for="chk_${x.id}"><b>${x.nome}</b> ${ja?'(Add)':''}</label></div>`; });
-    }
+    // BIBLIOTECA
+    onSnapshot(collection(db,"drinks"),(s)=>{ bibliotecaGlobal=[]; const l=document.getElementById('lista-biblioteca-visual'); if(l)l.innerHTML=''; s.forEach(doc=>{ const d=doc.data(); bibliotecaGlobal.push({...d,id:doc.id}); if(l)l.innerHTML+=`<div style="padding:10px;border-bottom:1px solid #eee"><b>${d.nome}</b></div>`; }); renderLib(); });
+    function renderLib(){ const d=document.getElementById('lista-global-checkboxes'); if(!d)return; d.innerHTML=''; bibliotecaGlobal.sort((a,b)=>a.nome.localeCompare(b.nome)); bibliotecaGlobal.forEach(x=>{ const ja=idsNoEvento.includes(x.id); d.innerHTML+=`<div class="chk-item ${ja?'disabled':''}"><input type="checkbox" id="chk_${x.id}" value="${x.id}" class="chk-drink" ${ja?'disabled':''}><label for="chk_${x.id}"><b>${x.nome}</b> ${ja?'(Add)':''}</label></div>`; }); }
 
-    onSnapshot(collection(db,"insumos"),(s)=>{
-        insumosCache = []; const l = document.getElementById('lista-insumos'); const sel = document.getElementById('selInsumo');
-        if(l) l.innerHTML=''; if(sel) sel.innerHTML='<option value="">Selecione...</option>';
-        s.forEach(doc => {
-            const i = doc.data(); i.id=doc.id; i.custoUnit = i.preco/i.volume; insumosCache.push(i);
-            if(l) l.innerHTML += `<div style="padding:5px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;"><span>${i.nome}</span><button onclick="delInsumo('${i.id}')" style="color:red;border:none;">x</button></div>`;
-            if(sel) { const o=document.createElement('option'); o.value=i.id; o.innerText=i.nome; sel.appendChild(o); }
-        });
-    });
-
-    window.addIngrediente = () => {
-        const id = document.getElementById('selInsumo').value; const qtd = document.getElementById('qtdInsumo').value;
-        if(!id) return;
-        const i = insumosCache.find(x=>x.id===id);
-        receitaAtual.push({nome:i.nome, custo:i.custoUnit*qtd, qtd:qtd});
-        renderReceita();
-    };
-    function renderReceita(){
-        let t=0; document.getElementById('lista-ingredientes').innerHTML = receitaAtual.map(i=>{t+=i.custo; return `<div>${i.qtd}x ${i.nome} (R$ ${i.custo.toFixed(2)})</div>`}).join('');
-        document.getElementById('globalCusto').value = t.toFixed(2); window.calcCMV();
-    }
-    window.calcCMV = () => {
-        const v = parseFloat(document.getElementById('globalPrice').value)||0; const c = parseFloat(document.getElementById('globalCusto').value)||0;
-        if(v>0) document.getElementById('cmv-display').innerText = `CMV: ${((c/v)*100).toFixed(1)}% | Lucro: R$ ${(v-c).toFixed(2)}`;
-    };
-    
-    window.adicionarAoGlobal = async () => {
-        const n=document.getElementById('globalName').value;
-        if(n) await addDoc(collection(db,"drinks"),{
-            nome:n, imagem:document.getElementById('globalImg').value||"./imagens/",
-            precoVenda:parseFloat(document.getElementById('globalPrice').value),
-            precoCusto:parseFloat(document.getElementById('globalCusto').value),
-            receita:receitaAtual, estoque:0
-        });
-        alert("Salvo!"); receitaAtual=[]; renderReceita();
-    };
-
-    window.salvarInsumo = async () => {
-        const n=document.getElementById('insNome').value, p=document.getElementById('insPreco').value, v=document.getElementById('insVol').value;
-        if(n) await addDoc(collection(db,"insumos"),{nome:n, preco:parseFloat(p), volume:parseFloat(v)});
-    };
-    window.delInsumo = async(id) => await deleteDoc(doc(db,"insumos",id));
-
-    // --- AÇÕES GERAIS ---
     window.attItem=async(id,c,v)=>await updateDoc(doc(db,"eventos",eventoID,"cardapio",id),{[c]:parseFloat(v)});
-    window.delItem=async(id)=>await deleteDoc(doc(db,"eventos",eventoID,"cardapio",id));
+    window.delItem=async(id, nome)=>{if(confirm(`Tem certeza que deseja remover o ${nome} deste evento?`))await deleteDoc(doc(db,"eventos",eventoID,"cardapio",id));};
     window.mudarStatus=async(s)=>await updateDoc(doc(db,"eventos",eventoID),{status:s});
     window.ativarEvento=async()=>{if(confirm("Ativar?"))await setDoc(doc(db,"config","geral"),{eventoAtivoID:eventoID,eventoAtivoNome:document.getElementById('titulo-evento').innerText},{merge:true});};
     window.reiniciarEvento=async()=>{if(confirm("ZERAR?")){const b=writeBatch(db);(await getDocs(collection(db,"eventos",eventoID,"vendas"))).forEach(d=>b.delete(d.ref));(await getDocs(collection(db,"eventos",eventoID,"cardapio"))).forEach(d=>b.update(d.ref,{estoque:50}));b.update(doc(db,"eventos",eventoID),{resetSignal:Date.now()});await b.commit();alert("Ok!");}};
     window.excluirEventoAtual=async()=>{if(confirm("Apagar?")){await deleteDoc(doc(db,"eventos",eventoID));location.reload();}};
     window.marcarTodos=(m)=>document.querySelectorAll('.chk-drink:not([disabled])').forEach(c=>c.checked=m);
     window.adicionarMuitos=async()=>{const c=document.querySelectorAll('.chk-drink:checked');if(!c.length)return;const b=writeBatch(db);c.forEach(chk=>{const d=bibliotecaGlobal.find(x=>x.id===chk.value);if(d)b.set(doc(collection(db,"eventos",eventoID,"cardapio")),{nome:d.nome,imagem:d.imagem,precoVenda:d.precoVenda||0,precoCusto:d.precoCusto||0,estoque:50,idOriginal:d.id});});await b.commit();document.querySelectorAll('.chk-drink').forEach(c=>c.checked=false);};
-
-    // --- 3. EQUIPE ---
-    onSnapshot(collection(db,"equipe"),(s)=>{const l=document.getElementById('lista-equipe');l.innerHTML='';s.forEach(d=>l.innerHTML+=`<tr><td>${d.data().nome}</td><td>${d.data().telefone}</td><td><button onclick="delEq('${d.id}')" style="color:red;border:none">x</button></td></tr>`)});
+    
+    // EXTRAS (Mantido igual V20)
+    window.adicionarAoGlobal=async()=>{const n=document.getElementById('globalName').value;if(n)await addDoc(collection(db,"drinks"),{nome:n,precoVenda:parseFloat(document.getElementById('globalPrice').value)||0,precoCusto:parseFloat(document.getElementById('globalCusto').value)||0,imagem:document.getElementById('globalImg').value||"./imagens/",receita:receitaAtual,estoque:0});alert("Salvo!");receitaAtual=[];};
+    onSnapshot(collection(db,"equipe"),(s)=>{const l=document.getElementById('lista-equipe');l.innerHTML='';s.forEach(d=>l.innerHTML+=`<tr><td>${d.data().nome}</td><td><button onclick="delEq('${d.id}')" class="btn-trash">🗑️</button></td></tr>`)});
     window.adicionarBartender=async()=>{const n=document.getElementById('bartenderNome').value,t=document.getElementById('bartenderPhone').value;if(n)await addDoc(collection(db,"equipe"),{nome:n,telefone:t});};
     window.delEq=async(id)=>await deleteDoc(doc(db,"equipe",id));
-
-    // --- 4. ANALYTICS ---
-    window.gerarRelatorio=async()=>{
-        const eid=document.getElementById('select-evento-analise').value;if(!eid)return;
-        const s=await getDocs(collection(db,"eventos",eid,"vendas"));
-        let fat=0,custo=0; const dc={},hc={};
-        s.forEach(d=>{const v=d.data();fat+=parseFloat(v.preco||0);custo+=parseFloat(v.custo||0); dc[v.drink]=(dc[v.drink]||0)+1; const h=v.hora.toDate?v.hora.toDate().getHours()+":00":new Date(v.hora).getHours()+":00";hc[h]=(hc[h]||0)+1;});
-        document.getElementById('kpi-fat').innerText='R$ '+fat.toFixed(2); document.getElementById('kpi-custo').innerText='R$ '+custo.toFixed(2); document.getElementById('kpi-lucro').innerText='R$ '+(fat-custo).toFixed(2); document.getElementById('kpi-cmv').innerText=fat>0?((custo/fat)*100).toFixed(1)+'%':'0%';
-        const cD=document.getElementById('chartDrinks').getContext('2d'); if(chartD)chartD.destroy(); chartD=new Chart(cD,{type:'doughnut',data:{labels:Object.keys(dc),datasets:[{data:Object.values(dc),backgroundColor:['#e74c3c','#3498db','#f1c40f']}]},options:{responsive:true,maintainAspectRatio:false}});
-        const cH=document.getElementById('chartHorario').getContext('2d'); if(chartH)chartH.destroy(); const sH=Object.keys(hc).sort((a,b)=>parseInt(a)-parseInt(b)); chartH=new Chart(cH,{type:'line',data:{labels:sH,datasets:[{label:'Vendas',data:sH.map(h=>hc[h]),borderColor:'#3498db',fill:true}]},options:{responsive:true,maintainAspectRatio:false}});
-    };
+    onSnapshot(collection(db,"insumos"),(s)=>{const l=document.getElementById('lista-insumos');l.innerHTML='';s.forEach(d=>l.innerHTML+=`<div style="padding:5px;border-bottom:1px solid #eee;display:flex;justify-content:space-between"><span>${d.data().nome}</span><button onclick="delIns('${d.id}')" class="btn-trash">🗑️</button></div>`)});
+    window.salvarInsumo=async()=>{const n=document.getElementById('insNome').value;if(n)await addDoc(collection(db,"insumos"),{nome:n,preco:parseFloat(document.getElementById('insPreco').value),volume:parseFloat(document.getElementById('insVol').value)});};
+    window.delIns=async(id)=>await deleteDoc(doc(db,"insumos",id));
+    window.addIngrediente=()=>{const id=document.getElementById('selInsumo').value;const qtd=document.getElementById('qtdInsumo').value;if(!id)return;const i=insumosCache.find(x=>x.id===id);receitaAtual.push({nome:i.nome,custo:i.custoUnit*qtd,qtd:qtd});renderReceita();};
+    function renderReceita(){let t=0;document.getElementById('lista-ingredientes').innerHTML=receitaAtual.map(i=>{t+=i.custo;return`<div>${i.qtd}x ${i.nome} (R$ ${i.custo.toFixed(2)})</div>`}).join('');document.getElementById('globalCusto').value=t.toFixed(2);window.calcCMV();};
+    window.calcCMV=()=>{const v=parseFloat(document.getElementById('globalPrice').value)||0;const c=parseFloat(document.getElementById('globalCusto').value)||0;if(v>0)document.getElementById('cmv-display').innerText=`CMV: ${((c/v)*100).toFixed(1)}% | Lucro: R$ ${(v-c).toFixed(2)}`;};
+    window.gerarRelatorio=async()=>{const eid=document.getElementById('select-evento-analise').value;if(!eid)return;const s=await getDocs(collection(db,"eventos",eid,"vendas"));let fat=0,custo=0; const dc={},hc={};s.forEach(d=>{const v=d.data();fat+=parseFloat(v.preco||0);custo+=parseFloat(v.custo||0); dc[v.drink]=(dc[v.drink]||0)+1; const h=v.hora.toDate?v.hora.toDate().getHours()+":00":new Date(v.hora).getHours()+":00";hc[h]=(hc[h]||0)+1;});document.getElementById('kpi-fat').innerText='R$ '+fat.toFixed(2); document.getElementById('kpi-custo').innerText='R$ '+custo.toFixed(2); document.getElementById('kpi-lucro').innerText='R$ '+(fat-custo).toFixed(2); document.getElementById('kpi-cmv').innerText=fat>0?((custo/fat)*100).toFixed(1)+'%':'0%';const cD=document.getElementById('chartDrinks').getContext('2d'); if(chartD)chartD.destroy(); chartD=new Chart(cD,{type:'doughnut',data:{labels:Object.keys(dc),datasets:[{data:Object.values(dc),backgroundColor:['#e74c3c','#3498db','#f1c40f']}]},options:{responsive:true,maintainAspectRatio:false}});const cH=document.getElementById('chartHorario').getContext('2d'); if(chartH)chartH.destroy(); const sH=Object.keys(hc).sort((a,b)=>parseInt(a)-parseInt(b)); chartH=new Chart(cH,{type:'line',data:{labels:sH,datasets:[{label:'Vendas',data:sH.map(h=>hc[h]),borderColor:'#3498db',fill:true}]},options:{responsive:true,maintainAspectRatio:false}});};
 </script>
 </body>
 </html>
