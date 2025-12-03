@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aurora Admin V21 (UI Fix)</title>
+    <title>Aurora Admin V29 (Staff Completo)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f6f8; color: #333; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* --- SIDEBAR --- */
+        /* SIDEBAR */
         .sidebar { width: 260px; background: #2c3e50; color: white; display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.3s ease; z-index: 1000; }
         .logo-area { padding: 20px; font-size: 1.5em; font-weight: bold; text-align: center; background: #1a252f; border-bottom: 1px solid #34495e; }
         .logo-area span { color: #2ecc71; }
@@ -19,131 +19,80 @@
         .menu-item.active { background: #2980b9; color: white; border-left: 4px solid #3498db; }
         .menu-icon { width: 25px; text-align: center; margin-right: 10px; }
 
-        /* --- HEADER MOBILE --- */
+        /* HEADER MOBILE */
         .mobile-header { display: none; background: #2c3e50; color: white; padding: 15px; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; width: 100%; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .btn-hamburger { background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; }
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 998; }
 
-        /* --- CONTEÚDO --- */
+        /* CONTEÚDO */
         .content { flex: 1; padding: 20px; overflow-y: auto; position: relative; }
         .view-section { display: none; max-width: 1200px; margin: 0 auto; animation: fadeIn 0.3s; }
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity:0; transform: translateY(5px); } to { opacity:1; transform: translateY(0); } }
 
-        /* --- ESTILOS GERAIS --- */
+        /* CARDS & ESTILOS */
         h2 { border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top: 0; color: #2c3e50; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e1e4e8; }
+        .card-header { background: #f8f9fa; margin: -20px -20px 20px -20px; padding: 10px 20px; border-bottom: 1px solid #e1e4e8; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         
+        /* TÍTULO PADRÃO (CONSISTENTE) */
+        .section-title { margin: 0 0 15px 0; border-bottom: 1px solid #ddd; padding-bottom: 5px; color: #555; font-size: 1.1em; font-weight: bold; }
+
         input, select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box; height: 38px; }
         label { font-size: 0.8em; font-weight: bold; color: #666; display: block; margin-bottom: 2px; }
+        
         button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; height: 38px; }
         button:hover { opacity: 0.9; }
-        
         .btn-primary { background: #3498db; color: white; }
         .btn-success { background: #27ae60; color: white; }
         .btn-danger { background: #e74c3c; color: white; font-size: 0.8em; }
         .btn-warning { background: #f39c12; color: white; }
+        .btn-edit { background: #f39c12; color: white; font-size: 0.9em; padding: 5px 10px; height: auto; }
+        .btn-trash { background: transparent; color: #c0392b; border: 1px solid #eccscs; font-size: 1.2em; padding: 5px 10px; height: auto; }
         .btn-activate { background: #8e44ad; color: white; width: 100%; padding: 15px; margin-top:10px; font-size: 1.1em; height: auto; }
         .btn-save-details { background: #27ae60; color: white; width: 100%; margin-top: 10px; }
-        .btn-purple { background: #9b59b6; color: white; }
 
-        /* BOTÃO DE DELETAR PROFISSIONAL (LIXEIRA) */
-        .btn-trash { 
-            background: transparent; 
-            color: #c0392b; 
-            border: 1px solid #eccscs; 
-            font-size: 1.2em; 
-            padding: 5px 10px; 
-            height: auto; 
-            border-radius: 4px;
-        }
-        .btn-trash:hover { background: #fadbd8; }
+        .cmd-btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; font-size: 0.9em; display: flex; align-items: center; gap: 5px; }
+        .btn-live { background: #8e44ad; } .btn-reset { background: #f1c40f; color: #333; } .btn-lock { background: #c0392b; } .btn-unlock { background: #27ae60; }
 
-        /* TIME GRID */
-        .time-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; background: #e8f4fd; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #d6eaf8; align-items: end; }
+        /* GRIDS */
+        .grid-3 { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .event-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #e8f4fd; padding: 15px; border-radius: 6px; margin-bottom: 15px; align-items: end; }
         .split-input { display: flex; gap: 5px; align-items: center; }
         .time-grid input[readonly] { background: #e0e0e0; color: #555; cursor: not-allowed; }
-
-        /* --- CHECKBOXES (CORREÇÃO DE ALINHAMENTO) --- */
-        .checkbox-container { 
-            max-height: 250px; 
-            overflow-y: auto; 
-            border: 1px solid #ddd; 
-            background: #fff; 
-            border-radius: 4px; 
-            margin-bottom: 10px; 
-        }
-        .chk-item { 
-            display: flex; 
-            align-items: center; /* Centraliza verticalmente */
-            padding: 8px 12px; 
-            border-bottom: 1px solid #f0f0f0; 
-            cursor: pointer;
-            transition: 0.1s;
-        }
-        .chk-item:hover { background: #f9f9f9; }
-        
-        /* Checkbox maior e com margem certa */
-        .chk-item input { 
-            width: 18px; 
-            height: 18px; 
-            margin: 0 10px 0 0; 
-            cursor: pointer; 
-            flex-shrink: 0; /* Não esmaga o checkbox */
-        }
-        .chk-item label { 
-            flex: 1; 
-            cursor: pointer; 
-            font-size: 0.95em; 
-            margin: 0; 
-            padding-top: 2px; /* Ajuste fino */
-        }
-        
-        /* Item Já Selecionado */
-        .chk-item.disabled { background-color: #f8f9fa; opacity: 0.6; cursor: default; }
-        .chk-item.disabled label { color: #999; text-decoration: line-through; }
-        .chk-item.disabled input { pointer-events: none; }
-
-        /* --- TABELA (AJUSTE DE LARGURA) --- */
-        .table-responsive { overflow-x: auto; border: 1px solid #eee; border-radius: 4px; }
-        table { width: 100%; border-collapse: collapse; min-width: 650px; /* Garante que não esmaga */ }
-        
-        th { background: #34495e; color: white; padding: 12px; text-align: left; font-size: 0.9em; white-space: nowrap; }
-        td { padding: 8px 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        
-        img.thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
-        .input-table { border: 1px solid #ddd; background: #fff; width: 100%; padding: 5px; height: 32px; border-radius: 4px; }
-        .input-table:focus { border-color: #3498db; outline: none; }
-
-        /* HEADER DO CARD */
-        .card-header { background: #f8f9fa; margin: -20px -20px 20px -20px; padding: 10px 20px; border-bottom: 1px solid #e1e4e8; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .header-actions { display: flex; gap: 8px; }
-        .cmd-btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; font-size: 0.9em; display: flex; align-items: center; gap: 5px; }
-        .btn-live { background: #8e44ad; }
-        .btn-reset { background: #f1c40f; color: #333; }
-        .btn-lock { background: #c0392b; }
-        .btn-unlock { background: #27ae60; }
 
         /* MODAL */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; }
         .modal { background: white; padding: 25px; border-radius: 8px; width: 95%; max-width: 600px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 95vh; overflow-y: auto; }
         .close-modal { float: right; cursor: pointer; font-size: 1.5em; color: #999; }
 
-        /* OUTROS */
+        /* TABELAS */
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; min-width: 600px; }
+        th { background: #ecf0f1; color: #2c3e50; padding: 10px; text-align: left; }
+        td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        img.thumb { width: 35px; height: 35px; object-fit: cover; border-radius: 4px; }
+        .input-table { border: 1px solid transparent; background: #f9f9f9; width: 100%; padding: 5px; height: 30px; }
+        .input-table:focus { border: 1px solid #3498db; background: white; }
+
+        /* COMPONENTES */
         .event-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .event-item.active { background: #e8f0fe; border-left: 4px solid #3498db; }
         .badge-live { background: #27ae60; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.75em; margin-left: 5px; }
         .badge-closed { background: #7f8c8d; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.75em; }
-        .danger-zone { margin-top: 30px; border-top: 2px dashed #e74c3c; padding-top: 20px; }
-        .btn-delete-event { background: #c0392b; color: white; width: 100%; padding: 15px; }
+        .checkbox-container { max-height: 250px; overflow-y: auto; border: 1px solid #ddd; background: #fff; padding: 0; border-radius: 4px; margin-bottom: 10px; }
+        .chk-item { display: flex; align-items: center; padding: 8px 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+        .chk-item:hover { background: #f9f9f9; }
+        .chk-item input { width: 18px; height: 18px; margin: 0 12px 0 0; }
+        .chk-item.disabled { background-color: #f0f0f0; opacity: 0.6; pointer-events: none; }
 
-        .grid-3 { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .event-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
         .kpi-card { background: white; padding: 15px; border-radius: 8px; text-align: center; border-bottom: 4px solid #ddd; }
         .kpi-val { font-size: 1.5em; font-weight: bold; color: #2c3e50; display: block; }
         .recipe-box { background: #f9f9f9; padding: 10px; border: 1px dashed #ccc; border-radius: 4px; }
+        .danger-zone { margin-top: 30px; border-top: 2px dashed #e74c3c; padding-top: 20px; }
 
         @media (max-width: 900px) {
             body { flex-direction: column; }
@@ -151,7 +100,7 @@
             .sidebar.active { transform: translateX(0); }
             .mobile-header { display: flex; }
             .content { padding: 80px 15px 20px 15px; }
-            .grid-3, .grid-2, .event-details-grid, .kpi-grid, .time-grid { grid-template-columns: 1fr !important; }
+            .grid-3, .grid-2, .event-details-grid, .time-grid, .kpi-grid { grid-template-columns: 1fr !important; }
             .sidebar-overlay.active { display: block; }
         }
     </style>
@@ -191,16 +140,16 @@
 
                 <div class="card" id="painel-detalhes" style="display:none;">
                     <div class="card-header">
-                        <h3 class="card-title" id="titulo-evento">Evento</h3>
+                        <h3 id="titulo-evento" style="margin:0">Evento</h3>
                         <div class="header-actions">
-                            <button onclick="ativarEvento()" class="cmd-btn btn-live" title="Enviar para o App">🚀 ATIVAR NO APP</button>
-                            <button onclick="reiniciarEvento()" class="cmd-btn btn-reset" title="Limpar Vendas">🔄 ZERAR</button>
+                            <button onclick="ativarEvento()" class="cmd-btn btn-live">🚀 ATIVAR NO APP</button>
+                            <button onclick="reiniciarEvento()" class="cmd-btn btn-reset">🔄 ZERAR</button>
                             <div id="controles-status"></div>
                         </div>
                     </div>
 
-                    <div class="details-box">
-                        <h4 style="margin:0 0 10px 0;">📝 Dados do Evento</h4>
+                    <div class="details-box" style="margin-top:15px; padding:15px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px;">
+                        <h4 class="section-title">📝 Dados do Evento</h4>
                         <div class="event-details-grid">
                             <div><label>Responsável</label><input type="text" id="detResp"></div>
                             <div><label>Telefone</label><input type="text" id="detTel" onkeyup="mascaraTelefone(this)"></div>
@@ -209,35 +158,26 @@
                         </div>
                         <div class="time-grid">
                             <div><label>Início</label><input type="time" id="detHora" onchange="calcTermino('det')"></div>
-                            <div><label>Duração</label><div class="split-input"><input type="number" id="detDurH" value="4" onchange="calcTermino('det')"><span>:</span><input type="number" id="detDurM" value="0" step="15" onchange="calcTermino('det')"></div></div>
-                            <div><label>Extra</label><div class="split-input"><input type="number" id="detExtH" value="0" onchange="calcTermino('det')" style="color:#2980b9;"><span>:</span><input type="number" id="detExtM" value="0" step="15" onchange="calcTermino('det')" style="color:#2980b9;"></div></div>
+                            <div><label>Duração</label><div class="split-input"><input type="number" id="detDurH" placeholder="H" value="4" onchange="calcTermino('det')"><span>:</span><input type="number" id="detDurM" placeholder="M" value="0" step="15" onchange="calcTermino('det')"></div></div>
+                            <div><label>Extra</label><div class="split-input"><input type="number" id="detExtH" placeholder="H" value="0" onchange="calcTermino('det')" style="color:#2980b9;font-weight:bold"><span>:</span><input type="number" id="detExtM" placeholder="M" value="0" step="15" onchange="calcTermino('det')" style="color:#2980b9;font-weight:bold"></div></div>
                             <div><label>Término</label><input type="time" id="detTermino" readonly></div>
                         </div>
                         <button onclick="atualizarDadosEvento()" class="btn-save-details">💾 Salvar Alterações</button>
                     </div>
 
-                    <div style="background:#eef2f7; padding:15px; border-radius:6px; margin:20px 0; border:1px solid #dde2e6;">
-                        <h4 style="margin-top:0">📥 Montar Cardápio</h4>
+                    <div style="background:#eef2f7; padding:15px; border-radius:6px; margin:20px 0;">
+                        <h4 class="section-title">📥 Montar Cardápio</h4>
                         <div class="checkbox-container" id="lista-global-checkboxes"></div>
                         <div style="display:flex; justify-content:space-between; margin-top:10px;">
                             <button onclick="marcarTodos(true)" style="background:none; color:#3498db; text-decoration:underline;">Marcar Todos</button>
-                            <button onclick="adicionarMuitos()" class="btn-primary">⬇️ Importar Selecionados</button>
+                            <button onclick="adicionarMuitos()" class="btn-primary">⬇️ Importar</button>
                         </div>
                     </div>
 
                     <h4>📋 Cardápio Confirmado</h4>
                     <div class="table-responsive">
                         <table>
-                            <thead>
-                                <tr>
-                                    <th width="50">Img</th>
-                                    <th>Nome do Drink</th>
-                                    <th width="80">Venda</th>
-                                    <th width="80">Custo</th>
-                                    <th width="60">Est.</th>
-                                    <th width="40"></th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th width="40">Img</th><th>Nome</th><th>Venda</th><th>Custo</th><th>Est</th><th></th></tr></thead>
                             <tbody id="tabela-evento"></tbody>
                         </table>
                     </div>
@@ -251,13 +191,28 @@
         </div>
 
         <div id="view-equipe" class="view-section">
-            <h2>👥 Equipe</h2>
-            <div class="card" style="max-width:600px;">
-                <div style="display:flex; gap:10px; margin-bottom:10px;">
-                    <input type="text" id="bartenderNome" placeholder="Nome"><input type="number" id="bartenderPhone" placeholder="Celular">
-                    <button onclick="adicionarBartender()" class="btn-success">Add</button>
+            <h2>👥 Gestão de Equipe</h2>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="section-title" style="border:none; margin:0;">Equipe de Profissionais (Staff)</h3>
+                    <button onclick="abrirModalEquipe()" class="btn-success" style="padding:8px 15px; height:auto;">+ NOVO MEMBRO</button>
                 </div>
-                <div class="table-responsive"><table><tbody id="lista-equipe"></tbody></table></div>
+                
+                <div class="table-responsive" style="margin-top:15px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Login (Celular)</th>
+                                <th>Função</th>
+                                <th>Taxa</th>
+                                <th>Adicional</th>
+                                <th style="text-align:right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-equipe"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -286,9 +241,9 @@
             </div>
         </div>
 
-        <div id="view-despensa" class="view-section"><h2>📦 Despensa</h2><div class="grid-2"><div class="card"><h3>Novo Insumo</h3><input type="text" id="insNome" placeholder="Nome"><div style="display:flex; gap:10px;"><input type="number" id="insPreco" placeholder="R$"><input type="number" id="insVol" placeholder="Vol"></div><button onclick="salvarInsumo()" class="btn-primary" style="width:100%; margin-top:10px;">Guardar</button></div><div class="card"><h3>Estoque</h3><div id="lista-insumos" style="max-height:300px; overflow-y:auto;"></div></div></div></div>
+        <div id="view-despensa" class="view-section"><h2>📦 Despensa</h2><div class="grid-2"><div class="card"><h3>Novo Insumo</h3><input type="text" id="insNome" placeholder="Nome (ex: Gin)"><div style="display:flex; gap:10px;"><input type="number" id="insPreco" placeholder="R$"><input type="number" id="insVol" placeholder="Vol"></div><button onclick="salvarInsumo()" class="btn-primary" style="width:100%; margin-top:10px;">Guardar</button></div><div class="card"><h3>Estoque</h3><div id="lista-insumos" style="max-height:300px; overflow-y:auto;"></div></div></div></div>
 
-        <div id="view-analytics" class="view-section"><h2>📈 Analytics</h2><div class="card" style="display:flex; gap:10px;"><select id="select-evento-analise"><option>Carregando...</option></select><button onclick="gerarRelatorio()" class="btn-primary">Analisar</button></div><div class="kpi-grid" style="margin-top:20px; display:grid; grid-template-columns: repeat(4,1fr); gap:15px;"><div class="kpi-card" style="border-color:gold"><small>Fat</small><span class="kpi-val" id="kpi-fat">0</span></div><div class="kpi-card" style="border-color:red"><small>Custo</small><span class="kpi-val" id="kpi-custo">0</span></div><div class="kpi-card" style="border-color:green"><small>Lucro</small><span class="kpi-val" id="kpi-lucro">0</span></div><div class="kpi-card" style="border-color:purple"><small>CMV</small><span class="kpi-val" id="kpi-cmv">0%</span></div></div><div class="grid-2" style="margin-top:20px;"><div class="card" style="height:300px"><canvas id="chartDrinks"></canvas></div><div class="card" style="height:300px"><canvas id="chartHorario"></canvas></div></div></div>
+        <div id="view-analytics" class="view-section"><h2>📈 Analytics</h2><div class="card" style="display:flex; gap:10px;"><select id="select-evento-analise"><option>Carregando...</option></select><button onclick="gerarRelatorio()" class="btn-primary">Analisar</button></div><div class="kpi-grid" style="margin-top:20px;"><div class="kpi-card" style="border-color:gold"><small>Fat</small><span class="kpi-val" id="kpi-fat">0</span></div><div class="kpi-card" style="border-color:red"><small>Custo</small><span class="kpi-val" id="kpi-custo">0</span></div><div class="kpi-card" style="border-color:green"><small>Lucro</small><span class="kpi-val" id="kpi-lucro">0</span></div><div class="kpi-card" style="border-color:purple"><small>CMV</small><span class="kpi-val" id="kpi-cmv">0%</span></div></div><div class="grid-2" style="margin-top:20px;"><div class="card" style="height:300px"><canvas id="chartDrinks"></canvas></div><div class="card" style="height:300px"><canvas id="chartHorario"></canvas></div></div></div>
     </main>
 
     <div id="modalNovoEvento" class="modal-overlay">
@@ -311,6 +266,48 @@
         </div>
     </div>
 
+    <div id="modalEquipe" class="modal-overlay">
+        <div class="modal">
+            <span class="close-modal" onclick="fecharModalEquipe()">×</span>
+            <h3 id="eqTitulo">👤 Novo Membro da Equipe</h3>
+            <div style="display:grid; gap: 10px;">
+                <input type="hidden" id="eqId">
+                <div><label>Nome Completo</label><input type="text" id="eqNome"></div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div><label>Telefone (Login)</label><input type="text" id="eqTel" placeholder="(11) 9..." onkeyup="mascaraTelefone(this)"></div>
+                    <div><label>CPF</label><input type="text" id="eqCPF" placeholder="000..." onkeyup="mascaraCPF(this)"></div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div><label>Data Nasc.</label><input type="date" id="eqData" onchange="calcIdade()"></div>
+                    <div><label>Idade</label><input type="text" id="eqIdade" readonly style="background:#eee"></div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div><label>Sexo</label><select id="eqSexo"><option value="M">Masculino</option><option value="F">Feminino</option><option value="O">Outro</option></select></div>
+                    <div><label>Função</label>
+                        <select id="eqFuncao">
+                            <option value="Bartender">Bartender</option>
+                            <option value="Barback">Barback</option>
+                            <option value="Chefe de Bar">Chefe de Bar</option>
+                            <option value="Garçom">Garçom</option>
+                            <option value="Copeiro">Copeiro</option>
+                            <option value="Gerente">Gerente</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; background:#f0fff4; padding:10px; border-radius:4px; border:1px solid #c6f6d5;">
+                    <div><label style="color:#27ae60">Valor Taxa (R$)</label><input type="number" id="eqTaxa"></div>
+                    <div><label style="color:#27ae60">Valor Adicional (R$)</label><input type="number" id="eqAdicional"></div>
+                </div>
+
+                <button onclick="salvarEquipe()" class="btn-success" style="margin-top:10px; padding:12px;">SALVAR CADASTRO</button>
+            </div>
+        </div>
+    </div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, query, orderBy, writeBatch, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -328,6 +325,18 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // --- MÁSCARAS ---
+    window.mascaraTelefone = (i) => { let v=i.value.replace(/\D/g,""); v=v.replace(/^(\d{2})(\d)/g,"($1) $2"); v=v.replace(/(\d)(\d{4})$/,"$1-$2"); i.value=v; };
+    window.mascaraCPF = (i) => { let v=i.value.replace(/\D/g,""); v=v.replace(/(\d{3})(\d)/,"$1.$2"); v=v.replace(/(\d{3})(\d)/,"$1.$2"); v=v.replace(/(\d{3})(\d{1,2})$/,"$1-$2"); i.value=v; };
+    window.calcIdade = () => {
+        const d = document.getElementById('eqData').value;
+        if(d) {
+            const diff = Date.now() - new Date(d).getTime();
+            const age = new Date(diff).getUTCFullYear() - 1970;
+            document.getElementById('eqIdade').value = age + " anos";
+        }
+    };
+    
     // --- TIME CALC ---
     window.calcTermino = (p) => {
         const inicio = document.getElementById(p+'Hora').value;
@@ -345,11 +354,10 @@
 
     window.toggleMenu = () => { document.getElementById('mainSidebar').classList.toggle('active'); document.querySelector('.sidebar-overlay').style.display = document.getElementById('mainSidebar').classList.contains('active') ? 'block' : 'none'; };
     window.showView = (id, el) => { document.querySelectorAll('.view-section').forEach(e=>e.classList.remove('active')); document.getElementById(id).classList.add('active'); document.querySelectorAll('.menu-item').forEach(e=>e.classList.remove('active')); el.classList.add('active'); if(window.innerWidth<=900)window.toggleMenu(); };
-    window.mascaraTelefone = (input) => { let v=input.value.replace(/\D/g,"").replace(/^(\d{2})(\d)/g,"($1) $2").replace(/(\d)(\d{4})$/,"$1-$2"); input.value=v; };
 
     let eventoID = null, bibliotecaGlobal = [], insumosCache = [], receitaAtual = [], chartD = null, chartH = null, idsNoEvento = [], eventoAtivoID = null;
 
-    // EVENTOS
+    // 1. EVENTOS
     onSnapshot(doc(db,"config","geral"), (s) => { if(s.exists()) { eventoAtivoID = s.data().eventoAtivoID; renderizarListaEventos(); }});
     let listaEventosCache = [];
     onSnapshot(query(collection(db, "eventos"), orderBy("criadoEm", "desc")), (snap) => {
@@ -379,11 +387,20 @@
 
     window.carregarEvento = (id, dados, status) => {
         eventoID = id; document.getElementById('painel-detalhes').style.display='block'; document.getElementById('titulo-evento').innerText=dados.nome;
-        document.getElementById('detResp').value=dados.responsavel||''; document.getElementById('detTel').value=dados.telefone||''; document.getElementById('detData').value=dados.dataEvento||''; document.getElementById('detHora').value=dados.horaEvento||''; document.getElementById('detLocal').value=dados.local||'';
-        document.getElementById('detDurH').value=dados.durH||'4'; document.getElementById('detDurM').value=dados.durM||'0'; document.getElementById('detExtH').value=dados.extH||'0'; document.getElementById('detExtM').value=dados.extM||'0'; document.getElementById('detTermino').value=dados.termino||'';
-        document.getElementById('controles-status').innerHTML = status==='fechado'?`<button onclick="mudarStatus('aberto')" class="cmd-btn btn-unlock">🔓 REABRIR</button>`:`<button onclick="mudarStatus('fechado')" class="cmd-btn btn-lock">🔒 ENCERRAR</button>`;
-        renderizarListaEventos();
+        document.getElementById('detResp').value=dados.responsavel||''; document.getElementById('detTel').value=dados.telefone||''; 
+        document.getElementById('detData').value=dados.dataEvento||''; document.getElementById('detHora').value=dados.horaEvento||''; 
+        document.getElementById('detLocal').value=dados.local||'';
+        document.getElementById('detDurH').value=dados.durH||'4'; document.getElementById('detDurM').value=dados.durM||'0'; 
+        document.getElementById('detExtH').value=dados.extH||'0'; document.getElementById('detExtM').value=dados.extM||'0'; 
+        document.getElementById('detTermino').value=dados.termino||'';
         
+        onSnapshot(doc(db,"eventos",id), (s) => {
+            if(s.exists()) {
+                const st = s.data().status || 'aberto';
+                document.getElementById('controles-status').innerHTML = st==='fechado'?`<button onclick="mudarStatus('aberto')" class="cmd-btn btn-unlock">🔓 REABRIR</button>`:`<button onclick="mudarStatus('fechado')" class="cmd-btn btn-lock">🔒 ENCERRAR</button>`;
+            }
+        });
+        renderizarListaEventos();
         onSnapshot(collection(db,"eventos",id,"cardapio"), (snap) => {
             const tb = document.getElementById('tabela-evento'); tb.innerHTML=''; idsNoEvento=[];
             snap.forEach(doc => { const d=doc.data(); idsNoEvento.push(d.idOriginal||doc.id); tb.innerHTML+=`<tr><td><img src="${d.imagem||''}" class="thumb"></td><td>${d.nome}</td><td><input type="number" value="${d.precoVenda}" onchange="attItem('${doc.id}','precoVenda',this.value)" class="input-table" style="color:#27ae60"></td><td><input type="number" value="${d.precoCusto}" onchange="attItem('${doc.id}','precoCusto',this.value)" class="input-table" style="color:#e74c3c"></td><td><input type="number" value="${d.estoque}" onchange="attItem('${doc.id}','estoque',this.value)" class="input-table" style="width:50px"></td><td><button onclick="delItem('${doc.id}','${d.nome}')" class="btn-trash">🗑️</button></td></tr>`; });
@@ -398,7 +415,7 @@
     function renderLib(){ const d=document.getElementById('lista-global-checkboxes'); if(!d)return; d.innerHTML=''; bibliotecaGlobal.sort((a,b)=>a.nome.localeCompare(b.nome)); bibliotecaGlobal.forEach(x=>{ const ja=idsNoEvento.includes(x.id); d.innerHTML+=`<div class="chk-item ${ja?'disabled':''}"><input type="checkbox" id="chk_${x.id}" value="${x.id}" class="chk-drink" ${ja?'disabled':''}><label for="chk_${x.id}"><b>${x.nome}</b> ${ja?'(Add)':''}</label></div>`; }); }
 
     window.attItem=async(id,c,v)=>await updateDoc(doc(db,"eventos",eventoID,"cardapio",id),{[c]:parseFloat(v)});
-    window.delItem=async(id, nome)=>{if(confirm(`Tem certeza que deseja remover o ${nome} deste evento?`))await deleteDoc(doc(db,"eventos",eventoID,"cardapio",id));};
+    window.delItem=async(id,nome)=>{if(confirm(`Remover ${nome}?`))await deleteDoc(doc(db,"eventos",eventoID,"cardapio",id));};
     window.mudarStatus=async(s)=>await updateDoc(doc(db,"eventos",eventoID),{status:s});
     window.ativarEvento=async()=>{if(confirm("Ativar?"))await setDoc(doc(db,"config","geral"),{eventoAtivoID:eventoID,eventoAtivoNome:document.getElementById('titulo-evento').innerText},{merge:true});};
     window.reiniciarEvento=async()=>{if(confirm("ZERAR?")){const b=writeBatch(db);(await getDocs(collection(db,"eventos",eventoID,"vendas"))).forEach(d=>b.delete(d.ref));(await getDocs(collection(db,"eventos",eventoID,"cardapio"))).forEach(d=>b.update(d.ref,{estoque:50}));b.update(doc(db,"eventos",eventoID),{resetSignal:Date.now()});await b.commit();alert("Ok!");}};
@@ -406,11 +423,86 @@
     window.marcarTodos=(m)=>document.querySelectorAll('.chk-drink:not([disabled])').forEach(c=>c.checked=m);
     window.adicionarMuitos=async()=>{const c=document.querySelectorAll('.chk-drink:checked');if(!c.length)return;const b=writeBatch(db);c.forEach(chk=>{const d=bibliotecaGlobal.find(x=>x.id===chk.value);if(d)b.set(doc(collection(db,"eventos",eventoID,"cardapio")),{nome:d.nome,imagem:d.imagem,precoVenda:d.precoVenda||0,precoCusto:d.precoCusto||0,estoque:50,idOriginal:d.id});});await b.commit();document.querySelectorAll('.chk-drink').forEach(c=>c.checked=false);};
     
-    // EXTRAS (Mantido igual V20)
-    window.adicionarAoGlobal=async()=>{const n=document.getElementById('globalName').value;if(n)await addDoc(collection(db,"drinks"),{nome:n,precoVenda:parseFloat(document.getElementById('globalPrice').value)||0,precoCusto:parseFloat(document.getElementById('globalCusto').value)||0,imagem:document.getElementById('globalImg').value||"./imagens/",receita:receitaAtual,estoque:0});alert("Salvo!");receitaAtual=[];};
-    onSnapshot(collection(db,"equipe"),(s)=>{const l=document.getElementById('lista-equipe');l.innerHTML='';s.forEach(d=>l.innerHTML+=`<tr><td>${d.data().nome}</td><td><button onclick="delEq('${d.id}')" class="btn-trash">🗑️</button></td></tr>`)});
-    window.adicionarBartender=async()=>{const n=document.getElementById('bartenderNome').value,t=document.getElementById('bartenderPhone').value;if(n)await addDoc(collection(db,"equipe"),{nome:n,telefone:t});};
+    // --- 3. EQUIPE (LÓGICA ATUALIZADA V29) ---
+    onSnapshot(collection(db,"equipe"), (snap) => {
+        const l = document.getElementById('lista-equipe'); l.innerHTML='';
+        snap.forEach(d => {
+            const b = d.data();
+            // Formata valores
+            const taxa = parseFloat(b.taxa||0).toFixed(2);
+            const add = parseFloat(b.adicional||0).toFixed(2);
+            
+            l.innerHTML += `
+                <tr>
+                    <td><b>${b.nome}</b><br><small style="color:#666">${b.funcao||'Bartender'}</small></td>
+                    <td>${b.telefone}</td>
+                    <td>${b.funcao||'-'}</td>
+                    <td style="color:#27ae60">R$ ${taxa}</td>
+                    <td style="color:#27ae60">R$ ${add}</td>
+                    <td style="text-align:right;">
+                        <button onclick="editarEquipe('${d.id}', '${b.nome}', '${b.telefone}', '${b.cpf||''}', '${b.dataNasc||''}', '${b.sexo||'M'}', '${b.funcao||'Bartender'}', '${b.taxa||0}', '${b.adicional||0}')" class="btn-edit" style="margin-right:5px">✏️</button>
+                        <button onclick="delEq('${d.id}')" class="btn-trash">🗑️</button>
+                    </td>
+                </tr>`;
+        });
+    });
+
+    window.abrirModalEquipe = (id) => {
+        document.getElementById('modalEquipe').style.display = 'flex';
+        document.getElementById('eqTitulo').innerText = id ? '✏️ Editar Membro' : '👤 Novo Membro';
+        document.getElementById('eqId').value = id || '';
+        
+        if(!id) { 
+            // Limpa se for novo
+            ['eqNome','eqTel','eqCPF','eqData','eqIdade','eqTaxa','eqAdicional'].forEach(i=>document.getElementById(i).value='');
+        }
+    };
+    window.fecharModalEquipe = () => document.getElementById('modalEquipe').style.display = 'none';
+
+    window.salvarEquipe = async () => {
+        const id = document.getElementById('eqId').value;
+        const tel = document.getElementById('eqTel').value;
+        const dados = {
+            nome: document.getElementById('eqNome').value,
+            telefone: tel,
+            cpf: document.getElementById('eqCPF').value,
+            dataNasc: document.getElementById('eqData').value,
+            sexo: document.getElementById('eqSexo').value,
+            funcao: document.getElementById('eqFuncao').value,
+            taxa: parseFloat(document.getElementById('eqTaxa').value)||0,
+            adicional: parseFloat(document.getElementById('eqAdicional').value)||0
+        };
+
+        if(!dados.nome || !dados.telefone) return alert("Nome e Telefone são obrigatórios!");
+
+        // Bloqueio de duplicidade (apenas se for novo)
+        if (!id) {
+            const q = query(collection(db, "equipe"), where("telefone", "==", tel));
+            const check = await getDocs(q);
+            if(!check.empty) return alert("Erro: Telefone já cadastrado!");
+            await addDoc(collection(db, "equipe"), dados);
+        } else {
+            await updateDoc(doc(db, "equipe", id), dados);
+        }
+        fecharModalEquipe();
+    };
+
+    window.editarEquipe = (id, nome, tel, cpf, data, sexo, funcao, taxa, add) => {
+        window.abrirModalEquipe(id);
+        document.getElementById('eqNome').value = nome;
+        document.getElementById('eqTel').value = tel;
+        document.getElementById('eqCPF').value = cpf;
+        document.getElementById('eqData').value = data;
+        document.getElementById('eqSexo').value = sexo;
+        document.getElementById('eqFuncao').value = funcao;
+        document.getElementById('eqTaxa').value = taxa;
+        document.getElementById('eqAdicional').value = add;
+        calcIdade(); // Recalcula visualmente
+    };
     window.delEq=async(id)=>await deleteDoc(doc(db,"equipe",id));
+
+    // Despensa/Global/Analytics (Mantido)
+    window.adicionarAoGlobal=async()=>{const n=document.getElementById('globalName').value;if(n)await addDoc(collection(db,"drinks"),{nome:n,precoVenda:parseFloat(document.getElementById('globalPrice').value)||0,precoCusto:parseFloat(document.getElementById('globalCusto').value)||0,imagem:document.getElementById('globalImg').value||"./imagens/",receita:receitaAtual,estoque:0});alert("Salvo!");receitaAtual=[];};
     onSnapshot(collection(db,"insumos"),(s)=>{const l=document.getElementById('lista-insumos');l.innerHTML='';s.forEach(d=>l.innerHTML+=`<div style="padding:5px;border-bottom:1px solid #eee;display:flex;justify-content:space-between"><span>${d.data().nome}</span><button onclick="delIns('${d.id}')" class="btn-trash">🗑️</button></div>`)});
     window.salvarInsumo=async()=>{const n=document.getElementById('insNome').value;if(n)await addDoc(collection(db,"insumos"),{nome:n,preco:parseFloat(document.getElementById('insPreco').value),volume:parseFloat(document.getElementById('insVol').value)});};
     window.delIns=async(id)=>await deleteDoc(doc(db,"insumos",id));
