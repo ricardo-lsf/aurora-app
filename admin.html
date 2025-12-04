@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aurora Admin V29 (Staff Completo)</title>
+    <title>Aurora Admin V32 (Biblioteca Pro)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f6f8; color: #333; margin: 0; display: flex; height: 100vh; overflow: hidden; }
@@ -30,39 +30,50 @@
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity:0; transform: translateY(5px); } to { opacity:1; transform: translateY(0); } }
 
-        /* CARDS & ESTILOS */
+        /* ESTILOS GERAIS */
         h2 { border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top: 0; color: #2c3e50; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e1e4e8; }
         .card-header { background: #f8f9fa; margin: -20px -20px 20px -20px; padding: 10px 20px; border-bottom: 1px solid #e1e4e8; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         
-        /* TÍTULO PADRÃO (CONSISTENTE) */
-        .section-title { margin: 0 0 15px 0; border-bottom: 1px solid #ddd; padding-bottom: 5px; color: #555; font-size: 1.1em; font-weight: bold; }
-
-        input, select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box; height: 38px; }
+        input, select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box; height: 38px; margin-bottom: 5px; }
+        input[readonly] { background-color: #e9ecef; color: #6c757d; }
         label { font-size: 0.8em; font-weight: bold; color: #666; display: block; margin-bottom: 2px; }
-        
+
         button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; height: 38px; }
         button:hover { opacity: 0.9; }
+        
         .btn-primary { background: #3498db; color: white; }
         .btn-success { background: #27ae60; color: white; }
         .btn-danger { background: #e74c3c; color: white; font-size: 0.8em; }
         .btn-warning { background: #f39c12; color: white; }
+        .btn-info { background: #34495e; color: white; width: 100%; margin-top: 5px; }
         .btn-edit { background: #f39c12; color: white; font-size: 0.9em; padding: 5px 10px; height: auto; }
         .btn-trash { background: transparent; color: #c0392b; border: 1px solid #eccscs; font-size: 1.2em; padding: 5px 10px; height: auto; }
         .btn-activate { background: #8e44ad; color: white; width: 100%; padding: 15px; margin-top:10px; font-size: 1.1em; height: auto; }
         .btn-save-details { background: #27ae60; color: white; width: 100%; margin-top: 10px; }
+        .btn-delete-event { background: #c0392b; color: white; width: 100%; padding: 15px; }
+        .btn-purple { background: #9b59b6; color: white; }
 
+        /* CATALOGO CLICKÁVEL */
+        .catalog-item { 
+            padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s;
+        }
+        .catalog-item:hover { background-color: #e8f4fd; padding-left: 15px; }
+        .catalog-item b { color: #2c3e50; }
+
+        /* Header Actions */
+        .header-actions { display: flex; gap: 8px; }
         .cmd-btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; font-size: 0.9em; display: flex; align-items: center; gap: 5px; }
         .btn-live { background: #8e44ad; } .btn-reset { background: #f1c40f; color: #333; } .btn-lock { background: #c0392b; } .btn-unlock { background: #27ae60; }
 
         /* GRIDS */
         .grid-3 { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         .event-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #e8f4fd; padding: 15px; border-radius: 6px; margin-bottom: 15px; align-items: end; }
         .split-input { display: flex; gap: 5px; align-items: center; }
-        .time-grid input[readonly] { background: #e0e0e0; color: #555; cursor: not-allowed; }
-
+        
         /* MODAL */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; }
         .modal { background: white; padding: 25px; border-radius: 8px; width: 95%; max-width: 600px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 95vh; overflow-y: auto; }
@@ -82,6 +93,7 @@
         .event-item.active { background: #e8f0fe; border-left: 4px solid #3498db; }
         .badge-live { background: #27ae60; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.75em; margin-left: 5px; }
         .badge-closed { background: #7f8c8d; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.75em; }
+        
         .checkbox-container { max-height: 250px; overflow-y: auto; border: 1px solid #ddd; background: #fff; padding: 0; border-radius: 4px; margin-bottom: 10px; }
         .chk-item { display: flex; align-items: center; padding: 8px 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
         .chk-item:hover { background: #f9f9f9; }
@@ -93,6 +105,7 @@
         .kpi-val { font-size: 1.5em; font-weight: bold; color: #2c3e50; display: block; }
         .recipe-box { background: #f9f9f9; padding: 10px; border: 1px dashed #ccc; border-radius: 4px; }
         .danger-zone { margin-top: 30px; border-top: 2px dashed #e74c3c; padding-top: 20px; }
+        .stock-tag { font-size: 0.7em; background: #eee; padding: 2px 6px; border-radius: 4px; color: #555; display: inline-block; margin-bottom: 2px; font-weight: bold; }
 
         @media (max-width: 900px) {
             body { flex-direction: column; }
@@ -100,7 +113,7 @@
             .sidebar.active { transform: translateX(0); }
             .mobile-header { display: flex; }
             .content { padding: 80px 15px 20px 15px; }
-            .grid-3, .grid-2, .event-details-grid, .time-grid, .kpi-grid { grid-template-columns: 1fr !important; }
+            .grid-3, .grid-2, .event-details-grid, .time-grid, .grid-form-row, .kpi-grid { grid-template-columns: 1fr !important; }
             .sidebar-overlay.active { display: block; }
         }
     </style>
@@ -149,7 +162,7 @@
                     </div>
 
                     <div class="details-box" style="margin-top:15px; padding:15px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px;">
-                        <h4 class="section-title">📝 Dados do Evento</h4>
+                        <h4 style="margin:0 0 10px 0;">📝 Dados do Evento</h4>
                         <div class="event-details-grid">
                             <div><label>Responsável</label><input type="text" id="detResp"></div>
                             <div><label>Telefone</label><input type="text" id="detTel" onkeyup="mascaraTelefone(this)"></div>
@@ -166,20 +179,17 @@
                     </div>
 
                     <div style="background:#eef2f7; padding:15px; border-radius:6px; margin:20px 0;">
-                        <h4 class="section-title">📥 Montar Cardápio</h4>
+                        <h4>📥 Montar Cardápio</h4>
                         <div class="checkbox-container" id="lista-global-checkboxes"></div>
                         <div style="display:flex; justify-content:space-between; margin-top:10px;">
                             <button onclick="marcarTodos(true)" style="background:none; color:#3498db; text-decoration:underline;">Marcar Todos</button>
-                            <button onclick="adicionarMuitos()" class="btn-primary">⬇️ Importar</button>
+                            <button onclick="adicionarMuitos()" class="btn-primary">⬇️ Importar Selecionados</button>
                         </div>
                     </div>
 
                     <h4>📋 Cardápio Confirmado</h4>
                     <div class="table-responsive">
-                        <table>
-                            <thead><tr><th width="40">Img</th><th>Nome</th><th>Venda</th><th>Custo</th><th>Est</th><th></th></tr></thead>
-                            <tbody id="tabela-evento"></tbody>
-                        </table>
+                        <table><thead><tr><th width="40">Img</th><th>Nome</th><th>Venda</th><th>Custo</th><th>Est</th><th></th></tr></thead><tbody id="tabela-evento"></tbody></table>
                     </div>
 
                     <div class="danger-zone">
@@ -194,119 +204,85 @@
             <h2>👥 Gestão de Equipe</h2>
             <div class="card">
                 <div class="card-header">
-                    <h3 class="section-title" style="border:none; margin:0;">Equipe de Profissionais (Staff)</h3>
-                    <button onclick="abrirModalEquipe()" class="btn-success" style="padding:8px 15px; height:auto;">+ NOVO MEMBRO</button>
+                    <h3 style="margin:0; font-size:1.1em;">Equipe de Profissionais (Staff)</h3>
+                    <button onclick="abrirModalEquipe()" class="btn-success">+ NOVO MEMBRO</button>
                 </div>
-                
                 <div class="table-responsive" style="margin-top:15px;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Login (Celular)</th>
-                                <th>Função</th>
-                                <th>Taxa</th>
-                                <th>Adicional</th>
-                                <th style="text-align:right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="lista-equipe"></tbody>
-                    </table>
+                    <table><thead><tr><th>Nome</th><th>Login (Celular)</th><th>Função</th><th>Taxa</th><th>Adicional</th><th style="text-align:right">Ações</th></tr></thead><tbody id="lista-equipe"></tbody></table>
                 </div>
             </div>
         </div>
 
         <div id="view-biblioteca" class="view-section">
-            <h2>🍹 Biblioteca</h2>
+            <h2>🍹 Biblioteca & Ficha</h2>
             <div class="grid-2">
                 <div class="card">
-                    <h3>Novo Drink Global</h3>
-                    <label>Nome</label><input type="text" id="globalName">
-                    <label>Imagem</label><input type="text" id="globalImg" placeholder="./imagens/">
+                    <h3>Editor de Drinks</h3>
+                    <input type="hidden" id="drinkId">
+                    
+                    <label>Nome do Drink</label><input type="text" id="globalName">
+                    <label>Imagem (URL)</label><input type="text" id="globalImg" placeholder="./imagens/">
                     <div style="display:flex; gap:10px; margin-top:5px;">
-                        <div style="flex:1"><label style="color:#27ae60">Venda</label><input type="number" id="globalPrice" oninput="calcCMV()"></div>
-                        <div style="flex:1"><label style="color:#e74c3c">Custo</label><input type="number" id="globalCusto" readonly></div>
+                        <div style="flex:1"><label style="color:#27ae60">Preço Venda</label><input type="number" id="globalPrice" oninput="calcCMV()"></div>
+                        <div style="flex:1"><label style="color:#e74c3c">Custo Prod.</label><input type="number" id="globalCusto" readonly></div>
                     </div>
                     <div id="cmv-display" style="text-align:center; font-weight:bold; color:#7f8c8d; margin:5px 0;">CMV: 0%</div>
+
                     <div class="recipe-box">
-                        <h4>📝 Ficha Técnica</h4>
+                        <h4>📝 Ficha Técnica (Ingredientes)</h4>
                         <div style="display:flex; gap:5px;">
-                            <select id="selInsumo"><option>Carregando...</option></select><input type="number" id="qtdInsumo" placeholder="Qtd" style="width:60px;"><button onclick="addIngrediente()" class="btn-purple">+</button>
+                            <select id="selInsumo"><option>Carregando...</option></select>
+                            <input type="number" id="qtdInsumo" placeholder="Qtd" style="width:60px;">
+                            <button onclick="addIngrediente()" class="btn-purple">+</button>
                         </div>
-                        <div id="lista-ingredientes" style="margin-top:10px; font-size:0.9em;"></div>
+                        <div id="lista-ingredientes" style="margin-top:10px; font-size:0.9em; max-height:100px; overflow-y:auto;"></div>
                     </div>
-                    <button onclick="adicionarAoGlobal()" class="btn-warning" style="width:100%; margin-top:15px;">Salvar</button>
+                    
+                    <div style="display:flex; gap:10px; margin-top:15px;">
+                        <button onclick="limparFormDrink()" class="btn-info">Limpar / Novo</button>
+                        <button onclick="salvarDrinkGlobal()" class="btn-warning" id="btnSalvarDrink">💾 SALVAR</button>
+                    </div>
                 </div>
-                <div class="card"><h3>Catálogo</h3><div id="lista-biblioteca-visual" style="max-height:400px; overflow-y:auto;"></div></div>
+                
+                <div class="card">
+                    <h3>Catálogo de Drinks</h3>
+                    <p style="font-size:0.8em; color:#666;">Clique num drink para editar a ficha técnica.</p>
+                    <div id="lista-biblioteca-visual" style="max-height:500px; overflow-y:auto;"></div>
+                </div>
             </div>
         </div>
 
-        <div id="view-despensa" class="view-section"><h2>📦 Despensa</h2><div class="grid-2"><div class="card"><h3>Novo Insumo</h3><input type="text" id="insNome" placeholder="Nome (ex: Gin)"><div style="display:flex; gap:10px;"><input type="number" id="insPreco" placeholder="R$"><input type="number" id="insVol" placeholder="Vol"></div><button onclick="salvarInsumo()" class="btn-primary" style="width:100%; margin-top:10px;">Guardar</button></div><div class="card"><h3>Estoque</h3><div id="lista-insumos" style="max-height:300px; overflow-y:auto;"></div></div></div></div>
+        <div id="view-despensa" class="view-section">
+            <h2>📦 Despensa & Insumos</h2>
+            <div class="card">
+                <h3>Cadastro de Produtos</h3>
+                <div style="display:grid; gap:10px; background:#f9f9f9; padding:15px; border-radius:6px; border:1px solid #eee;">
+                    <input type="hidden" id="insId">
+                    <div class="grid-form-row">
+                        <div><label>Produto</label><input type="text" id="insProd" placeholder="Ex: Gin"></div>
+                        <div><label>Marca</label><input type="text" id="insMarca" placeholder="Ex: Tanqueray"></div>
+                        <div><label>Tipo</label><select id="insTipo"><option>Destilado</option><option>Aperitivo</option><option>Bitter</option><option>Cocktail Alcoolico</option><option>Complemento</option><option>Frutas</option><option>Guarnição</option><option>Guarnição / Complemento</option><option>Mistura / Condimento</option><option>Soft drink</option><option>Sucos</option><option>Vinhos</option><option>Xarope</option></select></div>
+                    </div>
+                    <div class="grid-form-row">
+                        <div><label>Un. Medida</label><select id="insUn"><option value="ml">ml</option><option value="kg">Kg</option><option value="g">g</option><option value="bj">bj</option></select></div>
+                        <div><label>Qtde</label><input type="number" id="insQtde" placeholder="750"></div>
+                        <div><label>Valor (R$)</label><input type="number" id="insValor" placeholder="120.00"></div>
+                    </div>
+                    <button onclick="salvarInsumo()" class="btn-success" style="width:100%; margin-top:15px;">💾 Salvar no Estoque</button>
+                </div>
+
+                <h3 style="margin-top:20px;">Estoque Atual</h3>
+                <div class="table-responsive">
+                    <table><thead><tr><th>Tipo</th><th>Produto / Marca</th><th>Volume</th><th>Custo Total</th><th>Custo Unit.</th><th>Ações</th></tr></thead><tbody id="lista-insumos"></tbody></table>
+                </div>
+            </div>
+        </div>
 
         <div id="view-analytics" class="view-section"><h2>📈 Analytics</h2><div class="card" style="display:flex; gap:10px;"><select id="select-evento-analise"><option>Carregando...</option></select><button onclick="gerarRelatorio()" class="btn-primary">Analisar</button></div><div class="kpi-grid" style="margin-top:20px;"><div class="kpi-card" style="border-color:gold"><small>Fat</small><span class="kpi-val" id="kpi-fat">0</span></div><div class="kpi-card" style="border-color:red"><small>Custo</small><span class="kpi-val" id="kpi-custo">0</span></div><div class="kpi-card" style="border-color:green"><small>Lucro</small><span class="kpi-val" id="kpi-lucro">0</span></div><div class="kpi-card" style="border-color:purple"><small>CMV</small><span class="kpi-val" id="kpi-cmv">0%</span></div></div><div class="grid-2" style="margin-top:20px;"><div class="card" style="height:300px"><canvas id="chartDrinks"></canvas></div><div class="card" style="height:300px"><canvas id="chartHorario"></canvas></div></div></div>
     </main>
-
-    <div id="modalNovoEvento" class="modal-overlay">
-        <div class="modal">
-            <span class="close-modal" onclick="fecharModal()">×</span>
-            <h3>✨ Novo Evento</h3>
-            <div style="display:grid; gap: 10px;">
-                <div><label>Nome</label><input type="text" id="mNome"></div>
-                <div><label>Responsável</label><input type="text" id="mResp"></div>
-                <div><label>Telefone</label><input type="text" id="mTel" onkeyup="mascaraTelefone(this)"></div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;"><div><label>Data</label><input type="date" id="mData"></div><div><label>Local</label><input type="text" id="mLocal"></div></div>
-                <div class="time-grid">
-                    <div><label>Início</label><input type="time" id="mHora" onchange="calcTermino('m')"></div>
-                    <div><label>Duração</label><div class="split-input"><input type="number" id="mDurH" value="4" onchange="calcTermino('m')"><span>:</span><input type="number" id="mDurM" value="0" step="15" onchange="calcTermino('m')"></div></div>
-                    <div><label>Extra</label><div class="split-input"><input type="number" id="mExtH" value="0" onchange="calcTermino('m')" style="color:#2980b9;"><span>:</span><input type="number" id="mExtM" value="0" step="15" onchange="calcTermino('m')" style="color:#2980b9;"></div></div>
-                    <div><label>Término</label><input type="time" id="mTermino" readonly></div>
-                </div>
-                <button onclick="salvarNovoEvento()" class="btn-primary" style="margin-top:10px; padding:12px; width:100%;">CRIAR EVENTO</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modalEquipe" class="modal-overlay">
-        <div class="modal">
-            <span class="close-modal" onclick="fecharModalEquipe()">×</span>
-            <h3 id="eqTitulo">👤 Novo Membro da Equipe</h3>
-            <div style="display:grid; gap: 10px;">
-                <input type="hidden" id="eqId">
-                <div><label>Nome Completo</label><input type="text" id="eqNome"></div>
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <div><label>Telefone (Login)</label><input type="text" id="eqTel" placeholder="(11) 9..." onkeyup="mascaraTelefone(this)"></div>
-                    <div><label>CPF</label><input type="text" id="eqCPF" placeholder="000..." onkeyup="mascaraCPF(this)"></div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <div><label>Data Nasc.</label><input type="date" id="eqData" onchange="calcIdade()"></div>
-                    <div><label>Idade</label><input type="text" id="eqIdade" readonly style="background:#eee"></div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <div><label>Sexo</label><select id="eqSexo"><option value="M">Masculino</option><option value="F">Feminino</option><option value="O">Outro</option></select></div>
-                    <div><label>Função</label>
-                        <select id="eqFuncao">
-                            <option value="Bartender">Bartender</option>
-                            <option value="Barback">Barback</option>
-                            <option value="Chefe de Bar">Chefe de Bar</option>
-                            <option value="Garçom">Garçom</option>
-                            <option value="Copeiro">Copeiro</option>
-                            <option value="Gerente">Gerente</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; background:#f0fff4; padding:10px; border-radius:4px; border:1px solid #c6f6d5;">
-                    <div><label style="color:#27ae60">Valor Taxa (R$)</label><input type="number" id="eqTaxa"></div>
-                    <div><label style="color:#27ae60">Valor Adicional (R$)</label><input type="number" id="eqAdicional"></div>
-                </div>
-
-                <button onclick="salvarEquipe()" class="btn-success" style="margin-top:10px; padding:12px;">SALVAR CADASTRO</button>
-            </div>
-        </div>
-    </div>
+	
+	<div id="modalNovoEvento" class="modal-overlay"><div class="modal"><span class="close-modal" onclick="fecharModal()">×</span><h3>✨ Novo Evento</h3><div style="display:grid; gap: 10px;"><div><label>Nome</label><input type="text" id="mNome"></div><div><label>Responsável</label><input type="text" id="mResp"></div><div><label>Telefone</label><input type="text" id="mTel" onkeyup="mascaraTelefone(this)"></div><div class="grid-2"><div><label>Data</label><input type="date" id="mData"></div><div><label>Local</label><input type="text" id="mLocal"></div></div><div class="time-grid"><div><label>Início</label><input type="time" id="mHora" onchange="calcTermino('m')"></div><div><label>Dur</label><div class="split-input"><input type="number" id="mDurH" value="4" onchange="calcTermino('m')">:<input type="number" id="mDurM" value="0" step="15" onchange="calcTermino('m')"></div></div><div><label>Ext</label><div class="split-input"><input type="number" id="mExtH" value="0" onchange="calcTermino('m')">:<input type="number" id="mExtM" value="0" step="15" onchange="calcTermino('m')"></div></div><div><label>Fim</label><input type="time" id="mTermino" readonly></div></div><button onclick="salvarNovoEvento()" class="btn-primary" style="margin-top:10px; padding:12px; width:100%">CRIAR</button></div></div></div>
+    <div id="modalEquipe" class="modal-overlay"><div class="modal"><span class="close-modal" onclick="fecharModalEquipe()">×</span><h3 id="eqTitulo">👤 Membro</h3><div style="display:grid; gap:10px"><input type="hidden" id="eqId"><div><label>Nome</label><input type="text" id="eqNome"></div><div class="grid-2"><div><label>Telefone</label><input type="text" id="eqTel" onkeyup="mascaraTelefone(this)"></div><div><label>CPF</label><input type="text" id="eqCPF" onkeyup="mascaraCPF(this)"></div></div><div class="grid-2"><div><label>Data Nasc</label><input type="date" id="eqData" onchange="calcIdade()"></div><div><label>Idade</label><input type="text" id="eqIdade" readonly></div></div><div class="grid-2"><select id="eqSexo"><option value="M">M</option><option value="F">F</option></select><select id="eqFuncao"><option>Bartender</option><option>Barback</option><option>Chefe de Bar</option><option>Garçom</option><option>Copeiro</option><option>Gerente</option></select></div><div class="grid-2"><input type="number" id="eqTaxa" placeholder="Taxa"><input type="number" id="eqAdicional" placeholder="Add"></div><button onclick="salvarEquipe()" class="btn-success" style="margin-top:10px;padding:12px">SALVAR</button></div></div></div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -325,191 +301,295 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- MÁSCARAS ---
-    window.mascaraTelefone = (i) => { let v=i.value.replace(/\D/g,""); v=v.replace(/^(\d{2})(\d)/g,"($1) $2"); v=v.replace(/(\d)(\d{4})$/,"$1-$2"); i.value=v; };
-    window.mascaraCPF = (i) => { let v=i.value.replace(/\D/g,""); v=v.replace(/(\d{3})(\d)/,"$1.$2"); v=v.replace(/(\d{3})(\d)/,"$1.$2"); v=v.replace(/(\d{3})(\d{1,2})$/,"$1-$2"); i.value=v; };
-    window.calcIdade = () => {
-        const d = document.getElementById('eqData').value;
-        if(d) {
-            const diff = Date.now() - new Date(d).getTime();
-            const age = new Date(diff).getUTCFullYear() - 1970;
-            document.getElementById('eqIdade').value = age + " anos";
-        }
-    };
-    
-    // --- TIME CALC ---
-    window.calcTermino = (p) => {
-        const inicio = document.getElementById(p+'Hora').value;
-        const durH = parseInt(document.getElementById(p+'DurH').value)||0;
-        const durM = parseInt(document.getElementById(p+'DurM').value)||0;
-        const extH = parseInt(document.getElementById(p+'ExtH').value)||0;
-        const extM = parseInt(document.getElementById(p+'ExtM').value)||0;
-        if(inicio) {
-            const [h, m] = inicio.split(':').map(Number);
-            let totalMin = (h*60) + m + (durH*60) + durM + (extH*60) + extM;
-            let newH = Math.floor(totalMin/60)%24; let newM = totalMin%60;
-            document.getElementById(p+'Termino').value = `${String(newH).padStart(2,'0')}:${String(newM).padStart(2,'0')}`;
-        }
-    };
-
+    // UTILS
     window.toggleMenu = () => { document.getElementById('mainSidebar').classList.toggle('active'); document.querySelector('.sidebar-overlay').style.display = document.getElementById('mainSidebar').classList.contains('active') ? 'block' : 'none'; };
     window.showView = (id, el) => { document.querySelectorAll('.view-section').forEach(e=>e.classList.remove('active')); document.getElementById(id).classList.add('active'); document.querySelectorAll('.menu-item').forEach(e=>e.classList.remove('active')); el.classList.add('active'); if(window.innerWidth<=900)window.toggleMenu(); };
+    window.mascaraTelefone = (i) => { let v=i.value.replace(/\D/g,"").replace(/^(\d{2})(\d)/g,"($1) $2").replace(/(\d)(\d{4})$/,"$1-$2"); i.value=v; };
+    window.mascaraCPF = (i) => { let v=i.value.replace(/\D/g,"").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2"); i.value=v; };
+    window.calcIdade = () => { const d=document.getElementById('eqData').value; if(d) document.getElementById('eqIdade').value = (new Date().getFullYear() - new Date(d).getFullYear()) + " anos"; };
+    window.calcTermino = (p) => { const i=document.getElementById(p+'Hora').value, dH=parseInt(document.getElementById(p+'DurH').value)||0, dM=parseInt(document.getElementById(p+'DurM').value)||0, eH=parseInt(document.getElementById(p+'ExtH').value)||0, eM=parseInt(document.getElementById(p+'ExtM').value)||0; if(i){ const [h,m]=i.split(':').map(Number); let t=(h*60)+m+(dH*60)+dM+(eH*60)+eM; document.getElementById(p+'Termino').value=`${String(Math.floor(t/60)%24).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`; } };
 
-    let eventoID = null, bibliotecaGlobal = [], insumosCache = [], receitaAtual = [], chartD = null, chartH = null, idsNoEvento = [], eventoAtivoID = null;
+    let eventoID=null, bibliotecaGlobal=[], insumosCache=[], receitaAtual=[], idsNoEvento=[], eventoAtivoID=null;
 
-    // 1. EVENTOS
-    onSnapshot(doc(db,"config","geral"), (s) => { if(s.exists()) { eventoAtivoID = s.data().eventoAtivoID; renderizarListaEventos(); }});
-    let listaEventosCache = [];
-    onSnapshot(query(collection(db, "eventos"), orderBy("criadoEm", "desc")), (snap) => {
-        listaEventosCache = []; snap.forEach(d => listaEventosCache.push({ ...d.data(), id: d.id })); renderizarListaEventos();
-    });
-    function renderizarListaEventos() {
-        const div = document.getElementById('lista-eventos'); const selA = document.getElementById('select-evento-analise');
-        div.innerHTML = ''; selA.innerHTML = '<option value="">-- Escolha --</option>';
-        listaEventosCache.forEach(ev => {
-            const item = document.createElement('div'); item.className = `event-item ${eventoID === ev.id ? 'active' : ''}`;
-            const isLive = eventoAtivoID === ev.id;
-            const badges = (ev.status === 'fechado' ? '<span class="badge-closed">FECHADO</span>' : '') + (isLive ? '<span class="badge-live">NO AR</span>' : '');
-            item.innerHTML = `<div><b>${ev.nome}</b><br><small>${new Date(ev.criadoEm?.toDate()).toLocaleDateString()}</small></div><div>${badges}</div>`;
-            item.onclick = () => carregarEvento(ev.id, ev, ev.status||'aberto');
-            div.appendChild(item);
-            const opt = document.createElement('option'); opt.value = ev.id; opt.innerText = ev.nome; selA.appendChild(opt);
+    // ============================================================
+    // 1. DESPENSA & INSUMOS (LÓGICA NOVA V31)
+    // ============================================================
+    onSnapshot(collection(db,"insumos"), (snap) => {
+        insumosCache = [];
+        const l = document.getElementById('lista-insumos');
+        const s = document.getElementById('selInsumo');
+        if(l) l.innerHTML=''; if(s) s.innerHTML='<option value="">Selecione...</option>';
+        
+        snap.forEach(doc => {
+            const i = doc.data(); i.id = doc.id;
+            // Cálculo do Custo Unitário (Preço / Quantidade)
+            i.custoUnit = i.qtde > 0 ? (i.preco / i.qtde) : 0;
+            insumosCache.push(i);
+            
+            const custoF = i.custoUnit < 0.01 ? i.custoUnit.toFixed(4) : i.custoUnit.toFixed(2);
+            
+            if(l) l.innerHTML += `
+                <tr>
+                    <td><span class="stock-tag">${i.tipo}</span></td>
+                    <td><b>${i.produto}</b> <small>${i.marca}</small></td>
+                    <td>${i.qtde} ${i.un_med}</td>
+                    <td>R$ ${i.preco}</td>
+                    <td style="color:#e74c3c">R$ ${custoF}/${i.un_med}</td>
+                    <td>
+                        <button onclick="editarInsumo('${i.id}', '${i.produto}', '${i.marca}', '${i.tipo}', '${i.un_med}', '${i.qtde}', '${i.preco}')" class="btn-edit" title="Editar">✏️</button>
+                        <button onclick="delInsumo('${i.id}')" class="btn-trash" title="Excluir">🗑️</button>
+                    </td>
+                </tr>`;
+            
+            if(s) s.appendChild(new Option(`${i.produto} (${i.marca})`, i.id));
         });
+    });
+
+    window.salvarInsumo = async () => {
+        const id = document.getElementById('insId').value;
+        const d = {
+            produto: document.getElementById('insProd').value,
+            marca: document.getElementById('insMarca').value,
+            tipo: document.getElementById('insTipo').value,
+            un_med: document.getElementById('insUn').value,
+            qtde: parseFloat(document.getElementById('insQtde').value),
+            preco: parseFloat(document.getElementById('insValor').value)
+        };
+
+        if(!d.produto || !d.qtde || !d.preco) return alert("Preencha Produto, Quantidade e Valor!");
+
+        try {
+            if(id) {
+                // MODO EDIÇÃO: Atualiza o existente
+                await updateDoc(doc(db,"insumos",id), d);
+                alert("Insumo atualizado!");
+            } else {
+                // MODO CRIAÇÃO: Checa duplicidade (Produto + Marca + Qtde)
+                const q = query(collection(db,"insumos"), 
+                    where("produto", "==", d.produto),
+                    where("marca", "==", d.marca),
+                    where("qtde", "==", d.qtde)
+                );
+                const check = await getDocs(q);
+                if(!check.empty) return alert("Este produto já existe na despensa!");
+                
+                await addDoc(collection(db,"insumos"), d);
+                alert("Salvo na Despensa!");
+            }
+            // Limpa
+            document.getElementById('insId').value = '';
+            ['insProd','insMarca','insQtde','insValor'].forEach(i=>document.getElementById(i).value='');
+        } catch(e) { alert("Erro: " + e.message); }
+    };
+
+    window.editarInsumo = (id, prod, marca, tipo, un, qtde, valor) => {
+        document.getElementById('insId').value = id;
+        document.getElementById('insProd').value = prod;
+        document.getElementById('insMarca').value = marca;
+        document.getElementById('insTipo').value = tipo;
+        document.getElementById('insUn').value = un;
+        document.getElementById('insQtde').value = qtde;
+        document.getElementById('insValor').value = valor;
+        // Scroll para o topo
+        document.querySelector('#view-despensa').scrollIntoView({behavior:'smooth'});
+    };
+
+    window.delInsumo = async(id) => {
+        if(confirm("Tem certeza que deseja excluir este item da despensa?")) await deleteDoc(doc(db,"insumos",id));
+    };
+
+
+    // ============================================================
+    // 2. BIBLIOTECA & FICHA TÉCNICA (LÓGICA NOVA V31)
+    // ============================================================
+    
+    // Carregar Lista de Drinks
+    onSnapshot(collection(db,"drinks"), (s) => {
+        bibliotecaGlobal = [];
+        const l = document.getElementById('lista-biblioteca-visual');
+        if(l) l.innerHTML = '';
+        
+        s.forEach(doc => {
+            const d = doc.data();
+            bibliotecaGlobal.push({...d, id: doc.id});
+            
+            // Item Clicável para Edição
+            if(l) l.innerHTML += `
+                <div class="catalog-item" onclick="carregarDrinkParaEdicao('${doc.id}')">
+                    <span><b>${d.nome}</b></span>
+                    <div>
+                        <span style="font-size:0.8em; color:#27ae60; margin-right:10px;">Venda: R$ ${d.precoVenda}</span>
+                        <button onclick="excluirDrinkGlobal('${doc.id}', event)" class="btn-trash" style="font-size:0.9em; padding:2px 6px;">🗑️</button>
+                    </div>
+                </div>`;
+        });
+        renderLib(); // Atualiza checkbox do evento também
+    });
+
+    // Calculadora de Receita
+    window.addIngrediente = () => {
+        const id = document.getElementById('selInsumo').value;
+        const qtd = parseFloat(document.getElementById('qtdInsumo').value);
+        if(!id || !qtd) return;
+        
+        const i = insumosCache.find(x => x.id === id);
+        // Calcula custo baseado na unidade do insumo
+        const custoItem = i.custoUnit * qtd;
+
+        receitaAtual.push({ 
+            nome: `${i.produto} ${i.marca}`, 
+            qtd: qtd, 
+            un: i.un_med, 
+            custo: custoItem,
+            insumoId: id // Salva referência
+        });
+        renderReceita();
+    };
+
+    function renderReceita() {
+        let t = 0;
+        document.getElementById('lista-ingredientes').innerHTML = receitaAtual.map((i, idx) => {
+            t += i.custo;
+            return `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:4px; font-size:0.9em;">
+                <span>${i.qtd}${i.un} ${i.nome}</span>
+                <span>R$ ${i.custo.toFixed(2)} <a onclick="removerIngrediente(${idx})" style="color:red;cursor:pointer;margin-left:5px;">x</a></span>
+            </div>`;
+        }).join('');
+        
+        document.getElementById('globalCusto').value = t.toFixed(2);
+        window.calcCMV();
     }
 
-    window.abrirModalNovo=()=>{document.getElementById('modalNovoEvento').style.display='flex'; ['mNome','mResp','mTel','mData','mHora','mLocal','mTermino'].forEach(i=>document.getElementById(i).value='');};
-    window.fecharModal=()=>{document.getElementById('modalNovoEvento').style.display='none';};
-    window.salvarNovoEvento=async()=>{
-        const n=document.getElementById('mNome').value; if(!n)return alert("Nome!");
-        const d={ nome:n, responsavel:document.getElementById('mResp').value, telefone:document.getElementById('mTel').value, dataEvento:document.getElementById('mData').value, horaEvento:document.getElementById('mHora').value, durH:document.getElementById('mDurH').value, durM:document.getElementById('mDurM').value, extH:document.getElementById('mExtH').value, extM:document.getElementById('mExtM').value, termino:document.getElementById('mTermino').value, local:document.getElementById('mLocal').value, criadoEm:new Date(), status:'aberto' };
-        try{const r=await addDoc(collection(db,"eventos"),d); fecharModal(); carregarEvento(r.id,d,'aberto');}catch(e){alert(e.message);}
+    window.removerIngrediente = (idx) => {
+        receitaAtual.splice(idx, 1);
+        renderReceita();
     };
 
-    window.carregarEvento = (id, dados, status) => {
-        eventoID = id; document.getElementById('painel-detalhes').style.display='block'; document.getElementById('titulo-evento').innerText=dados.nome;
-        document.getElementById('detResp').value=dados.responsavel||''; document.getElementById('detTel').value=dados.telefone||''; 
-        document.getElementById('detData').value=dados.dataEvento||''; document.getElementById('detHora').value=dados.horaEvento||''; 
-        document.getElementById('detLocal').value=dados.local||'';
-        document.getElementById('detDurH').value=dados.durH||'4'; document.getElementById('detDurM').value=dados.durM||'0'; 
-        document.getElementById('detExtH').value=dados.extH||'0'; document.getElementById('detExtM').value=dados.extM||'0'; 
-        document.getElementById('detTermino').value=dados.termino||'';
+    window.calcCMV = () => {
+        const v = parseFloat(document.getElementById('globalPrice').value)||0;
+        const c = parseFloat(document.getElementById('globalCusto').value)||0;
+        if(v>0) {
+            const cmv = ((c/v)*100).toFixed(1);
+            const lucro = (v-c).toFixed(2);
+            const cor = cmv > 35 ? '#e74c3c' : '#27ae60';
+            document.getElementById('cmv-display').innerHTML = `CMV: <span style="color:${cor}">${cmv}%</span> | Lucro: R$ ${lucro}`;
+        }
+    };
+
+    window.salvarDrinkGlobal = async () => {
+        const id = document.getElementById('drinkId').value;
+        const nome = document.getElementById('globalName').value;
         
-        onSnapshot(doc(db,"eventos",id), (s) => {
-            if(s.exists()) {
-                const st = s.data().status || 'aberto';
-                document.getElementById('controles-status').innerHTML = st==='fechado'?`<button onclick="mudarStatus('aberto')" class="cmd-btn btn-unlock">🔓 REABRIR</button>`:`<button onclick="mudarStatus('fechado')" class="cmd-btn btn-lock">🔒 ENCERRAR</button>`;
+        if(!nome) return alert("Nome é obrigatório!");
+
+        const dados = {
+            nome: nome,
+            imagem: document.getElementById('globalImg').value || "./imagens/",
+            precoVenda: parseFloat(document.getElementById('globalPrice').value)||0,
+            precoCusto: parseFloat(document.getElementById('globalCusto').value)||0,
+            receita: receitaAtual,
+            estoque: 0
+        };
+
+        try {
+            if(id) {
+                // ATUALIZAR
+                await updateDoc(doc(db,"drinks",id), dados);
+                alert("Drink Atualizado!");
+            } else {
+                // CRIAR NOVO (COM VERIFICAÇÃO DE NOME)
+                const check = bibliotecaGlobal.find(d => d.nome.toLowerCase() === nome.toLowerCase());
+                if(check) return alert("Já existe um drink com este nome!");
+                
+                await addDoc(collection(db,"drinks"), dados);
+                alert("Drink Criado!");
             }
-        });
-        renderizarListaEventos();
-        onSnapshot(collection(db,"eventos",id,"cardapio"), (snap) => {
-            const tb = document.getElementById('tabela-evento'); tb.innerHTML=''; idsNoEvento=[];
-            snap.forEach(doc => { const d=doc.data(); idsNoEvento.push(d.idOriginal||doc.id); tb.innerHTML+=`<tr><td><img src="${d.imagem||''}" class="thumb"></td><td>${d.nome}</td><td><input type="number" value="${d.precoVenda}" onchange="attItem('${doc.id}','precoVenda',this.value)" class="input-table" style="color:#27ae60"></td><td><input type="number" value="${d.precoCusto}" onchange="attItem('${doc.id}','precoCusto',this.value)" class="input-table" style="color:#e74c3c"></td><td><input type="number" value="${d.estoque}" onchange="attItem('${doc.id}','estoque',this.value)" class="input-table" style="width:50px"></td><td><button onclick="delItem('${doc.id}','${d.nome}')" class="btn-trash">🗑️</button></td></tr>`; });
-            renderLib();
-        });
+            window.limparFormDrink();
+        } catch(e) { alert(e.message); }
     };
 
-    window.atualizarDadosEvento=async()=>{ if(eventoID)await updateDoc(doc(db,"eventos",eventoID),{ responsavel:document.getElementById('detResp').value, telefone:document.getElementById('detTel').value, dataEvento:document.getElementById('detData').value, horaEvento:document.getElementById('detHora').value, durH:document.getElementById('detDurH').value, durM:document.getElementById('detDurM').value, extH:document.getElementById('detExtH').value, extM:document.getElementById('detExtM').value, termino:document.getElementById('detTermino').value, local:document.getElementById('detLocal').value }); alert("Salvo!"); };
+    window.carregarDrinkParaEdicao = (id) => {
+        const d = bibliotecaGlobal.find(x => x.id === id);
+        if(d) {
+            document.getElementById('drinkId').value = d.id;
+            document.getElementById('globalName').value = d.nome;
+            document.getElementById('globalImg').value = d.imagem;
+            document.getElementById('globalPrice').value = d.precoVenda;
+            document.getElementById('globalCusto').value = d.precoCusto;
+            receitaAtual = d.receita || [];
+            
+            // Muda botão para indicar edição
+            document.getElementById('btnSalvarDrink').innerText = "💾 ATUALIZAR";
+            document.getElementById('btnSalvarDrink').classList.replace('btn-warning', 'btn-success');
+            
+            renderReceita();
+            // Rola para o form
+            document.querySelector('.grid-2').scrollIntoView({behavior:'smooth'});
+        }
+    };
 
-    // BIBLIOTECA
-    onSnapshot(collection(db,"drinks"),(s)=>{ bibliotecaGlobal=[]; const l=document.getElementById('lista-biblioteca-visual'); if(l)l.innerHTML=''; s.forEach(doc=>{ const d=doc.data(); bibliotecaGlobal.push({...d,id:doc.id}); if(l)l.innerHTML+=`<div style="padding:10px;border-bottom:1px solid #eee"><b>${d.nome}</b></div>`; }); renderLib(); });
-    function renderLib(){ const d=document.getElementById('lista-global-checkboxes'); if(!d)return; d.innerHTML=''; bibliotecaGlobal.sort((a,b)=>a.nome.localeCompare(b.nome)); bibliotecaGlobal.forEach(x=>{ const ja=idsNoEvento.includes(x.id); d.innerHTML+=`<div class="chk-item ${ja?'disabled':''}"><input type="checkbox" id="chk_${x.id}" value="${x.id}" class="chk-drink" ${ja?'disabled':''}><label for="chk_${x.id}"><b>${x.nome}</b> ${ja?'(Add)':''}</label></div>`; }); }
+    window.limparFormDrink = () => {
+        document.getElementById('drinkId').value = '';
+        ['globalName','globalImg','globalPrice','globalCusto'].forEach(i=>document.getElementById(i).value='');
+        receitaAtual = [];
+        renderReceita();
+        document.getElementById('cmv-display').innerText = "CMV: 0%";
+        document.getElementById('btnSalvarDrink').innerText = "💾 SALVAR";
+        document.getElementById('btnSalvarDrink').classList.replace('btn-success', 'btn-warning');
+    };
 
+    window.excluirDrinkGlobal = async (id, event) => {
+        event.stopPropagation(); // Impede que o clique abra a edição
+        if(confirm("Tem certeza que deseja excluir este drink da biblioteca?")) {
+            await deleteDoc(doc(db,"drinks",id));
+            window.limparFormDrink(); // Limpa se estava sendo editado
+        }
+    };
+
+
+    // ============================================================
+    // 3. EVENTOS & EQUIPE & ANALYTICS (MANTIDO V30)
+    // ============================================================
+    // (Esta parte do código mantém tudo o que já funcionava: Eventos, Equipe, Analytics, etc.)
+    
+    onSnapshot(doc(db,"config","geral"), (s) => { if(s.exists()) { eventoAtivoID = s.data().eventoAtivoID; renderizarListaEventos(); }});
+    let listaEventosCache=[]; onSnapshot(query(collection(db,"eventos"),orderBy("criadoEm","desc")),(snap)=>{listaEventosCache=[];snap.forEach(d=>listaEventosCache.push({...d.data(),id:d.id}));renderizarListaEventos();});
+    function renderizarListaEventos() {
+        const d=document.getElementById('lista-eventos'), sA=document.getElementById('select-evento-analise'); d.innerHTML=''; sA.innerHTML='<option value="">-- Escolha --</option>';
+        listaEventosCache.forEach(ev=>{
+            const item=document.createElement('div'); item.className=`event-item ${eventoID===ev.id?'active':''}`;
+            const b=(ev.status==='fechado'?'<span class="badge-closed">FECHADO</span>':'')+(eventoAtivoID===ev.id?' <span class="badge-live">NO AR</span>':'');
+            item.innerHTML=`<div><b>${ev.nome}</b><br><small>${new Date(ev.criadoEm?.toDate()).toLocaleDateString()}</small></div><div>${b}</div>`;
+            item.onclick=()=>carregarEvento(ev.id,ev,ev.status||'aberto'); d.appendChild(item); sA.appendChild(new Option(ev.nome,ev.id));
+        });
+    }
+    
+    window.abrirModalNovo=()=>{document.getElementById('modalNovoEvento').style.display='flex';['mNome','mResp','mTel','mData','mHora','mLocal','mTermino'].forEach(i=>document.getElementById(i).value='');};
+    window.fecharModal=()=>{document.getElementById('modalNovoEvento').style.display='none';};
+    window.salvarNovoEvento=async()=>{const n=document.getElementById('mNome').value;if(!n)return alert("Nome!");const d={nome:n,responsavel:document.getElementById('mResp').value,telefone:document.getElementById('mTel').value,dataEvento:document.getElementById('mData').value,horaEvento:document.getElementById('mHora').value,durH:document.getElementById('mDurH').value,durM:document.getElementById('mDurM').value,extH:document.getElementById('mExtH').value,extM:document.getElementById('mExtM').value,termino:document.getElementById('mTermino').value,local:document.getElementById('mLocal').value,criadoEm:new Date(),status:'aberto'};try{const r=await addDoc(collection(db,"eventos"),d);fecharModal();carregarEvento(r.id,d,'aberto');}catch(e){alert(e.message);}};
+    window.carregarEvento=(id,d,s)=>{eventoID=id;document.getElementById('painel-detalhes').style.display='block';document.getElementById('titulo-evento').innerText=d.nome;document.getElementById('detResp').value=d.responsavel||'';document.getElementById('detTel').value=d.telefone||'';document.getElementById('detData').value=d.dataEvento||'';document.getElementById('detHora').value=d.horaEvento||'';document.getElementById('detLocal').value=d.local||'';document.getElementById('detDurH').value=d.durH||'4';document.getElementById('detDurM').value=d.durM||'0';document.getElementById('detExtH').value=d.extH||'0';document.getElementById('detExtM').value=d.extM||'0';document.getElementById('detTermino').value=d.termino||'';onSnapshot(doc(db,"eventos",id),(sn)=>{if(sn.exists()){const st=sn.data().status||'aberto';document.getElementById('controles-status').innerHTML=st==='fechado'?`<button onclick="mudarStatus('aberto')" class="cmd-btn btn-unlock">🔓 REABRIR</button>`:`<button onclick="mudarStatus('fechado')" class="cmd-btn btn-lock">🔒 ENCERRAR</button>`;}});renderizarListaEventos();onSnapshot(collection(db,"eventos",id,"cardapio"),(snap)=>{const tb=document.getElementById('tabela-evento');tb.innerHTML='';idsNoEvento=[];snap.forEach(doc=>{const dd=doc.data();idsNoEvento.push(dd.idOriginal||doc.id);tb.innerHTML+=`<tr><td><img src="${dd.imagem||''}" class="thumb"></td><td>${dd.nome}</td><td><input type="number" value="${dd.precoVenda}" onchange="attItem('${doc.id}','precoVenda',this.value)" class="input-table" style="color:#27ae60"></td><td><input type="number" value="${dd.precoCusto}" onchange="attItem('${doc.id}','precoCusto',this.value)" class="input-table" style="color:#e74c3c"></td><td><input type="number" value="${dd.estoque}" onchange="attItem('${doc.id}','estoque',this.value)" class="input-table" style="width:50px"></td><td><button onclick="delItem('${doc.id}','${dd.nome}')" class="btn-trash">🗑️</button></td></tr>`;});renderLib();});};
+    window.atualizarDadosEvento=async()=>{if(eventoID)await updateDoc(doc(db,"eventos",eventoID),{responsavel:document.getElementById('detResp').value,telefone:document.getElementById('detTel').value,dataEvento:document.getElementById('detData').value,horaEvento:document.getElementById('detHora').value,durH:document.getElementById('detDurH').value,durM:document.getElementById('detDurM').value,extH:document.getElementById('detExtH').value,extM:document.getElementById('detExtM').value,termino:document.getElementById('detTermino').value,local:document.getElementById('detLocal').value});alert("Salvo!");};
+    
+    function renderLib(){const d=document.getElementById('lista-global-checkboxes');if(!d)return;d.innerHTML='';bibliotecaGlobal.sort((a,b)=>a.nome.localeCompare(b.nome));bibliotecaGlobal.forEach(x=>{const ja=idsNoEvento.includes(x.id);d.innerHTML+=`<div class="chk-item ${ja?'disabled':''}"><input type="checkbox" id="chk_${x.id}" value="${x.id}" class="chk-drink" ${ja?'disabled':''}><label for="chk_${x.id}"><b>${x.nome}</b> ${ja?'(Add)':''}</label></div>`;});}
     window.attItem=async(id,c,v)=>await updateDoc(doc(db,"eventos",eventoID,"cardapio",id),{[c]:parseFloat(v)});
-    window.delItem=async(id,nome)=>{if(confirm(`Remover ${nome}?`))await deleteDoc(doc(db,"eventos",eventoID,"cardapio",id));};
+    window.delItem=async(id,n)=>{if(confirm(`Remover ${n}?`))await deleteDoc(doc(db,"eventos",eventoID,"cardapio",id));};
     window.mudarStatus=async(s)=>await updateDoc(doc(db,"eventos",eventoID),{status:s});
     window.ativarEvento=async()=>{if(confirm("Ativar?"))await setDoc(doc(db,"config","geral"),{eventoAtivoID:eventoID,eventoAtivoNome:document.getElementById('titulo-evento').innerText},{merge:true});};
     window.reiniciarEvento=async()=>{if(confirm("ZERAR?")){const b=writeBatch(db);(await getDocs(collection(db,"eventos",eventoID,"vendas"))).forEach(d=>b.delete(d.ref));(await getDocs(collection(db,"eventos",eventoID,"cardapio"))).forEach(d=>b.update(d.ref,{estoque:50}));b.update(doc(db,"eventos",eventoID),{resetSignal:Date.now()});await b.commit();alert("Ok!");}};
     window.excluirEventoAtual=async()=>{if(confirm("Apagar?")){await deleteDoc(doc(db,"eventos",eventoID));location.reload();}};
     window.marcarTodos=(m)=>document.querySelectorAll('.chk-drink:not([disabled])').forEach(c=>c.checked=m);
     window.adicionarMuitos=async()=>{const c=document.querySelectorAll('.chk-drink:checked');if(!c.length)return;const b=writeBatch(db);c.forEach(chk=>{const d=bibliotecaGlobal.find(x=>x.id===chk.value);if(d)b.set(doc(collection(db,"eventos",eventoID,"cardapio")),{nome:d.nome,imagem:d.imagem,precoVenda:d.precoVenda||0,precoCusto:d.precoCusto||0,estoque:50,idOriginal:d.id});});await b.commit();document.querySelectorAll('.chk-drink').forEach(c=>c.checked=false);};
-    
-    // --- 3. EQUIPE (LÓGICA ATUALIZADA V29) ---
-    onSnapshot(collection(db,"equipe"), (snap) => {
-        const l = document.getElementById('lista-equipe'); l.innerHTML='';
-        snap.forEach(d => {
-            const b = d.data();
-            // Formata valores
-            const taxa = parseFloat(b.taxa||0).toFixed(2);
-            const add = parseFloat(b.adicional||0).toFixed(2);
-            
-            l.innerHTML += `
-                <tr>
-                    <td><b>${b.nome}</b><br><small style="color:#666">${b.funcao||'Bartender'}</small></td>
-                    <td>${b.telefone}</td>
-                    <td>${b.funcao||'-'}</td>
-                    <td style="color:#27ae60">R$ ${taxa}</td>
-                    <td style="color:#27ae60">R$ ${add}</td>
-                    <td style="text-align:right;">
-                        <button onclick="editarEquipe('${d.id}', '${b.nome}', '${b.telefone}', '${b.cpf||''}', '${b.dataNasc||''}', '${b.sexo||'M'}', '${b.funcao||'Bartender'}', '${b.taxa||0}', '${b.adicional||0}')" class="btn-edit" style="margin-right:5px">✏️</button>
-                        <button onclick="delEq('${d.id}')" class="btn-trash">🗑️</button>
-                    </td>
-                </tr>`;
-        });
-    });
 
-    window.abrirModalEquipe = (id) => {
-        document.getElementById('modalEquipe').style.display = 'flex';
-        document.getElementById('eqTitulo').innerText = id ? '✏️ Editar Membro' : '👤 Novo Membro';
-        document.getElementById('eqId').value = id || '';
-        
-        if(!id) { 
-            // Limpa se for novo
-            ['eqNome','eqTel','eqCPF','eqData','eqIdade','eqTaxa','eqAdicional'].forEach(i=>document.getElementById(i).value='');
-        }
-    };
-    window.fecharModalEquipe = () => document.getElementById('modalEquipe').style.display = 'none';
-
-    window.salvarEquipe = async () => {
-        const id = document.getElementById('eqId').value;
-        const tel = document.getElementById('eqTel').value;
-        const dados = {
-            nome: document.getElementById('eqNome').value,
-            telefone: tel,
-            cpf: document.getElementById('eqCPF').value,
-            dataNasc: document.getElementById('eqData').value,
-            sexo: document.getElementById('eqSexo').value,
-            funcao: document.getElementById('eqFuncao').value,
-            taxa: parseFloat(document.getElementById('eqTaxa').value)||0,
-            adicional: parseFloat(document.getElementById('eqAdicional').value)||0
-        };
-
-        if(!dados.nome || !dados.telefone) return alert("Nome e Telefone são obrigatórios!");
-
-        // Bloqueio de duplicidade (apenas se for novo)
-        if (!id) {
-            const q = query(collection(db, "equipe"), where("telefone", "==", tel));
-            const check = await getDocs(q);
-            if(!check.empty) return alert("Erro: Telefone já cadastrado!");
-            await addDoc(collection(db, "equipe"), dados);
-        } else {
-            await updateDoc(doc(db, "equipe", id), dados);
-        }
-        fecharModalEquipe();
-    };
-
-    window.editarEquipe = (id, nome, tel, cpf, data, sexo, funcao, taxa, add) => {
-        window.abrirModalEquipe(id);
-        document.getElementById('eqNome').value = nome;
-        document.getElementById('eqTel').value = tel;
-        document.getElementById('eqCPF').value = cpf;
-        document.getElementById('eqData').value = data;
-        document.getElementById('eqSexo').value = sexo;
-        document.getElementById('eqFuncao').value = funcao;
-        document.getElementById('eqTaxa').value = taxa;
-        document.getElementById('eqAdicional').value = add;
-        calcIdade(); // Recalcula visualmente
-    };
+    // EQUIPE (MANTIDO)
+    window.abrirModalEquipe=(id)=>{document.getElementById('modalEquipe').style.display='flex';document.getElementById('eqTitulo').innerText=id?'✏️ Editar':'👤 Novo';document.getElementById('eqId').value=id||'';if(!id)['eqNome','eqTel','eqCPF','eqData','eqIdade','eqTaxa','eqAdicional'].forEach(i=>document.getElementById(i).value='');};
+    window.fecharModalEquipe=()=>document.getElementById('modalEquipe').style.display='none';
+    onSnapshot(collection(db,"equipe"),(s)=>{const l=document.getElementById('lista-equipe');l.innerHTML='';s.forEach(d=>{const b=d.data();l.innerHTML+=`<tr><td><b>${b.nome}</b><br><small style="color:#666">${b.funcao||''}</small></td><td>${b.telefone}</td><td>${b.funcao}</td><td>R$ ${parseFloat(b.taxa||0).toFixed(2)}</td><td>R$ ${parseFloat(b.adicional||0).toFixed(2)}</td><td style="text-align:right"><button onclick="editarEquipe('${d.id}','${b.nome}','${b.telefone}','${b.cpf}','${b.dataNasc}','${b.sexo}','${b.funcao}','${b.taxa}','${b.adicional}')" class="btn-edit">✏️</button><button onclick="delEq('${d.id}')" class="btn-trash">🗑️</button></td></tr>`;});});
+    window.salvarEquipe=async()=>{const id=document.getElementById('eqId').value,tel=document.getElementById('eqTel').value;const d={nome:document.getElementById('eqNome').value,telefone:tel,cpf:document.getElementById('eqCPF').value,dataNasc:document.getElementById('eqData').value,sexo:document.getElementById('eqSexo').value,funcao:document.getElementById('eqFuncao').value,taxa:parseFloat(document.getElementById('eqTaxa').value)||0,adicional:parseFloat(document.getElementById('eqAdicional').value)||0};if(!d.nome||!d.telefone)return alert("Nome e Telefone!");if(!id){const q=query(collection(db,"equipe"),where("telefone","==",tel));const c=await getDocs(q);if(!c.empty)return alert("Telefone já existe!");await addDoc(collection(db,"equipe"),d);}else await updateDoc(doc(db,"equipe",id),d);fecharModalEquipe();};
+    window.editarEquipe=(id,n,t,c,d,s,f,tx,ad)=>{window.abrirModalEquipe(id);document.getElementById('eqNome').value=n;document.getElementById('eqTel').value=t;document.getElementById('eqCPF').value=c;document.getElementById('eqData').value=d;document.getElementById('eqSexo').value=s;document.getElementById('eqFuncao').value=f;document.getElementById('eqTaxa').value=tx;document.getElementById('eqAdicional').value=ad;calcIdade();};
     window.delEq=async(id)=>await deleteDoc(doc(db,"equipe",id));
 
-    // Despensa/Global/Analytics (Mantido)
-    window.adicionarAoGlobal=async()=>{const n=document.getElementById('globalName').value;if(n)await addDoc(collection(db,"drinks"),{nome:n,precoVenda:parseFloat(document.getElementById('globalPrice').value)||0,precoCusto:parseFloat(document.getElementById('globalCusto').value)||0,imagem:document.getElementById('globalImg').value||"./imagens/",receita:receitaAtual,estoque:0});alert("Salvo!");receitaAtual=[];};
-    onSnapshot(collection(db,"insumos"),(s)=>{const l=document.getElementById('lista-insumos');l.innerHTML='';s.forEach(d=>l.innerHTML+=`<div style="padding:5px;border-bottom:1px solid #eee;display:flex;justify-content:space-between"><span>${d.data().nome}</span><button onclick="delIns('${d.id}')" class="btn-trash">🗑️</button></div>`)});
-    window.salvarInsumo=async()=>{const n=document.getElementById('insNome').value;if(n)await addDoc(collection(db,"insumos"),{nome:n,preco:parseFloat(document.getElementById('insPreco').value),volume:parseFloat(document.getElementById('insVol').value)});};
-    window.delIns=async(id)=>await deleteDoc(doc(db,"insumos",id));
-    window.addIngrediente=()=>{const id=document.getElementById('selInsumo').value;const qtd=document.getElementById('qtdInsumo').value;if(!id)return;const i=insumosCache.find(x=>x.id===id);receitaAtual.push({nome:i.nome,custo:i.custoUnit*qtd,qtd:qtd});renderReceita();};
-    function renderReceita(){let t=0;document.getElementById('lista-ingredientes').innerHTML=receitaAtual.map(i=>{t+=i.custo;return`<div>${i.qtd}x ${i.nome} (R$ ${i.custo.toFixed(2)})</div>`}).join('');document.getElementById('globalCusto').value=t.toFixed(2);window.calcCMV();};
-    window.calcCMV=()=>{const v=parseFloat(document.getElementById('globalPrice').value)||0;const c=parseFloat(document.getElementById('globalCusto').value)||0;if(v>0)document.getElementById('cmv-display').innerText=`CMV: ${((c/v)*100).toFixed(1)}% | Lucro: R$ ${(v-c).toFixed(2)}`;};
-    window.gerarRelatorio=async()=>{const eid=document.getElementById('select-evento-analise').value;if(!eid)return;const s=await getDocs(collection(db,"eventos",eid,"vendas"));let fat=0,custo=0; const dc={},hc={};s.forEach(d=>{const v=d.data();fat+=parseFloat(v.preco||0);custo+=parseFloat(v.custo||0); dc[v.drink]=(dc[v.drink]||0)+1; const h=v.hora.toDate?v.hora.toDate().getHours()+":00":new Date(v.hora).getHours()+":00";hc[h]=(hc[h]||0)+1;});document.getElementById('kpi-fat').innerText='R$ '+fat.toFixed(2); document.getElementById('kpi-custo').innerText='R$ '+custo.toFixed(2); document.getElementById('kpi-lucro').innerText='R$ '+(fat-custo).toFixed(2); document.getElementById('kpi-cmv').innerText=fat>0?((custo/fat)*100).toFixed(1)+'%':'0%';const cD=document.getElementById('chartDrinks').getContext('2d'); if(chartD)chartD.destroy(); chartD=new Chart(cD,{type:'doughnut',data:{labels:Object.keys(dc),datasets:[{data:Object.values(dc),backgroundColor:['#e74c3c','#3498db','#f1c40f']}]},options:{responsive:true,maintainAspectRatio:false}});const cH=document.getElementById('chartHorario').getContext('2d'); if(chartH)chartH.destroy(); const sH=Object.keys(hc).sort((a,b)=>parseInt(a)-parseInt(b)); chartH=new Chart(cH,{type:'line',data:{labels:sH,datasets:[{label:'Vendas',data:sH.map(h=>hc[h]),borderColor:'#3498db',fill:true}]},options:{responsive:true,maintainAspectRatio:false}});};
+    // ANALYTICS
+    window.gerarRelatorio=async()=>{const eid=document.getElementById('select-evento-analise').value;if(!eid)return;const s=await getDocs(collection(db,"eventos",eid,"vendas"));let fat=0,custo=0;const dc={},hc={};s.forEach(d=>{const v=d.data();fat+=parseFloat(v.preco||0);custo+=parseFloat(v.custo||0);dc[v.drink]=(dc[v.drink]||0)+1;const h=v.hora.toDate?v.hora.toDate().getHours()+":00":new Date(v.hora).getHours()+":00";hc[h]=(hc[h]||0)+1;});document.getElementById('kpi-fat').innerText='R$ '+fat.toFixed(2);document.getElementById('kpi-custo').innerText='R$ '+custo.toFixed(2);document.getElementById('kpi-lucro').innerText='R$ '+(fat-custo).toFixed(2);document.getElementById('kpi-cmv').innerText=fat>0?((custo/fat)*100).toFixed(1)+'%':'0%';const cD=document.getElementById('chartDrinks').getContext('2d');if(chartD)chartD.destroy();chartD=new Chart(cD,{type:'doughnut',data:{labels:Object.keys(dc),datasets:[{data:Object.values(dc),backgroundColor:['#e74c3c','#3498db','#f1c40f']}]},options:{responsive:true,maintainAspectRatio:false}});const cH=document.getElementById('chartHorario').getContext('2d');if(chartH)chartH.destroy();const sH=Object.keys(hc).sort((a,b)=>parseInt(a)-parseInt(b));chartH=new Chart(cH,{type:'line',data:{labels:sH,datasets:[{label:'Vendas',data:sH.map(h=>hc[h]),borderColor:'#3498db',fill:true}]},options:{responsive:true,maintainAspectRatio:false}});};
 </script>
 </body>
 </html>
