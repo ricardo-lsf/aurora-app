@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aurora App V17 (Receitas)</title>
+    <title>Aurora App V19 (Chart & Click Fix)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e1e1e">
     
-    <!-- Gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     
@@ -15,87 +14,99 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Inter', sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; padding-bottom: 40px; }
 
+        /* LOGIN */
+        #login-overlay { position: fixed; inset: 0; background: radial-gradient(circle at center, #222 0%, #000 100%); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        .login-box { width: 100%; max-width: 320px; text-align: center; }
+        .login-input { background: #222; border: 1px solid #444; color: white; padding: 15px; border-radius: 8px; width: 100%; font-size: 1.3rem; text-align: center; margin-bottom: 15px; outline: none; transition: 0.3s; }
+        .login-input:focus { border-color: #2ecc71; background: #2a2a2a; }
+        .login-btn { background: #2ecc71; color: #000; width: 100%; padding: 15px; border-radius: 8px; font-weight: 800; font-size: 1.1rem; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3); }
+        .error-msg { color: #e74c3c; margin-top: 15px; display: none; font-weight: bold; background: rgba(231, 76, 60, 0.1); padding: 10px; border-radius: 6px; }
+        #loading { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 98; color:#2ecc71; flex-direction: column; }
+
         /* HEADER */
         header { background: rgba(30,30,30,0.95); position: sticky; top: 0; z-index: 100; padding: 12px 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         h1 { margin: 0; font-size: 1.1rem; color: #2ecc71; font-weight: 800; }
         .user-badge { font-size: 0.8rem; background: #333; padding: 4px 10px; border-radius: 20px; color: #fff; border: 1px solid #444; }
-
         .event-bar { text-align: center; padding: 8px; background: #1e1e1e; margin-bottom: 15px; border-bottom: 1px solid #222; font-size: 0.9rem; color: #888; }
-        .event-name { color: #fff; font-weight: 700; font-size: 1rem; display: block; }
 
-        /* GRID DE DRINKS */
+        /* GRID */
         .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 12px; }
         @media (min-width: 600px) { .grid-container { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
         
         .drink-card { background: #252525; border-radius: 12px; overflow: hidden; border: 1px solid #333; position: relative; transition: 0.2s; display: flex; flex-direction: column; }
         .drink-card.stock-low { border: 1px solid #e67e22; box-shadow: inset 0 0 10px rgba(230, 126, 34, 0.1); }
         .drink-card.stock-out { border: 1px solid #c0392b; opacity: 0.6; filter: grayscale(0.8); }
-        
         .sold-out-overlay { position: absolute; top: 35%; left: 0; width: 100%; background: rgba(192, 57, 43, 0.9); color: white; text-align: center; padding: 5px; font-weight: bold; transform: rotate(-5deg); z-index: 10; display: none; pointer-events: none; }
         .drink-card.stock-out .sold-out-overlay { display: block; }
 
-        /* FOTO CLICÁVEL */
         .img-wrapper { position: relative; width: 100%; height: 110px; cursor: pointer; }
         .drink-img { width: 100%; height: 100%; object-fit: cover; border-bottom: 1px solid #333; }
-        .info-icon { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8em; border: 1px solid rgba(255,255,255,0.3); }
+        .info-icon { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8em; border: 1px solid rgba(255,255,255,0.3); z-index: 5; pointer-events: none; }
 
         .card-body { padding: 10px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
         .drink-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 6px; color: #fff; line-height: 1.2; height: 34px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
         .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .price-tag { color: #f1c40f; font-weight: 700; font-size: 0.9rem; }
         .stock-badge { font-size: 0.7rem; color: #bbb; background: #333; padding: 2px 6px; border-radius: 4px; border: 1px solid #444; }
-        .stock-low .stock-badge { color: #e67e22; border-color: #e67e22; }
-        .stock-out .stock-badge { color: #c0392b; border-color: #c0392b; }
-
+        
         .controls { display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; padding: 4px; border-radius: 25px; border: 1px solid #333; }
         .btn-circle { width: 32px; height: 32px; border-radius: 50%; border: none; color: white; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .btn-add { background: #27ae60; } .btn-remove { background: #c0392b; }
         .drink-count { font-size: 1.1rem; font-weight: 700; color: #fff; min-width: 20px; text-align: center; }
         button:disabled { background: #444 !important; opacity: 0.3; cursor: not-allowed; }
 
-        /* --- MODAL DE RECEITA (NOVO) --- */
+        /* MODAL RECEITA */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: flex-end; z-index: 2000; backdrop-filter: blur(5px); }
         .modal-content { background: #1e1e1e; width: 100%; max-width: 500px; height: 85vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; position: relative; animation: slideUp 0.3s; border-top: 1px solid #333; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        
         .close-modal { position: absolute; top: 15px; right: 15px; background: #333; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 1.5em; cursor: pointer; z-index: 10; }
-        
-        .rec-img { width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .rec-img { width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .rec-title { font-size: 1.5em; font-weight: 800; color: #2ecc71; margin: 0 0 5px 0; }
-        .rec-badge { background: #3498db; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8em; text-transform: uppercase; display: inline-block; margin-bottom: 15px; }
-        
+        .rec-badge { background: #3498db; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; text-transform: uppercase; display: inline-block; margin-bottom: 15px; letter-spacing: 1px; font-weight: bold; }
         .rec-section { margin-bottom: 20px; background: #252525; padding: 15px; border-radius: 8px; border: 1px solid #333; }
         .rec-section h4 { margin: 0 0 10px 0; color: #888; border-bottom: 1px solid #444; padding-bottom: 5px; font-size: 0.9em; letter-spacing: 1px; text-transform: uppercase; }
-        .rec-text { color: #ddd; line-height: 1.6; font-size: 0.95em; white-space: pre-wrap; }
+        .rec-text { color: #ddd; line-height: 1.6; font-size: 1em; white-space: pre-wrap; }
         .rec-list { list-style: none; padding: 0; margin: 0; }
-        .rec-list li { padding: 5px 0; border-bottom: 1px solid #333; color: #ccc; font-size: 0.9em; display: flex; justify-content: space-between; }
+        .rec-list li { padding: 8px 0; border-bottom: 1px solid #333; color: #ccc; font-size: 0.95em; display: flex; justify-content: space-between; }
         .rec-list li span { color: #fff; font-weight: bold; }
 
-        /* DASHBOARD */
+        /* DASHBOARD (LAYOUT RESTAURADO) */
         .dashboard { padding: 20px 12px; display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 700px) { .dashboard { grid-template-columns: 2fr 1fr; } } /* PC: Grafico 2/3, Lista 1/3 */
+        
         .panel { background: #1e1e1e; padding: 15px; border-radius: 12px; border: 1px solid #333; }
-        .chart-wrapper { position: relative; height: 250px; width: 100%; }
+        .chart-wrapper { position: relative; height: 300px; width: 100%; margin-top:15px; }
         .total-display { font-size: 1.6rem; font-weight: 800; color: #fff; }
         .export-btn { background: #27ae60; width: 100%; padding: 12px; border-radius: 8px; color: white; border: none; font-weight: bold; margin-top: 15px; font-size: 1rem; }
-
-        #log-list { max-height: 300px; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
-        #log-list li { padding: 10px 0; border-bottom: 1px solid #2a2a2a; font-size: 0.85rem; color: #ccc; display: flex; justify-content: space-between; }
         
-        #login-overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; background: radial-gradient(circle at center, #222 0%, #000 100%); }
-        .login-input { background: #222; border: 1px solid #444; color: white; padding: 15px; border-radius: 8px; width: 100%; max-width: 300px; text-align: center; margin-bottom: 15px; font-size: 1.2rem; }
-        .login-btn { background: #2ecc71; color: #000; width: 100%; max-width: 300px; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; font-size: 1.1rem; }
+        /* HISTÓRICO (LAYOUT RESTAURADO) */
+        #log-list { max-height: 300px; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
+        #log-list li { 
+            padding: 8px 0; 
+            border-bottom: 1px solid #2a2a2a; 
+            font-size: 0.85rem; 
+            color: #ccc; 
+            display: grid; 
+            grid-template-columns: 50px 1fr 30px; /* HORA | TEXTO | QTD */
+            align-items: center; 
+        }
+        .log-time { color:#666; font-size:0.8em; }
+        .log-user { color:#3498db; font-weight:bold; margin-right:5px; }
+        
         #evento-fechado-msg { background: #c0392b; color: white; text-align: center; padding: 12px; position: fixed; bottom: 0; width: 100%; z-index: 90; display: none; font-weight: bold; }
-        #loading { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 98; color:#2ecc71; }
     </style>
 </head>
 <body>
 
-    <!-- LOGIN -->
     <div id="login-overlay">
-        <div style="font-size:3rem;margin-bottom:10px">🍸</div><h2 style="color:white">Aurora App</h2>
-        <input type="tel" id="loginPhone" class="login-input" placeholder="Celular">
-        <button onclick="fazerLogin()" class="login-btn">ENTRAR</button>
-        <p id="login-error" style="color:#e74c3c;display:none;margin-top:10px">Não encontrado!</p>
+        <div class="login-box">
+            <div style="font-size:3rem; margin-bottom:10px;">🍸</div>
+            <h2 style="color:#fff; margin:0 0 5px 0;">Aurora App</h2>
+            <p style="color:#777; margin:0 0 30px 0;">Equipe</p>
+            <input type="tel" id="loginPhone" class="login-input" placeholder="(DDD) 9xxxx-xxxx" onkeyup="mascaraTelefone(this)">
+            <button onclick="fazerLogin()" class="login-btn">ENTRAR</button>
+            <p id="login-error" class="error-msg">Número não encontrado!</p>
+        </div>
     </div>
 
     <div id="loading"><h3>Conectando...</h3></div>
@@ -111,7 +122,7 @@
             <h3>PERFORMANCE</h3>
             <div style="display:flex;justify-content:space-between;margin-bottom:10px">
                 <div><div class="total-display" id="total-count">0</div><small style="color:#666">Drinks</small></div>
-                <div style="text-align:right"><div class="total-display" id="total-valor" style="color:#f1c40f">R$ 0</div><small style="color:#666">Vendas</small></div>
+                <div style="text-align:right;"><div class="total-display" id="total-valor" style="color:#f1c40f;">R$ 0</div><small style="color:#666">Vendas</small></div>
             </div>
             <div class="chart-wrapper"><canvas id="chart"></canvas></div>
             <button onclick="window.exportarCSV()" class="export-btn">Baixar Relatório</button>
@@ -119,23 +130,14 @@
         <div class="panel"><h3>HISTÓRICO</h3><ul id="log-list"></ul></div>
     </div>
 
-    <!-- MODAL DE RECEITA (NOVO) -->
     <div id="modalReceita" class="modal-overlay">
         <div class="modal-content">
             <span class="close-modal" onclick="document.getElementById('modalReceita').style.display='none'">×</span>
             <img id="recImg" class="rec-img" src="">
             <h2 id="recNome" class="rec-title"></h2>
             <div id="recTecnica" class="rec-badge"></div>
-            
-            <div class="rec-section">
-                <h4>Ingredientes</h4>
-                <ul id="recIngredientes" class="rec-list"></ul>
-            </div>
-
-            <div class="rec-section">
-                <h4>Modo de Preparo</h4>
-                <p id="recTexto" class="rec-text"></p>
-            </div>
+            <div class="rec-section"><h4>Ingredientes</h4><ul id="recIngredientes" class="rec-list"></ul></div>
+            <div class="rec-section"><h4>Modo de Preparo</h4><p id="recTexto" class="rec-text"></p></div>
         </div>
     </div>
 
@@ -144,32 +146,50 @@
         import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, increment, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ⚠️ COLE SUA CONFIG AQUI ⚠️
-	const firebaseConfig = {
-	  apiKey: "AIzaSyBu8y9RQMv9fbxORcRLAZN4OlA1IEXyZUU",
-	  authDomain: "aurora-bar-system.firebaseapp.com",
-	  projectId: "aurora-bar-system",
-	  storageBucket: "aurora-bar-system.firebasestorage.app",
-	  messagingSenderId: "380441809814",
-	  appId: "1:380441809814:web:ad008f37d30a5b0abe03b7"
-	};
+		const firebaseConfig = {
+		  apiKey: "AIzaSyBu8y9RQMv9fbxORcRLAZN4OlA1IEXyZUU",
+		  authDomain: "aurora-bar-system.firebaseapp.com",
+		  projectId: "aurora-bar-system",
+		  storageBucket: "aurora-bar-system.firebasestorage.app",
+		  messagingSenderId: "380441809814",
+		  appId: "1:380441809814:web:ad008f37d30a5b0abe03b7"
+		};
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let eventoID=null, eventoStatus="aberto", usuarioAtual=localStorage.getItem('aurora_user_name'), drinks=[], counts={}, localLogs=[], chart=null;
-        let ultimoReset = localStorage.getItem('last_reset_signal');
-
-        // LOGIN
-        if(usuarioAtual){ document.getElementById('login-overlay').style.display='none'; document.getElementById('user-display').innerText=usuarioAtual.split(' ')[0]; }
-        window.fazerLogin=async()=>{
-            const t=document.getElementById('loginPhone').value; if(!t)return;
-            try{ const q=query(collection(db,"equipe"),where("telefone","==",t)); const s=await getDocs(q);
-            if(s.empty){document.getElementById('login-error').style.display='block';}
-            else{const d=s.docs[0].data(); usuarioAtual=d.nome; localStorage.setItem('aurora_user_name',d.nome); localStorage.setItem('aurora_user_phone',d.telefone); await addDoc(collection(db,"acessos_sistema"),{nome:d.nome,tel:d.telefone,data:new Date()}); location.reload();}
-            }catch(e){alert("Erro conexão");}
+        window.mascaraTelefone = (input) => {
+            let v = input.value.replace(/\D/g,"");
+            v = v.replace(/^(\d{2})(\d)/g,"($1) $2");
+            v = v.replace(/(\d)(\d{4})$/,"$1-$2");
+            input.value = v;
         };
 
-        // MONITORAR EVENTO
+        let eventoID=null, eventoStatus="aberto", usuarioAtual=localStorage.getItem('aurora_user_name'), drinks=[], counts={}, localLogs=[], chart=null, ultimoReset=localStorage.getItem('last_reset_signal');
+
+        if(usuarioAtual) { document.getElementById('login-overlay').style.display='none'; document.getElementById('user-display').innerText = usuarioAtual.split(' ')[0]; }
+
+        window.fazerLogin = async () => {
+            const tel = document.getElementById('loginPhone').value;
+            const btn = document.querySelector('.login-btn');
+            const erro = document.getElementById('login-error');
+            if(!tel) return;
+            btn.innerText = "Verificando..."; erro.style.display = 'none';
+            try {
+                const q = query(collection(db,"equipe"), where("telefone", "==", tel));
+                const snap = await getDocs(q);
+                if(snap.empty) { erro.style.display = 'block'; btn.innerText = "ENTRAR"; } 
+                else {
+                    const d = snap.docs[0].data();
+                    usuarioAtual = d.nome;
+                    localStorage.setItem('aurora_user_name', d.nome);
+                    localStorage.setItem('aurora_user_phone', d.telefone);
+                    await addDoc(collection(db,"acessos_sistema"), {nome: d.nome, tel: d.telefone, data: new Date(), tipo: 'app_barman'});
+                    location.reload();
+                }
+            } catch(e) { console.error(e); alert("Erro de conexão"); btn.innerText="ENTRAR"; }
+        };
+
         onSnapshot(doc(db,"config","geral"), (s)=>{
             if(s.exists() && s.data().eventoAtivoID){
                 const nid=s.data().eventoAtivoID; document.getElementById('nome-evento').innerText=s.data().eventoAtivoNome;
@@ -189,7 +209,6 @@
             });
         }
 
-        // CARREGAR DRINKS
         function carregarDrinks(id){
             onSnapshot(collection(db,"eventos",id,"cardapio"), (s)=>{
                 drinks=[]; s.forEach(d=>drinks.push({...d.data(), id:d.id}));
@@ -205,11 +224,13 @@
                 const p=d.precoVenda||d.VlCusto||0; const sold=d.estoque<=0; const low=d.estoque<10&&!sold;
                 let cls='drink-card'; if(low)cls+=' stock-low'; if(sold)cls+=' stock-out';
                 
-                // AQUI ESTÁ A MÁGICA: onclick na Imagem chama verReceita() passando o idOriginal
+                // CLIQUE INTELIGENTE: Verifica se tem ID Original
+                const clickAction = d.idOriginal ? `onclick="verReceita('${d.idOriginal}')"` : `onclick="alert('Receita não vinculada!')"`;
+
                 g.innerHTML+=`
                 <div class="${cls}">
                     <div class="sold-out-overlay">ESGOTADO</div>
-                    <div class="img-wrapper" onclick="verReceita('${d.idOriginal}')">
+                    <div class="img-wrapper" ${clickAction}>
                         <div class="info-icon">i</div>
                         <img src="${d.imagem||''}" class="drink-img" onerror="this.style.opacity=0.3">
                     </div>
@@ -223,15 +244,12 @@
             atualizarTotais();
         }
 
-        // --- ABRIR RECEITA (NOVO) ---
         window.verReceita = async (idOriginal) => {
             if(!idOriginal) return;
-            // Busca os dados globais do drink na coleção 'drinks'
             try {
                 const docSnap = await getDoc(doc(db, "drinks", idOriginal));
                 if(docSnap.exists()) {
                     const data = docSnap.data();
-                    // Preenche o Modal
                     document.getElementById('recImg').src = data.imagem || '';
                     document.getElementById('recNome').innerText = data.nome;
                     document.getElementById('recTecnica').innerText = data.tecnica || 'Técnica Padrão';
@@ -243,16 +261,13 @@
                         data.receita.forEach(i => {
                             lista.innerHTML += `<li><span>${i.nome}</span> ${i.qtd}${i.un}</li>`;
                         });
-                    } else {
-                        lista.innerHTML = '<li>Sem ingredientes cadastrados.</li>';
-                    }
+                    } else { lista.innerHTML = '<li>Sem ingredientes cadastrados.</li>'; }
                     
                     document.getElementById('modalReceita').style.display = 'flex';
-                }
-            } catch(e) { console.error("Erro ao abrir receita", e); }
+                } else { alert("Ficha técnica não encontrada no sistema."); }
+            } catch(e) { console.error(e); }
         };
 
-        // VENDAS
         window.mudar=async(id,q)=>{
             if(!eventoID||eventoStatus==='fechado')return; const d=drinks.find(x=>x.id===id);
             if(q>0&&d.estoque<=0)return navigator.vibrate(200); if(q<0&&(!counts[id]||counts[id]<=0))return;
@@ -261,17 +276,47 @@
             try{ await updateDoc(doc(db,"eventos",eventoID,"cardapio",id),{estoque:increment(-q)}); if(q>0)await addDoc(collection(db,"eventos",eventoID,"vendas"),{drink:d.nome,preco:parseFloat(d.precoVenda||0),custo:parseFloat(d.precoCusto||0),hora:new Date(),usuario:usuarioAtual}); }catch(e){}
         };
 
+        // GRÁFICO CORRIGIDO (2 BARRAS)
         function atualizarTotais(){
             let tQ=0, tV=0; drinks.forEach(d=>{const q=counts[d.id]||0; tQ+=q; tV+=q*parseFloat(d.precoVenda||d.VlCusto||0);});
             document.getElementById('total-count').innerText=tQ; document.getElementById('total-valor').innerText='R$ '+tV.toFixed(2);
             const ctx=document.getElementById('chart').getContext('2d'); if(chart)chart.destroy();
+            
             const act=drinks.filter(d=>(counts[d.id]||0)>0);
-            chart=new Chart(ctx,{type:'bar',data:{labels:act.map(d=>d.nome.substring(0,8)+'...'),datasets:[{label:'Vendas',data:act.map(d=>counts[d.id]),backgroundColor:'#2ecc71',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#888',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#2ecc71'},grid:{color:'#333'}}}}});
+            const labels = act.map(d => d.nome.length > 10 ? d.nome.substring(0,10)+'...' : d.nome);
+
+            chart=new Chart(ctx,{
+                type:'bar',
+                data:{
+                    labels: labels,
+                    datasets:[
+                        {label:'Qtd', data:act.map(d=>counts[d.id]), backgroundColor:'#2ecc71', yAxisID:'y'},
+                        {label:'Valor', data:act.map(d=>counts[d.id]*(d.precoVenda||0)), backgroundColor:'#f1c40f', yAxisID:'y1'}
+                    ]
+                },
+                options:{
+                    responsive:true, maintainAspectRatio:false,
+                    plugins:{legend:{display:false}},
+                    scales:{
+                        x:{ticks:{color:'#888',font:{size:10}, autoSkip:false, maxRotation:90}, grid:{display:false}},
+                        y:{type:'linear',position:'left',ticks:{color:'#2ecc71'},grid:{color:'#333'}},
+                        y1:{type:'linear',position:'right',ticks:{color:'#f1c40f'},grid:{display:false}}
+                    }
+                }
+            });
         }
 
         function adicionarLog(n,q){const i={n,q,h:new Date().toLocaleTimeString().substring(0,5),u:usuarioAtual};localLogs.unshift(i);if(localLogs.length>30)localLogs.pop();localStorage.setItem('logs_ev_'+eventoID,JSON.stringify(localLogs));renderLog(i,true);}
         function carregarLogsAntigos(){document.getElementById('log-list').innerHTML='';const s=localStorage.getItem('logs_ev_'+eventoID);if(s){localLogs=JSON.parse(s);localLogs.forEach(i=>renderLog(i,false));}}
-        function renderLog(i,pre){const li=document.createElement('li');li.innerHTML=`<span class="log-time">${i.h}</span> <span><span style="color:#3498db;font-weight:bold">${i.u.split(' ')[0]}:</span> ${i.n}</span> <b style="color:${i.q>0?'#2ecc71':'#c0392b'}">${i.q>0?'+1':'-1'}</b>`;const l=document.getElementById('log-list');if(pre)l.prepend(li);else l.appendChild(li);}
+        
+        // HISTÓRICO RESTAURADO (ALINHADO À ESQUERDA)
+        function renderLog(i,pre){
+            const li=document.createElement('li');
+            li.innerHTML=`<span class="log-time">${i.h}</span> <span class="log-msg"><span class="log-user">${i.u.split(' ')[0]}:</span> ${i.n}</span> <b style="color:${i.q>0?'#2ecc71':'#c0392b'}">${i.q>0?'+1':'-1'}</b>`;
+            const l=document.getElementById('log-list');
+            if(pre)l.prepend(li);else l.appendChild(li);
+        }
+        
         window.exportarCSV=()=>{let c=`Evento: ${document.getElementById('nome-evento').innerText}\nBartender: ${usuarioAtual}\nData: ${new Date().toLocaleDateString()}\n\nBebida,Qtd,Total\n`;drinks.forEach(d=>{if(counts[d.id]>0)c+=`${d.nome},${counts[d.id]},${(counts[d.id]*parseFloat(d.precoVenda||0)).toFixed(2)}\n`;});c+=`\nTOTAL,,${document.getElementById('total-valor').innerText}`;const l=document.createElement("a");l.href=URL.createObjectURL(new Blob([c],{type:'text/csv;charset=utf-8;'}));l.download=`fechamento_${usuarioAtual}.csv`;l.click();};
         if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
     </script>
