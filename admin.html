@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aurora Admin V36 (Final)</title>
+    <title>Aurora Admin V39 (Ordenação)</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
+
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f6f8; color: #333; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
@@ -328,21 +328,32 @@
     let chartD = null, chartH = null;
 
     // ============================================================
-    // 1. DESPENSA & IMPORTADOR EXCEL
+    // 1. DESPENSA & IMPORTADOR (COM ORDENAÇÃO ALFABÉTICA)
     // ============================================================
     onSnapshot(collection(db,"insumos"), (snap) => {
         insumosCache = [];
         const l = document.getElementById('lista-insumos');
         const s = document.getElementById('selInsumo');
-        if(l) l.innerHTML=''; if(s) s.innerHTML='<option value="">Selecione...</option>';
+        if(l) l.innerHTML=''; if(s) s.innerHTML='<option value="">Selecione o Insumo...</option>';
         
+        // 1. Coleta os dados
         snap.forEach(doc => {
             const i = doc.data(); i.id = doc.id;
             i.custoUnit = i.qtde > 0 ? (i.preco / i.qtde) : 0; 
             insumosCache.push(i);
+        });
+
+        // 2. Ordena Alfabeticamente por Produto
+        insumosCache.sort((a, b) => a.produto.localeCompare(b.produto));
+
+        // 3. Renderiza na Tela (Tabela e Dropdown)
+        insumosCache.forEach(i => {
             const custoF = i.custoUnit < 0.01 ? i.custoUnit.toFixed(4) : i.custoUnit.toFixed(2);
             
-            if(l) l.innerHTML += `<tr><td><span class="stock-tag">${i.tipo||'-'}</span></td><td><b>${i.produto}</b> <small>${i.marca||''}</small></td><td>${i.qtde} ${i.un_med}</td><td>R$ ${i.preco}</td><td style="color:#e74c3c">R$ ${custoF}/${i.un_med}</td><td><button onclick="delInsumo('${i.id}')" class="btn-trash" title="Excluir">🗑️</button></td></tr>`;
+            // Tabela Despensa
+            if(l) l.innerHTML += `<tr><td><span class="stock-tag">${i.tipo||'-'}</span></td><td><b>${i.produto}</b> <small>${i.marca||''}</small></td><td>${i.qtde} ${i.un_med}</td><td>R$ ${i.preco}</td><td style="color:#e74c3c">R$ ${custoF}/${i.un_med}</td><td><button onclick="delInsumo('${i.id}')" class="btn-trash">🗑️</button></td></tr>`;
+            
+            // Dropdown Ficha Técnica (Ordenado)
             if(s) s.appendChild(new Option(`${i.produto} ${i.marca||''} (${i.un_med})`, i.id));
         });
     });
@@ -398,7 +409,7 @@
     window.delInsumo = async(id) => { if(confirm("Excluir?")) await deleteDoc(doc(db,"insumos",id)); };
 
     // ============================================================
-    // 2. BIBLIOTECA & FICHA TÉCNICA (COM CAMPO PREPARO)
+    // 2. BIBLIOTECA & FICHA TÉCNICA
     // ============================================================
     onSnapshot(collection(db,"drinks"), (s) => {
         bibliotecaGlobal = []; const l = document.getElementById('lista-biblioteca-visual'); if(l) l.innerHTML = '';
@@ -413,32 +424,18 @@
         const d=bibliotecaGlobal.find(x=>x.id===id); if(d){
             let h=document.getElementById('drinkId'); if(!h){h=document.createElement('input');h.type='hidden';h.id='drinkId';document.getElementById('globalName').parentNode.appendChild(h);} h.value=d.id;
             document.getElementById('globalName').value=d.nome; document.getElementById('globalImg').value=d.imagem; 
-            document.getElementById('globalTecnica').value=d.tecnica||'Montado'; 
-            document.getElementById('globalPrice').value=d.precoVenda; document.getElementById('globalCusto').value=d.precoCusto;
-            document.getElementById('globalPreparo').value = d.preparo || ''; // CARREGA PREPARO
-
+            document.getElementById('globalTecnica').value=d.tecnica||'Montado'; document.getElementById('globalPrice').value=d.precoVenda; document.getElementById('globalCusto').value=d.precoCusto;
+            document.getElementById('globalPreparo').value = d.preparo || ''; 
             receitaAtual=d.receita||[]; window.atualizarPreview(d.imagem); renderReceita();
             const b=document.getElementById('btnSalvarDrink'); b.innerText="🔄 ATUALIZAR"; b.className="btn-update-main";
             if(!document.getElementById('btnLimparDrink')) { const cl=document.createElement('button'); cl.id='btnLimparDrink'; cl.innerText="Limpar"; cl.className="btn-info"; cl.onclick=window.limparFormDrink; document.querySelector('.card-header button').replaceWith(cl); }
         }
     };
-    window.limparFormDrink = () => {
-        const h=document.getElementById('drinkId'); if(h)h.value='';
-        ['globalName','globalImg','globalPrice','globalCusto','globalPreparo'].forEach(i=>document.getElementById(i).value=''); // LIMPA PREPARO
-        receitaAtual=[]; renderReceita(); window.atualizarPreview('');
-        const b=document.getElementById('btnSalvarDrink'); b.innerText="💾 SALVAR"; b.className="btn-save-main";
-    };
+    window.limparFormDrink = () => { const h=document.getElementById('drinkId'); if(h)h.value=''; ['globalName','globalImg','globalPrice','globalCusto','globalPreparo'].forEach(i=>document.getElementById(i).value=''); receitaAtual=[]; renderReceita(); window.atualizarPreview(''); const btn=document.getElementById('btnSalvarDrink'); btn.innerText="💾 SALVAR"; btn.className="btn-save-main"; };
     window.salvarDrinkGlobal = async () => {
         const id=document.getElementById('drinkId')?document.getElementById('drinkId').value:null; const nome=document.getElementById('globalName').value;
-        const d={
-            nome, 
-            imagem:document.getElementById('globalImg').value||"./imagens/", 
-            tecnica:document.getElementById('globalTecnica').value, 
-            preparo: document.getElementById('globalPreparo').value, // SALVA PREPARO
-            precoVenda:parseFloat(document.getElementById('globalPrice').value)||0, 
-            precoCusto:parseFloat(document.getElementById('globalCusto').value)||0, 
-            receita:receitaAtual, estoque:0
-        };
+        const preparo = document.getElementById('globalPreparo').value;
+        const d={nome, imagem:document.getElementById('globalImg').value||"./imagens/", tecnica:document.getElementById('globalTecnica').value, preparo: preparo, precoVenda:parseFloat(document.getElementById('globalPrice').value)||0, precoCusto:parseFloat(document.getElementById('globalCusto').value)||0, receita:receitaAtual, estoque:0};
         if(id) await updateDoc(doc(db,"drinks",id),d); else { const c=bibliotecaGlobal.find(x=>x.nome.toLowerCase()===nome.toLowerCase()); if(c)return alert("Já existe!"); await addDoc(collection(db,"drinks"),d); } alert("Salvo!"); window.limparFormDrink();
     };
     window.delDrinkGlob=async(id,e)=>{e.stopPropagation();if(confirm("Excluir?"))await deleteDoc(doc(db,"drinks",id));};
@@ -449,7 +446,7 @@
     window.calcCMV=()=>{const v=parseFloat(document.getElementById('globalPrice').value)||0, c=parseFloat(document.getElementById('globalCusto').value)||0; if(v>0)document.getElementById('cmv-display').innerText=`CMV: ${((c/v)*100).toFixed(1)}% | Lucro: R$ ${(v-c).toFixed(2)}`;};
 
     // ============================================================
-    // 3. EVENTOS & LISTA DE COMPRAS (MANTIDOS)
+    // 3. EVENTOS, LISTA DE COMPRAS & EQUIPE (MANTIDOS)
     // ============================================================
     onSnapshot(doc(db,"config","geral"), (s) => { if(s.exists()) { eventoAtivoID = s.data().eventoAtivoID; renderizarListaEventos(); }});
     let listaEventosCache=[]; onSnapshot(query(collection(db,"eventos"),orderBy("criadoEm","desc")),(snap)=>{listaEventosCache=[];snap.forEach(d=>listaEventosCache.push({...d.data(),id:d.id}));renderizarListaEventos();});
@@ -458,14 +455,17 @@
     window.abrirModalNovo=()=>{document.getElementById('modalNovoEvento').style.display='flex';['mNome','mResp','mTel','mData','mHora','mLocal','mTermino'].forEach(i=>document.getElementById(i).value='');};
     window.fecharModal=()=>{document.getElementById('modalNovoEvento').style.display='none';};
     window.salvarNovoEvento=async()=>{const n=document.getElementById('mNome').value;if(!n)return alert("Nome!");const d={nome:n,responsavel:document.getElementById('mResp').value,telefone:document.getElementById('mTel').value,dataEvento:document.getElementById('mData').value,horaEvento:document.getElementById('mHora').value,durH:document.getElementById('mDurH').value,durM:document.getElementById('mDurM').value,extH:document.getElementById('mExtH').value,extM:document.getElementById('mExtM').value,termino:document.getElementById('mTermino').value,local:document.getElementById('mLocal').value,criadoEm:new Date(),status:'aberto'};try{const r=await addDoc(collection(db,"eventos"),d);fecharModal();carregarEvento(r.id,d,'aberto');}catch(e){alert(e.message);}};
+    
     window.carregarEvento=(id,d,s)=>{
         eventoID=id; document.getElementById('painel-detalhes').style.display='block'; document.getElementById('titulo-evento').innerText=d.nome;
-        document.getElementById('detResp').value=d.responsavel||''; document.getElementById('detTel').value=d.telefone||''; document.getElementById('detData').value=d.dataEvento||''; document.getElementById('detHora').value=d.horaEvento||''; document.getElementById('detLocal').value=d.local||''; document.getElementById('detDurH').value=d.durH||'4'; document.getElementById('detDurM').value=d.durM||'0'; document.getElementById('detExtH').value=d.extH||'0'; document.getElementById('detExtM').value=d.extM||'0'; document.getElementById('detTermino').value=d.termino||'';
+        document.getElementById('detResp').value=d.responsavel||''; document.getElementById('detTel').value=d.telefone||''; document.getElementById('detData').value=d.dataEvento||''; document.getElementById('detHora').value=d.horaEvento||''; document.getElementById('detLocal').value=d.local||''; 
+        document.getElementById('detDurH').value=d.durH||'4'; document.getElementById('detDurM').value=d.durM||'0'; document.getElementById('detExtH').value=d.extH||'0'; document.getElementById('detExtM').value=d.extM||'0'; document.getElementById('detTermino').value=d.termino||'';
         onSnapshot(doc(db,"eventos",id),(sn)=>{if(sn.exists()){const st=sn.data().status||'aberto';document.getElementById('controles-status').innerHTML=st==='fechado'?`<button onclick="mudarStatus('aberto')" class="cmd-btn btn-unlock">🔓 REABRIR</button>`:`<button onclick="mudarStatus('fechado')" class="cmd-btn btn-lock">🔒 ENCERRAR</button>`;}});
         renderizarListaEventos();
         onSnapshot(collection(db,"eventos",id,"cardapio"),(snap)=>{const tb=document.getElementById('tabela-evento');tb.innerHTML='';idsNoEvento=[];snap.forEach(doc=>{const dd=doc.data();idsNoEvento.push(dd.idOriginal||doc.id);tb.innerHTML+=`<tr><td><img src="${dd.imagem||''}" class="thumb"></td><td>${dd.nome}</td><td><input type="number" value="${dd.precoVenda}" onchange="attItem('${doc.id}','precoVenda',this.value)" class="input-table" style="color:#27ae60"></td><td><input type="number" value="${dd.precoCusto}" onchange="attItem('${doc.id}','precoCusto',this.value)" class="input-table" style="color:#e74c3c"></td><td><input type="number" value="${dd.estoque}" onchange="attItem('${doc.id}','estoque',this.value)" class="input-table" style="width:50px"></td><td><button onclick="delItem('${doc.id}','${dd.nome}')" class="btn-trash">🗑️</button></td></tr>`;});renderLib();});
     };
     window.atualizarDadosEvento=async()=>{if(eventoID)await updateDoc(doc(db,"eventos",eventoID),{responsavel:document.getElementById('detResp').value,telefone:document.getElementById('detTel').value,dataEvento:document.getElementById('detData').value,horaEvento:document.getElementById('detHora').value,durH:document.getElementById('detDurH').value,durM:document.getElementById('detDurM').value,extH:document.getElementById('detExtH').value,extM:document.getElementById('detExtM').value,termino:document.getElementById('detTermino').value,local:document.getElementById('detLocal').value});alert("Salvo!");};
+    
     function renderLib(){const d=document.getElementById('lista-global-checkboxes');if(!d)return;d.innerHTML='';bibliotecaGlobal.sort((a,b)=>a.nome.localeCompare(b.nome));bibliotecaGlobal.forEach(x=>{const ja=idsNoEvento.includes(x.id);d.innerHTML+=`<div class="chk-item ${ja?'disabled':''}"><input type="checkbox" id="chk_${x.id}" value="${x.id}" class="chk-drink" ${ja?'disabled':''}><label for="chk_${x.id}"><b>${x.nome}</b> ${ja?'(Add)':''}</label></div>`;});}
     window.attItem=async(id,c,v)=>await updateDoc(doc(db,"eventos",eventoID,"cardapio",id),{[c]:parseFloat(v)});
     window.delItem=async(id,n)=>{if(confirm(`Remover ${n}?`))await deleteDoc(doc(db,"eventos",eventoID,"cardapio",id));};
@@ -476,6 +476,7 @@
     window.marcarTodos=(m)=>document.querySelectorAll('.chk-drink:not([disabled])').forEach(c=>c.checked=m);
     window.adicionarMuitos=async()=>{const c=document.querySelectorAll('.chk-drink:checked');if(!c.length)return;const b=writeBatch(db);c.forEach(chk=>{const d=bibliotecaGlobal.find(x=>x.id===chk.value);if(d)b.set(doc(collection(db,"eventos",eventoID,"cardapio")),{nome:d.nome,imagem:d.imagem,precoVenda:d.precoVenda||0,precoCusto:d.precoCusto||0,estoque:50,idOriginal:d.id});});await b.commit();document.querySelectorAll('.chk-drink').forEach(c=>c.checked=false);};
     
+    // GERADOR LISTA DE COMPRAS
     window.gerarListaCompras = async () => {
         if(!eventoID) return;
         const snaps = await getDocs(collection(db, "eventos", eventoID, "cardapio"));
