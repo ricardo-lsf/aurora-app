@@ -292,7 +292,29 @@
             </div>
         </div>
 
-        <div id="view-analytics" class="view-section"><h2>📈 Analytics</h2><div class="card" style="display:flex; gap:10px;"><select id="select-evento-analise"><option>Carregando...</option></select><button onclick="gerarRelatorio()" class="btn-primary">Analisar</button></div><div class="kpi-grid" style="margin-top:20px;"><div class="kpi-card" style="border-color:gold"><small>Fat</small><span class="kpi-val" id="kpi-fat">0</span></div><div class="kpi-card" style="border-color:red"><small>Custo</small><span class="kpi-val" id="kpi-custo">0</span></div><div class="kpi-card" style="border-color:green"><small>Lucro</small><span class="kpi-val" id="kpi-lucro">0</span></div><div class="kpi-card" style="border-color:purple"><small>CMV</small><span class="kpi-val" id="kpi-cmv">0%</span></div></div><div class="grid-2" style="margin-top:20px;"><div class="card" style="height:300px"><canvas id="chartDrinks"></canvas></div><div class="card" style="height:300px"><canvas id="chartHorario"></canvas></div></div></div>
+<div id="view-analytics" class="view-section">
+            <h2>📈 Analytics & Extrato</h2>
+            
+            <div class="card">
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <select id="select-evento-analise" style="flex:1;"><option>Carregando eventos...</option></select>
+                    <button onclick="gerarRelatorio()" class="btn-primary" style="min-width:120px;">📊 Gráficos</button>
+                    <button onclick="baixarExtratoVendas()" class="btn-success" style="min-width:150px; background:#217346;">📑 Baixar Extrato Excel</button>
+                </div>
+            </div>
+
+            <div class="kpi-grid" style="margin-top:20px;">
+                <div class="kpi-card" style="border-color:gold"><small>Faturamento</small><span class="kpi-val" id="kpi-fat">0</span></div>
+                <div class="kpi-card" style="border-color:red"><small>Custo Total</small><span class="kpi-val" id="kpi-custo">0</span></div>
+                <div class="kpi-card" style="border-color:green"><small>Lucro Líquido</small><span class="kpi-val" id="kpi-lucro">0</span></div>
+                <div class="kpi-card" style="border-color:purple"><small>CMV Global</small><span class="kpi-val" id="kpi-cmv">0%</span></div>
+            </div>
+
+            <div class="grid-2" style="margin-top:20px;">
+                <div class="card" style="height:300px"><canvas id="chartDrinks"></canvas></div>
+                <div class="card" style="height:300px"><canvas id="chartHorario"></canvas></div>
+            </div>
+        </div>
     </main>
 	
 	<div id="modalNovoEvento" class="modal-overlay"><div class="modal"><span class="close-modal" onclick="fecharModal()">×</span><h3>✨ Novo Evento</h3><div style="display:grid; gap: 10px;"><div><label>Nome</label><input type="text" id="mNome"></div><div><label>Responsável</label><input type="text" id="mResp"></div><div><label>Telefone</label><input type="text" id="mTel" onkeyup="mascaraTelefone(this)"></div><div class="grid-2"><div><label>Data</label><input type="date" id="mData"></div><div><label>Local</label><input type="text" id="mLocal"></div></div><div class="time-grid"><div><label>Início</label><input type="time" id="mHora" onchange="calcTermino('m')"></div><div><label>Dur</label><div class="split-input"><input type="number" id="mDurH" value="4" onchange="calcTermino('m')">:<input type="number" id="mDurM" value="0" step="15" onchange="calcTermino('m')"></div></div><div><label>Ext</label><div class="split-input"><input type="number" id="mExtH" value="0" onchange="calcTermino('m')">:<input type="number" id="mExtM" value="0" step="15" onchange="calcTermino('m')"></div></div><div><label>Fim</label><input type="time" id="mTermino" readonly></div></div><button onclick="salvarNovoEvento()" class="btn-primary" style="margin-top:10px; padding:12px; width:100%">CRIAR EVENTO</button></div></div></div>
@@ -328,38 +350,28 @@
     let chartD = null, chartH = null;
 
     // ============================================================
-    // 1. DESPENSA & IMPORTADOR (COM ORDENAÇÃO ALFABÉTICA)
+    // 1. DESPENSA & IMPORTADOR EXCEL
     // ============================================================
     onSnapshot(collection(db,"insumos"), (snap) => {
         insumosCache = [];
         const l = document.getElementById('lista-insumos');
         const s = document.getElementById('selInsumo');
-        if(l) l.innerHTML=''; if(s) s.innerHTML='<option value="">Selecione o Insumo...</option>';
+        if(l) l.innerHTML=''; if(s) s.innerHTML='<option value="">Selecione...</option>';
         
-        // 1. Coleta os dados
         snap.forEach(doc => {
             const i = doc.data(); i.id = doc.id;
             i.custoUnit = i.qtde > 0 ? (i.preco / i.qtde) : 0; 
             insumosCache.push(i);
-        });
-
-        // 2. Ordena Alfabeticamente por Produto
-        insumosCache.sort((a, b) => a.produto.localeCompare(b.produto));
-
-        // 3. Renderiza na Tela (Tabela e Dropdown)
-        insumosCache.forEach(i => {
             const custoF = i.custoUnit < 0.01 ? i.custoUnit.toFixed(4) : i.custoUnit.toFixed(2);
             
-            // Tabela Despensa
             if(l) l.innerHTML += `<tr><td><span class="stock-tag">${i.tipo||'-'}</span></td><td><b>${i.produto}</b> <small>${i.marca||''}</small></td><td>${i.qtde} ${i.un_med}</td><td>R$ ${i.preco}</td><td style="color:#e74c3c">R$ ${custoF}/${i.un_med}</td><td><button onclick="delInsumo('${i.id}')" class="btn-trash">🗑️</button></td></tr>`;
-            
-            // Dropdown Ficha Técnica (Ordenado)
             if(s) s.appendChild(new Option(`${i.produto} ${i.marca||''} (${i.un_med})`, i.id));
         });
     });
 
     const parseMoney = (val) => {
-        if (!val) return 0; if (typeof val === 'number') return val;
+        if (!val) return 0;
+        if (typeof val === 'number') return val;
         return parseFloat(val.toString().replace(/[R$\s.]/g, '').replace(',', '.')) || 0;
     };
 
@@ -376,6 +388,7 @@
                 const ws = wb.Sheets[wb.SheetNames[0]];
                 const json = XLSX.utils.sheet_to_json(ws);
                 let count = 0;
+                
                 for (const r of json) {
                     const d = {
                         produto: r['Produto']||r['produto']||'Sem Nome', 
@@ -409,7 +422,7 @@
     window.delInsumo = async(id) => { if(confirm("Excluir?")) await deleteDoc(doc(db,"insumos",id)); };
 
     // ============================================================
-    // 2. BIBLIOTECA & FICHA TÉCNICA
+    // 2. BIBLIOTECA
     // ============================================================
     onSnapshot(collection(db,"drinks"), (s) => {
         bibliotecaGlobal = []; const l = document.getElementById('lista-biblioteca-visual'); if(l) l.innerHTML = '';
@@ -434,8 +447,7 @@
     window.limparFormDrink = () => { const h=document.getElementById('drinkId'); if(h)h.value=''; ['globalName','globalImg','globalPrice','globalCusto','globalPreparo'].forEach(i=>document.getElementById(i).value=''); receitaAtual=[]; renderReceita(); window.atualizarPreview(''); const btn=document.getElementById('btnSalvarDrink'); btn.innerText="💾 SALVAR"; btn.className="btn-save-main"; };
     window.salvarDrinkGlobal = async () => {
         const id=document.getElementById('drinkId')?document.getElementById('drinkId').value:null; const nome=document.getElementById('globalName').value;
-        const preparo = document.getElementById('globalPreparo').value;
-        const d={nome, imagem:document.getElementById('globalImg').value||"./imagens/", tecnica:document.getElementById('globalTecnica').value, preparo: preparo, precoVenda:parseFloat(document.getElementById('globalPrice').value)||0, precoCusto:parseFloat(document.getElementById('globalCusto').value)||0, receita:receitaAtual, estoque:0};
+        const d={nome, imagem:document.getElementById('globalImg').value||"./imagens/", tecnica:document.getElementById('globalTecnica').value, preparo:document.getElementById('globalPreparo').value, precoVenda:parseFloat(document.getElementById('globalPrice').value)||0, precoCusto:parseFloat(document.getElementById('globalCusto').value)||0, receita:receitaAtual, estoque:0};
         if(id) await updateDoc(doc(db,"drinks",id),d); else { const c=bibliotecaGlobal.find(x=>x.nome.toLowerCase()===nome.toLowerCase()); if(c)return alert("Já existe!"); await addDoc(collection(db,"drinks"),d); } alert("Salvo!"); window.limparFormDrink();
     };
     window.delDrinkGlob=async(id,e)=>{e.stopPropagation();if(confirm("Excluir?"))await deleteDoc(doc(db,"drinks",id));};
@@ -446,7 +458,7 @@
     window.calcCMV=()=>{const v=parseFloat(document.getElementById('globalPrice').value)||0, c=parseFloat(document.getElementById('globalCusto').value)||0; if(v>0)document.getElementById('cmv-display').innerText=`CMV: ${((c/v)*100).toFixed(1)}% | Lucro: R$ ${(v-c).toFixed(2)}`;};
 
     // ============================================================
-    // 3. EVENTOS, LISTA DE COMPRAS & EQUIPE (MANTIDOS)
+    // 3. EVENTOS, LISTA DE COMPRAS & EQUIPE
     // ============================================================
     onSnapshot(doc(db,"config","geral"), (s) => { if(s.exists()) { eventoAtivoID = s.data().eventoAtivoID; renderizarListaEventos(); }});
     let listaEventosCache=[]; onSnapshot(query(collection(db,"eventos"),orderBy("criadoEm","desc")),(snap)=>{listaEventosCache=[];snap.forEach(d=>listaEventosCache.push({...d.data(),id:d.id}));renderizarListaEventos();});
@@ -499,6 +511,25 @@
         });
         const w = window.open("","_blank"); w.document.write(`<pre style="font-size:16px">${msg}</pre>`); w.document.close(); w.print();
     };
+    
+    // --- NOVO: EXTRATO ANALÍTICO (LINHA A LINHA) ---
+    window.baixarExtratoVendas = async () => {
+        const eid = document.getElementById('select-evento-analise').value;
+        if (!eid) return alert("Selecione um evento!");
+        const btn = document.querySelector('button[onclick="baixarExtratoVendas()"]'); const txtOrg=btn.innerText; btn.innerText="⏳";
+        try {
+            const snap = await getDocs(collection(db, "eventos", eid, "vendas"));
+            if (snap.empty) { btn.innerText=txtOrg; return alert("Sem vendas."); }
+            let csv = "Data,Hora,Bartender,Drink,Valor (R$),Custo (R$),Lucro (R$)\n";
+            snap.forEach(doc => {
+                const d = doc.data();
+                let dStr="", hStr=""; if(d.hora&&d.hora.toDate){const o=d.hora.toDate(); dStr=o.toLocaleDateString(); hStr=o.toLocaleTimeString();}
+                csv += `${dStr},${hStr},${d.usuario||'?'},${d.drink},"${parseFloat(d.preco||0).toFixed(2).replace('.',',')}","${parseFloat(d.custo||0).toFixed(2).replace('.',',')}","${(parseFloat(d.preco||0)-parseFloat(d.custo||0)).toFixed(2).replace('.',',')}"\n`;
+            });
+            const url = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+            const link = document.createElement("a"); link.href=url; link.download="Extrato_Vendas.csv"; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        } catch(e){console.error(e);alert("Erro ao gerar");} finally{btn.innerText=txtOrg;}
+    };
 
     window.abrirModalEquipe=(id)=>{document.getElementById('modalEquipe').style.display='flex';document.getElementById('eqTitulo').innerText=id?'✏️ Editar':'👤 Novo';document.getElementById('eqId').value=id||'';if(!id)['eqNome','eqTel','eqCPF','eqData','eqIdade','eqTaxa','eqAdicional'].forEach(i=>document.getElementById(i).value='');};
     window.fecharModalEquipe=()=>document.getElementById('modalEquipe').style.display='none';
@@ -507,5 +538,35 @@
     window.editarEquipe=(id,n,t,c,d,s,f,tx,ad)=>{window.abrirModalEquipe(id);document.getElementById('eqNome').value=n;document.getElementById('eqTel').value=t;document.getElementById('eqCPF').value=c;document.getElementById('eqData').value=d;document.getElementById('eqSexo').value=s;document.getElementById('eqFuncao').value=f;document.getElementById('eqTaxa').value=tx;document.getElementById('eqAdicional').value=ad;calcIdade();};
     window.delEq=async(id)=>await deleteDoc(doc(db,"equipe",id));
 
-    window.gerarRelatorio=async()=>{const eid=document.getElementById('select-evento-analise').value;if(!eid)return alert("Selecione!");try{const s=await getDocs(collection(db,"eventos",eid,"vendas"));if(s.empty)return alert("Sem vendas");let fat=0,custo=0;const dc={},hc={};s.forEach(d=>{const v=d.data();const p=parseFloat(v.preco||0),c=parseFloat(v.custo||0);fat+=p;custo+=c;if(!dc[v.drink])dc[v.drink]={qtd:0,val:0};dc[v.drink].qtd++;dc[v.drink].val+=p;let h="??";if(v.hora&&v.hora.toDate)h=v.hora.toDate().getHours()+":00";else if(v.hora)h=new Date(v.hora).getHours()+":00";hc[h]=(hc[h]||0)+1;});document.getElementById('kpi-fat').innerText='R$ '+fat.toFixed(2);document.getElementById('kpi-custo').innerText='R$ '+custo.toFixed(2);document.getElementById('kpi-lucro').innerText='R$ '+(fat-custo).toFixed(2);document.getElementById('kpi-cmv').innerText=fat>0?((custo/fat)*100).toFixed(1)+'%':'0%';const ctxD=document.getElementById('chartDrinks').getContext('2d');if(chartD)chartD.destroy();const lbs=Object.keys(dc);chartD=new Chart(ctxD,{type:'bar',data:{labels:lbs,datasets:[{label:'Qtd',data:lbs.map(k=>dc[k].qtd),backgroundColor:'#2ecc71',yAxisID:'y'},{label:'Valor',data:lbs.map(k=>dc[k].val),backgroundColor:'#f1c40f',type:'bar',yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{position:'left'},y1:{position:'right',grid:{display:false}}}}});const ctxH=document.getElementById('chartHorario').getContext('2d');if(chartH)chartH.destroy();const sH=Object.keys(hc).sort((a,b)=>parseInt(a)-parseInt(b));chartH=new Chart(ctxH,{type:'line',data:{labels:sH,datasets:[{label:'Vendas',data:sH.map(h=>hc[h]),borderColor:'#3498db',fill:true}]},options:{responsive:true,maintainAspectRatio:false}});}catch(e){console.error(e);}};
+    // ANALYTICS (GRÁFICOS 10 MINUTOS)
+    window.gerarRelatorio=async()=>{
+        const eid=document.getElementById('select-evento-analise').value;if(!eid)return alert("Selecione!");
+        try{
+            const s=await getDocs(collection(db,"eventos",eid,"vendas"));
+            if(s.empty)return alert("Sem dados");
+            let fat=0,custo=0; const dc={},hc={};
+            s.forEach(d=>{
+                const v=d.data(); const p=parseFloat(v.preco||0),c=parseFloat(v.custo||0); fat+=p; custo+=c;
+                // Drinks
+                if(!dc[v.drink])dc[v.drink]={qtd:0,val:0}; dc[v.drink].qtd++; dc[v.drink].val+=p;
+                // Tempo 10 min
+                let date=v.hora&&v.hora.toDate?v.hora.toDate():new Date(v.hora);
+                let mm=Math.floor(date.getMinutes()/10)*10;
+                let hLabel=`${String(date.getHours()).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+                hc[hLabel]=(hc[hLabel]||0)+1;
+            });
+            document.getElementById('kpi-fat').innerText='R$ '+fat.toFixed(2);
+            document.getElementById('kpi-custo').innerText='R$ '+custo.toFixed(2);
+            document.getElementById('kpi-lucro').innerText='R$ '+(fat-custo).toFixed(2);
+            document.getElementById('kpi-cmv').innerText=fat>0?((custo/fat)*100).toFixed(1)+'%':'0%';
+            
+            const ctxD=document.getElementById('chartDrinks').getContext('2d'); if(chartD)chartD.destroy();
+            const lbs=Object.keys(dc);
+            chartD=new Chart(ctxD,{type:'bar',data:{labels:lbs,datasets:[{label:'Qtd',data:lbs.map(k=>dc[k].qtd),backgroundColor:'#2ecc71',yAxisID:'y'},{label:'Valor',data:lbs.map(k=>dc[k].val),backgroundColor:'#f1c40f',type:'bar',yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{position:'left'},y1:{position:'right',grid:{display:false}}}}});
+            
+            const ctxH=document.getElementById('chartHorario').getContext('2d'); if(chartH)chartH.destroy();
+            const sH=Object.keys(hc).sort();
+            chartH=new Chart(ctxH,{type:'line',data:{labels:sH,datasets:[{label:'Vendas (10 min)',data:sH.map(h=>hc[h]),borderColor:'#3498db',fill:true}]},options:{responsive:true,maintainAspectRatio:false}});
+        }catch(e){console.error(e);}
+    };
 </script>
