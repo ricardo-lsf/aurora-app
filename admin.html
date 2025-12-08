@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aurora Admin V39 (Ordenação)</title>
+    <title>Aurora Admin V45 (Sinal de Negócio)</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f6f8; color: #333; margin: 0; display: flex; height: 100vh; overflow: hidden; }
@@ -22,27 +23,28 @@
         .menu-item.active { background: #2980b9; color: white; border-left: 4px solid #3498db; }
         .menu-icon { width: 25px; text-align: center; margin-right: 10px; }
 
-        /* HEADER MOBILE */
+        /* HEADER & LAYOUT */
         .mobile-header { display: none; background: #2c3e50; color: white; padding: 15px; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; width: 100%; z-index: 999; }
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 998; }
-
-        /* CONTEÚDO */
         .content { flex: 1; padding: 20px; overflow-y: auto; position: relative; }
-        .view-section { display: none; max-width: 1300px; margin: 0 auto; animation: fadeIn 0.3s; }
-        .view-section.active { display: block; }
+        .view-section { display: none; max-width: 1300px; margin: 0 auto; }
+        .view-section.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity:0; transform: translateY(5px); } to { opacity:1; transform: translateY(0); } }
 
-        /* ESTILOS GERAIS */
-        h2 { border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top: 0; color: #2c3e50; }
+        /* CARDS & INPUTS */
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e1e4e8; }
         .card-header { background: #f8f9fa; margin: -20px -20px 20px -20px; padding: 10px 20px; border-bottom: 1px solid #e1e4e8; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        h2 { border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top: 0; color: #2c3e50; }
+        h3 { margin: 0; font-size: 1.1em; color: #333; }
         
-        input, select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box; height: 38px; margin-bottom: 5px; }
+        input, select, textarea { padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box; height: 38px; margin-bottom: 5px; font-family: inherit; }
+        textarea { height: auto; resize: vertical; }
         input[readonly] { background-color: #e9ecef; color: #6c757d; }
         label { font-size: 0.8em; font-weight: bold; color: #666; display: block; margin-bottom: 2px; }
-        textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; font-family: inherit; margin-bottom: 5px; }
 
+        /* BOTÕES */
         button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; height: 38px; }
+        button:hover { opacity: 0.9; }
         .btn-primary { background: #3498db; color: white; }
         .btn-success { background: #27ae60; color: white; }
         .btn-danger { background: #e74c3c; color: white; font-size: 0.8em; }
@@ -56,8 +58,8 @@
         .btn-purple { background: #9b59b6; color: white; }
         .btn-save-main { background: linear-gradient(45deg, #2980b9, #3498db); color: white; width: 100%; margin-top: 15px; }
         .btn-update-main { background: linear-gradient(45deg, #27ae60, #2ecc71); color: white; width: 100%; margin-top: 15px; }
-        .btn-shopping { background: #34495e; color: white; width: 100%; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1em; }
-        .btn-shopping:hover { background: #2c3e50; }
+        .btn-shopping { background: #34495e; color: white; width: 100%; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-pdf { background: #e67e22; color: white; width: 100%; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.9em; }
 
         .header-actions { display: flex; gap: 8px; }
         .cmd-btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; font-size: 0.9em; display: flex; align-items: center; gap: 5px; }
@@ -66,16 +68,17 @@
         /* GRIDS */
         .grid-3 { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
         .grid-form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         .event-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #e8f4fd; padding: 15px; border-radius: 6px; margin-bottom: 15px; align-items: end; }
         .split-input { display: flex; gap: 5px; align-items: center; }
         .grid-row-custom { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
         
-        /* MODAL */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; }
-        .modal { background: white; padding: 25px; border-radius: 8px; width: 95%; max-width: 600px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 95vh; overflow-y: auto; }
-        .close-modal { float: right; cursor: pointer; font-size: 1.5em; color: #999; }
+        /* FINANCEIRO */
+        .finance-panel { background: #fffde7; border: 1px solid #fbc02d; padding: 15px; border-radius: 6px; margin-top: 15px; }
+        .finance-total { font-size: 1.4em; font-weight: bold; color: #27ae60; text-align: right; border-top: 1px dashed #f9a825; padding-top: 10px; margin-top: 10px; }
+        .finance-sinal { border-top: 1px solid #ffe082; margin-top: 10px; padding-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
         /* TABELAS */
         .table-responsive { overflow-x: auto; }
@@ -87,20 +90,19 @@
         .input-table:focus { border: 1px solid #3498db; background: white; }
 
         /* COMPONENTES */
-        .event-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .event-item.active { background: #e8f0fe; border-left: 4px solid #3498db; }
-        .badge-live { background: #27ae60; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.7em; margin-left: 5px; }
-        .badge-closed { background: #7f8c8d; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.7em; }
-        
         .checkbox-container { max-height: 250px; overflow-y: auto; border: 1px solid #ddd; background: #fff; padding: 0; border-radius: 4px; margin-bottom: 10px; }
         .chk-item { display: flex; align-items: center; padding: 8px 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
         .chk-item:hover { background: #f9f9f9; }
         .chk-item input { width: 18px; height: 18px; margin: 0 12px 0 0; }
         .chk-item.disabled { background-color: #f0f0f0; opacity: 0.6; pointer-events: none; }
+        .event-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .event-item.active { background: #e8f0fe; border-left: 4px solid #3498db; }
+        .badge-live { background: #27ae60; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.7em; margin-left: 5px; }
+        .badge-closed { background: #7f8c8d; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.7em; }
         .catalog-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
         .catalog-item:hover { background-color: #e8f4fd; padding-left: 15px; border-left: 4px solid #3498db; }
         .catalog-tech-badge { font-size: 0.7em; background: #ecf0f1; padding: 2px 6px; border-radius: 4px; color: #7f8c8d; border: 1px solid #bdc3c7; margin-left: 5px; }
-        
+
         .img-preview-box { width: 100%; height: 150px; background: #eee; border-radius: 6px; overflow: hidden; margin-top: 5px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; }
         .img-preview-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
 
@@ -111,13 +113,17 @@
         .danger-zone { margin-top: 30px; border-top: 2px dashed #e74c3c; padding-top: 20px; }
         .stock-tag { font-size: 0.7em; background: #eee; padding: 2px 6px; border-radius: 4px; color: #555; display: inline-block; margin-bottom: 2px; font-weight: bold; }
 
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .modal { background: white; padding: 25px; border-radius: 8px; width: 95%; max-width: 600px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 95vh; overflow-y: auto; }
+        .close-modal { float: right; cursor: pointer; font-size: 1.5em; color: #999; }
+
         @media (max-width: 900px) {
             body { flex-direction: column; }
             .sidebar { position: fixed; top: 0; left: 0; height: 100%; transform: translateX(-100%); width: 280px; }
             .sidebar.active { transform: translateX(0); }
             .mobile-header { display: flex; }
             .content { padding: 80px 15px 20px 15px; }
-            .grid-3, .grid-2, .event-details-grid, .time-grid, .grid-form-row, .kpi-grid { grid-template-columns: 1fr !important; }
+            .grid-3, .grid-2, .event-details-grid, .time-grid, .grid-form-row, .kpi-grid, .grid-4, .finance-sinal { grid-template-columns: 1fr !important; }
             .sidebar-overlay.active { display: block; }
         }
     </style>
@@ -176,9 +182,28 @@
                         <div class="time-grid">
                             <div><label>Início</label><input type="time" id="detHora" onchange="calcTermino('det')"></div>
                             <div><label>Duração</label><div class="split-input"><input type="number" id="detDurH" placeholder="H" value="4" onchange="calcTermino('det')"><span>:</span><input type="number" id="detDurM" placeholder="M" value="0" step="15" onchange="calcTermino('det')"></div></div>
-                            <div><label>Extra</label><div class="split-input"><input type="number" id="detExtH" placeholder="H" value="0" onchange="calcTermino('det')" style="color:#2980b9;font-weight:bold"><span>:</span><input type="number" id="detExtM" placeholder="M" value="0" step="15" onchange="calcTermino('det')" style="color:#2980b9;font-weight:bold"></div></div>
+                            <div><label>Extra</label><div class="split-input"><input type="number" id="detExtH" placeholder="H" value="0" onchange="calcTermino('det'); calcContrato()"><span>:</span><input type="number" id="detExtM" placeholder="M" value="0" step="15" onchange="calcTermino('det'); calcContrato()"></div></div>
                             <div><label>Término</label><input type="time" id="detTermino" readonly></div>
                         </div>
+                        
+                        <div class="finance-panel">
+                            <h4 style="margin:0 0 10px 0; color:#f57f17;">💰 Fechamento do Contrato</h4>
+                            <div class="grid-4">
+                                <div><label>Contrato (R$)</label><input type="text" id="finContrato" placeholder="R$ 0,00" onkeyup="mascaraMoeda(this); calcContrato()"></div>
+                                <div><label>Hora Extra (R$)</label><input type="text" id="finValorExtra" placeholder="R$ 0,00" onkeyup="mascaraMoeda(this); calcContrato()"></div>
+                                <div><label>Custos Adicionais (R$)</label><input type="text" id="finCustoExtra" placeholder="R$ 0,00" onkeyup="mascaraMoeda(this); calcContrato()"></div>
+                                <div><label>Adicional Tempo</label><input type="text" id="finAdicional" readonly style="color:#c0392b; font-weight:bold; background:#fff;"></div>
+                            </div>
+                            
+                            <div class="finance-sinal">
+                                <div><label>Sinal de Negócio (%)</label><input type="number" id="finSinalPerc" placeholder="Ex: 30" oninput="calcContrato()"></div>
+                                <div><label>Valor do Sinal (R$)</label><input type="text" id="finSinalValor" readonly style="font-weight:bold; background:#fff; color:#2980b9;"></div>
+                            </div>
+
+                            <div class="finance-total">Total Final: <span id="finTotal">R$ 0,00</span></div>
+                            <button onclick="gerarNotaServico()" class="btn-pdf">📄 Gerar Nota de Serviço (PDF)</button>
+                        </div>
+
                         <button onclick="atualizarDadosEvento()" class="btn-save-details">💾 Salvar Alterações</button>
                     </div>
 
@@ -252,12 +277,13 @@
                         </div>
                         <div id="lista-ingredientes" style="margin-top:10px; font-size:0.9em; margin-bottom:10px;"></div>
                         
-                        <label>Modo de Preparo</label>
-                        <textarea id="globalPreparo" rows="4" maxlength="500" placeholder="Descreva aqui..."></textarea>
+                        <label>Modo de Preparo (Max 500)</label>
+                        <textarea id="globalPreparo" rows="4" maxlength="500" placeholder="Descreva o passo a passo..." style="width:100%; box-sizing:border-box;"></textarea>
                     </div>
 
                     <button onclick="salvarDrinkGlobal()" id="btnSalvarDrink" class="btn-save-main">💾 SALVAR NOVO</button>
                 </div>
+                
                 <div class="card"><h3>Catálogo</h3><div id="lista-biblioteca-visual" style="max-height:500px; overflow-y:auto;"></div></div>
             </div>
         </div>
@@ -267,7 +293,6 @@
             <div class="grid-2">
                 <div class="card">
                     <h3>Cadastro de Produtos</h3>
-                    
                     <div style="background:#e8f5e9; padding:10px; border:1px dashed #27ae60; margin-bottom:15px; text-align:center; border-radius:6px;">
                         <label style="cursor:pointer;">📤 <b>Importar Planilha Excel</b><input type="file" id="excelInput" accept=".xlsx, .xls" style="display:none" onchange="importarExcel()"></label>
                         <div id="upload-progress" style="display:none; margin-top:5px; font-size:0.8em; color:#27ae60">Lendo...</div>
@@ -292,29 +317,7 @@
             </div>
         </div>
 
-<div id="view-analytics" class="view-section">
-            <h2>📈 Analytics & Extrato</h2>
-            
-            <div class="card">
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                    <select id="select-evento-analise" style="flex:1;"><option>Carregando eventos...</option></select>
-                    <button onclick="gerarRelatorio()" class="btn-primary" style="min-width:120px;">📊 Gráficos</button>
-                    <button onclick="baixarExtratoVendas()" class="btn-success" style="min-width:150px; background:#217346;">📑 Baixar Extrato Excel</button>
-                </div>
-            </div>
-
-            <div class="kpi-grid" style="margin-top:20px;">
-                <div class="kpi-card" style="border-color:gold"><small>Faturamento</small><span class="kpi-val" id="kpi-fat">0</span></div>
-                <div class="kpi-card" style="border-color:red"><small>Custo Total</small><span class="kpi-val" id="kpi-custo">0</span></div>
-                <div class="kpi-card" style="border-color:green"><small>Lucro Líquido</small><span class="kpi-val" id="kpi-lucro">0</span></div>
-                <div class="kpi-card" style="border-color:purple"><small>CMV Global</small><span class="kpi-val" id="kpi-cmv">0%</span></div>
-            </div>
-
-            <div class="grid-2" style="margin-top:20px;">
-                <div class="card" style="height:300px"><canvas id="chartDrinks"></canvas></div>
-                <div class="card" style="height:300px"><canvas id="chartHorario"></canvas></div>
-            </div>
-        </div>
+        <div id="view-analytics" class="view-section"><h2>📈 Analytics</h2><div class="card" style="display:flex; gap:10px;"><select id="select-evento-analise"><option>Carregando...</option></select><select id="chartPeriod" style="width:auto; min-width:140px;"><option value="60">Visão: Hora</option><option value="10">Visão: 10 min</option></select><button onclick="gerarRelatorio()" class="btn-primary">Analisar</button><button onclick="baixarExtratoVendas()" class="btn-success">📑 Extrato</button></div><div class="kpi-grid" style="margin-top:20px;"><div class="kpi-card" style="border-color:gold"><small>Fat</small><span class="kpi-val" id="kpi-fat">0</span></div><div class="kpi-card" style="border-color:red"><small>Custo</small><span class="kpi-val" id="kpi-custo">0</span></div><div class="kpi-card" style="border-color:green"><small>Lucro</small><span class="kpi-val" id="kpi-lucro">0</span></div><div class="kpi-card" style="border-color:purple"><small>CMV</small><span class="kpi-val" id="kpi-cmv">0%</span></div></div><div class="grid-2" style="margin-top:20px;"><div class="card" style="height:300px"><canvas id="chartDrinks"></canvas></div><div class="card" style="height:300px"><canvas id="chartHorario"></canvas></div></div></div>
     </main>
 	
 	<div id="modalNovoEvento" class="modal-overlay"><div class="modal"><span class="close-modal" onclick="fecharModal()">×</span><h3>✨ Novo Evento</h3><div style="display:grid; gap: 10px;"><div><label>Nome</label><input type="text" id="mNome"></div><div><label>Responsável</label><input type="text" id="mResp"></div><div><label>Telefone</label><input type="text" id="mTel" onkeyup="mascaraTelefone(this)"></div><div class="grid-2"><div><label>Data</label><input type="date" id="mData"></div><div><label>Local</label><input type="text" id="mLocal"></div></div><div class="time-grid"><div><label>Início</label><input type="time" id="mHora" onchange="calcTermino('m')"></div><div><label>Dur</label><div class="split-input"><input type="number" id="mDurH" value="4" onchange="calcTermino('m')">:<input type="number" id="mDurM" value="0" step="15" onchange="calcTermino('m')"></div></div><div><label>Ext</label><div class="split-input"><input type="number" id="mExtH" value="0" onchange="calcTermino('m')">:<input type="number" id="mExtM" value="0" step="15" onchange="calcTermino('m')"></div></div><div><label>Fim</label><input type="time" id="mTermino" readonly></div></div><button onclick="salvarNovoEvento()" class="btn-primary" style="margin-top:10px; padding:12px; width:100%">CRIAR EVENTO</button></div></div></div>
@@ -343,7 +346,56 @@
     window.mascaraTelefone = (i) => { let v=i.value.replace(/\D/g,"").replace(/^(\d{2})(\d)/g,"($1) $2").replace(/(\d)(\d{4})$/,"$1-$2"); i.value=v; };
     window.mascaraCPF = (i) => { let v=i.value.replace(/\D/g,"").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2"); i.value=v; };
     window.calcIdade = () => { const d=document.getElementById('eqData').value; if(d) document.getElementById('eqIdade').value = (new Date().getFullYear() - new Date(d).getFullYear()) + " anos"; };
-    window.calcTermino = (p) => { const i=document.getElementById(p+'Hora').value, dH=parseInt(document.getElementById(p+'DurH').value)||0, dM=parseInt(document.getElementById(p+'DurM').value)||0, eH=parseInt(document.getElementById(p+'ExtH').value)||0, eM=parseInt(document.getElementById(p+'ExtM').value)||0; if(i){ const [h,m]=i.split(':').map(Number); let t=(h*60)+m+(dH*60)+dM+(eH*60)+eM; document.getElementById(p+'Termino').value=`${String(Math.floor(t/60)%24).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`; } };
+    
+    // --- FORMATADORES FINANCEIROS ---
+    window.mascaraMoeda = (i) => {
+        let v = i.value.replace(/\D/g,'');
+        v = (v/100).toFixed(2) + '';
+        v = v.replace(".", ",");
+        v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+        i.value = 'R$ ' + v;
+        window.calcContrato(); // Recalcula ao digitar
+    };
+    
+    const parseCurrencyInput = (val) => {
+        if(!val) return 0;
+        if(typeof val === 'number') return val;
+        return parseFloat(val.toString().replace(/[R$\s.]/g, '').replace(',', '.')) || 0;
+    };
+
+    const formatCurrency = (val) => {
+        return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    };
+
+    // --- CÁLCULOS TEMPO & FINANCEIRO ---
+    window.calcTermino = (p) => { 
+        const i=document.getElementById(p+'Hora').value, dH=parseInt(document.getElementById(p+'DurH').value)||0, dM=parseInt(document.getElementById(p+'DurM').value)||0, eH=parseInt(document.getElementById(p+'ExtH').value)||0, eM=parseInt(document.getElementById(p+'ExtM').value)||0; 
+        if(i){ const [h,m]=i.split(':').map(Number); let t=(h*60)+m+(dH*60)+dM+(eH*60)+eM; document.getElementById(p+'Termino').value=`${String(Math.floor(t/60)%24).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`; }
+        if(p === 'det') window.calcContrato();
+    };
+
+    // LÓGICA FINANCEIRA DO EVENTO (COM SINAL)
+    window.calcContrato = () => {
+        const vContrato = parseCurrencyInput(document.getElementById('finContrato').value);
+        const vHora = parseCurrencyInput(document.getElementById('finValorExtra').value);
+        const vCustoExtra = parseCurrencyInput(document.getElementById('finCustoExtra').value);
+        const sinalPerc = parseFloat(document.getElementById('finSinalPerc').value) || 0;
+        
+        const extH = parseInt(document.getElementById('detExtH').value) || 0;
+        const extM = parseInt(document.getElementById('detExtM').value) || 0;
+
+        const minutosExtras = (extH * 60) + extM;
+        const valorPorMinuto = vHora > 0 ? (vHora / 60) : 0;
+        const adicional = minutosExtras * valorPorMinuto;
+        
+        const totalFinal = vContrato + adicional + vCustoExtra;
+        const sinalValor = vContrato * (sinalPerc / 100);
+
+        document.getElementById('finAdicional').value = formatCurrency(adicional);
+        document.getElementById('finTotal').innerText = formatCurrency(totalFinal);
+        document.getElementById('finSinalValor').value = formatCurrency(sinalValor);
+    };
+
     window.atualizarPreview = (u) => { const i=document.getElementById('previewImg'),t=document.getElementById('previewText'); if(u&&u.length>10){i.src=u;i.style.display='block';t.style.display='none'}else{i.style.display='none';t.style.display='block'} };
 
     let eventoID=null, bibliotecaGlobal=[], insumosCache=[], receitaAtual=[], idsNoEvento=[], eventoAtivoID=null;
@@ -353,51 +405,33 @@
     // 1. DESPENSA & IMPORTADOR EXCEL
     // ============================================================
     onSnapshot(collection(db,"insumos"), (snap) => {
-        insumosCache = [];
-        const l = document.getElementById('lista-insumos');
-        const s = document.getElementById('selInsumo');
+        insumosCache = []; const l = document.getElementById('lista-insumos'), s = document.getElementById('selInsumo');
         if(l) l.innerHTML=''; if(s) s.innerHTML='<option value="">Selecione...</option>';
         
-        snap.forEach(doc => {
-            const i = doc.data(); i.id = doc.id;
+        let temp = [];
+        snap.forEach(doc => { temp.push({...doc.data(), id: doc.id}); });
+        temp.sort((a,b) => a.produto.localeCompare(b.produto));
+
+        temp.forEach(i => {
             i.custoUnit = i.qtde > 0 ? (i.preco / i.qtde) : 0; 
             insumosCache.push(i);
             const custoF = i.custoUnit < 0.01 ? i.custoUnit.toFixed(4) : i.custoUnit.toFixed(2);
-            
             if(l) l.innerHTML += `<tr><td><span class="stock-tag">${i.tipo||'-'}</span></td><td><b>${i.produto}</b> <small>${i.marca||''}</small></td><td>${i.qtde} ${i.un_med}</td><td>R$ ${i.preco}</td><td style="color:#e74c3c">R$ ${custoF}/${i.un_med}</td><td><button onclick="delInsumo('${i.id}')" class="btn-trash">🗑️</button></td></tr>`;
             if(s) s.appendChild(new Option(`${i.produto} ${i.marca||''} (${i.un_med})`, i.id));
         });
     });
 
-    const parseMoney = (val) => {
-        if (!val) return 0;
-        if (typeof val === 'number') return val;
-        return parseFloat(val.toString().replace(/[R$\s.]/g, '').replace(',', '.')) || 0;
-    };
-
+    const parseMoneyExcel = (val) => { if (!val) return 0; if (typeof val === 'number') return val; return parseFloat(val.toString().replace(/[R$\s.]/g, '').replace(',', '.')) || 0; };
     window.importarExcel = () => {
         const file = document.getElementById('excelInput').files[0];
         if(!file) return alert("Selecione o arquivo!");
-        const reader = new FileReader();
-        const prog = document.getElementById('upload-progress'); prog.style.display='block'; prog.innerText="Lendo...";
-
+        const reader = new FileReader(); const prog = document.getElementById('upload-progress'); prog.style.display='block'; prog.innerText="Lendo...";
         reader.onload = async (e) => {
             try {
-                const data = new Uint8Array(e.target.result);
-                const wb = XLSX.read(data, {type:'array'});
-                const ws = wb.Sheets[wb.SheetNames[0]];
-                const json = XLSX.utils.sheet_to_json(ws);
+                const data = new Uint8Array(e.target.result); const wb = XLSX.read(data, {type:'array'}); const ws = wb.Sheets[wb.SheetNames[0]]; const json = XLSX.utils.sheet_to_json(ws);
                 let count = 0;
-                
                 for (const r of json) {
-                    const d = {
-                        produto: r['Produto']||r['produto']||'Sem Nome', 
-                        marca: r['Marca']||r['marca']||'',
-                        tipo: r['Tipo']||r['tipo']||'Outro', 
-                        un_med: r['Unidade']||r['unidade']||'un',
-                        qtde: parseMoney(r['Qtde']||r['qtde']), 
-                        preco: parseMoney(r['Valor']||r['valor'])
-                    };
+                    const d = { produto: r['Produto']||r['produto']||'Sem Nome', marca: r['Marca']||r['marca']||'', tipo: r['Tipo']||r['tipo']||'Outro', un_med: r['Unidade']||r['unidade']||'un', qtde: parseMoneyExcel(r['Qtde']||r['qtde']), preco: parseMoneyExcel(r['Valor']||r['valor']) };
                     const exists = insumosCache.find(i => i.produto===d.produto && i.marca===d.marca);
                     if(!exists && d.qtde > 0) { await addDoc(collection(db,"insumos"), d); count++; }
                 }
@@ -408,11 +442,7 @@
     };
 
     window.salvarInsumo = async () => {
-        const d = {
-            produto: document.getElementById('insProd').value, marca: document.getElementById('insMarca').value,
-            tipo: document.getElementById('insTipo').value, un_med: document.getElementById('insUn').value,
-            qtde: parseFloat(document.getElementById('insQtde').value), preco: parseFloat(document.getElementById('insValor').value)
-        };
+        const d = { produto: document.getElementById('insProd').value, marca: document.getElementById('insMarca').value, tipo: document.getElementById('insTipo').value, un_med: document.getElementById('insUn').value, qtde: parseFloat(document.getElementById('insQtde').value), preco: parseFloat(document.getElementById('insValor').value) };
         if(!d.produto || !d.qtde || !d.preco) return alert("Preencha tudo!");
         const q = query(collection(db,"insumos"), where("produto","==",d.produto), where("marca","==",d.marca));
         if(!(await getDocs(q)).empty) return alert("Duplicado!");
@@ -422,7 +452,7 @@
     window.delInsumo = async(id) => { if(confirm("Excluir?")) await deleteDoc(doc(db,"insumos",id)); };
 
     // ============================================================
-    // 2. BIBLIOTECA
+    // 2. BIBLIOTECA (COM PREPARO)
     // ============================================================
     onSnapshot(collection(db,"drinks"), (s) => {
         bibliotecaGlobal = []; const l = document.getElementById('lista-biblioteca-visual'); if(l) l.innerHTML = '';
@@ -437,28 +467,43 @@
         const d=bibliotecaGlobal.find(x=>x.id===id); if(d){
             let h=document.getElementById('drinkId'); if(!h){h=document.createElement('input');h.type='hidden';h.id='drinkId';document.getElementById('globalName').parentNode.appendChild(h);} h.value=d.id;
             document.getElementById('globalName').value=d.nome; document.getElementById('globalImg').value=d.imagem; 
-            document.getElementById('globalTecnica').value=d.tecnica||'Montado'; document.getElementById('globalPrice').value=d.precoVenda; document.getElementById('globalCusto').value=d.precoCusto;
+            document.getElementById('globalTecnica').value=d.tecnica||'Montado'; 
+            document.getElementById('globalPrice').value=d.precoVenda; document.getElementById('globalCusto').value=d.precoCusto;
             document.getElementById('globalPreparo').value = d.preparo || ''; 
             receitaAtual=d.receita||[]; window.atualizarPreview(d.imagem); renderReceita();
             const b=document.getElementById('btnSalvarDrink'); b.innerText="🔄 ATUALIZAR"; b.className="btn-update-main";
             if(!document.getElementById('btnLimparDrink')) { const cl=document.createElement('button'); cl.id='btnLimparDrink'; cl.innerText="Limpar"; cl.className="btn-info"; cl.onclick=window.limparFormDrink; document.querySelector('.card-header button').replaceWith(cl); }
         }
     };
-    window.limparFormDrink = () => { const h=document.getElementById('drinkId'); if(h)h.value=''; ['globalName','globalImg','globalPrice','globalCusto','globalPreparo'].forEach(i=>document.getElementById(i).value=''); receitaAtual=[]; renderReceita(); window.atualizarPreview(''); const btn=document.getElementById('btnSalvarDrink'); btn.innerText="💾 SALVAR"; btn.className="btn-save-main"; };
+    window.limparFormDrink = () => {
+        const h=document.getElementById('drinkId'); if(h)h.value='';
+        ['globalName','globalImg','globalPrice','globalCusto','globalPreparo'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
+        receitaAtual=[]; renderReceita(); window.atualizarPreview('');
+        const b=document.getElementById('btnSalvarDrink'); b.innerText="💾 SALVAR"; b.className="btn-save-main";
+    };
     window.salvarDrinkGlobal = async () => {
         const id=document.getElementById('drinkId')?document.getElementById('drinkId').value:null; const nome=document.getElementById('globalName').value;
-        const d={nome, imagem:document.getElementById('globalImg').value||"./imagens/", tecnica:document.getElementById('globalTecnica').value, preparo:document.getElementById('globalPreparo').value, precoVenda:parseFloat(document.getElementById('globalPrice').value)||0, precoCusto:parseFloat(document.getElementById('globalCusto').value)||0, receita:receitaAtual, estoque:0};
-        if(id) await updateDoc(doc(db,"drinks",id),d); else { const c=bibliotecaGlobal.find(x=>x.nome.toLowerCase()===nome.toLowerCase()); if(c)return alert("Já existe!"); await addDoc(collection(db,"drinks"),d); } alert("Salvo!"); window.limparFormDrink();
+        const preparo = document.getElementById('globalPreparo') ? document.getElementById('globalPreparo').value : '';
+        if(!nome) return alert("Nome obrigatório!");
+        const d={
+            nome, imagem:document.getElementById('globalImg').value||"./imagens/", 
+            tecnica:document.getElementById('globalTecnica').value, preparo: preparo,
+            precoVenda:parseFloat(document.getElementById('globalPrice').value)||0, 
+            precoCusto:parseFloat(document.getElementById('globalCusto').value)||0, 
+            receita:receitaAtual, estoque:0
+        };
+        try {
+            if(id) await updateDoc(doc(db,"drinks",id),d); else { const c=bibliotecaGlobal.find(x=>x.nome.toLowerCase()===nome.toLowerCase()); if(c) return alert("Já existe!"); await addDoc(collection(db,"drinks"),d); } alert("Salvo!"); window.limparFormDrink();
+        } catch(e){alert(e.message);}
     };
     window.delDrinkGlob=async(id,e)=>{e.stopPropagation();if(confirm("Excluir?"))await deleteDoc(doc(db,"drinks",id));};
-
     window.addIngrediente=()=>{const id=document.getElementById('selInsumo').value, q=parseFloat(document.getElementById('qtdInsumo').value); if(!id||!q)return; const i=insumosCache.find(x=>x.id===id); receitaAtual.push({nome:`${i.produto} ${i.marca}`, qtd:q, un:i.un_med, custo:i.custoUnit*q, insumoId:id}); renderReceita();};
     function renderReceita(){let t=0; document.getElementById('lista-ingredientes').innerHTML=receitaAtual.map((i,x)=>{t+=i.custo; return `<div>${i.qtd}${i.un} ${i.nome} (R$ ${i.custo.toFixed(2)}) <a onclick="remIng(${x})" style="color:red;cursor:pointer">x</a></div>`}).join(''); document.getElementById('globalCusto').value=t.toFixed(2); window.calcCMV();}
     window.remIng=(i)=>{receitaAtual.splice(i,1); renderReceita();};
     window.calcCMV=()=>{const v=parseFloat(document.getElementById('globalPrice').value)||0, c=parseFloat(document.getElementById('globalCusto').value)||0; if(v>0)document.getElementById('cmv-display').innerText=`CMV: ${((c/v)*100).toFixed(1)}% | Lucro: R$ ${(v-c).toFixed(2)}`;};
 
     // ============================================================
-    // 3. EVENTOS, LISTA DE COMPRAS & EQUIPE
+    // 3. EVENTOS (COM FINANCEIRO)
     // ============================================================
     onSnapshot(doc(db,"config","geral"), (s) => { if(s.exists()) { eventoAtivoID = s.data().eventoAtivoID; renderizarListaEventos(); }});
     let listaEventosCache=[]; onSnapshot(query(collection(db,"eventos"),orderBy("criadoEm","desc")),(snap)=>{listaEventosCache=[];snap.forEach(d=>listaEventosCache.push({...d.data(),id:d.id}));renderizarListaEventos();});
@@ -472,11 +517,40 @@
         eventoID=id; document.getElementById('painel-detalhes').style.display='block'; document.getElementById('titulo-evento').innerText=d.nome;
         document.getElementById('detResp').value=d.responsavel||''; document.getElementById('detTel').value=d.telefone||''; document.getElementById('detData').value=d.dataEvento||''; document.getElementById('detHora').value=d.horaEvento||''; document.getElementById('detLocal').value=d.local||''; 
         document.getElementById('detDurH').value=d.durH||'4'; document.getElementById('detDurM').value=d.durM||'0'; document.getElementById('detExtH').value=d.extH||'0'; document.getElementById('detExtM').value=d.extM||'0'; document.getElementById('detTermino').value=d.termino||'';
+        
+        // CARREGA FINANCEIRO
+        document.getElementById('finContrato').value = formatCurrency(d.valorContrato || 0).replace('R$ ', 'R$ ');
+        document.getElementById('finValorExtra').value = formatCurrency(d.valorHoraExtra || 0).replace('R$ ', 'R$ ');
+        document.getElementById('finCustoExtra').value = formatCurrency(d.valorCustosAdicionais || 0).replace('R$ ', 'R$ ');
+        document.getElementById('finSinalPerc').value = d.sinalPerc || 0; 
+        
+        window.calcContrato(); // Recalcula totais
+
         onSnapshot(doc(db,"eventos",id),(sn)=>{if(sn.exists()){const st=sn.data().status||'aberto';document.getElementById('controles-status').innerHTML=st==='fechado'?`<button onclick="mudarStatus('aberto')" class="cmd-btn btn-unlock">🔓 REABRIR</button>`:`<button onclick="mudarStatus('fechado')" class="cmd-btn btn-lock">🔒 ENCERRAR</button>`;}});
         renderizarListaEventos();
         onSnapshot(collection(db,"eventos",id,"cardapio"),(snap)=>{const tb=document.getElementById('tabela-evento');tb.innerHTML='';idsNoEvento=[];snap.forEach(doc=>{const dd=doc.data();idsNoEvento.push(dd.idOriginal||doc.id);tb.innerHTML+=`<tr><td><img src="${dd.imagem||''}" class="thumb"></td><td>${dd.nome}</td><td><input type="number" value="${dd.precoVenda}" onchange="attItem('${doc.id}','precoVenda',this.value)" class="input-table" style="color:#27ae60"></td><td><input type="number" value="${dd.precoCusto}" onchange="attItem('${doc.id}','precoCusto',this.value)" class="input-table" style="color:#e74c3c"></td><td><input type="number" value="${dd.estoque}" onchange="attItem('${doc.id}','estoque',this.value)" class="input-table" style="width:50px"></td><td><button onclick="delItem('${doc.id}','${dd.nome}')" class="btn-trash">🗑️</button></td></tr>`;});renderLib();});
     };
-    window.atualizarDadosEvento=async()=>{if(eventoID)await updateDoc(doc(db,"eventos",eventoID),{responsavel:document.getElementById('detResp').value,telefone:document.getElementById('detTel').value,dataEvento:document.getElementById('detData').value,horaEvento:document.getElementById('detHora').value,durH:document.getElementById('detDurH').value,durM:document.getElementById('detDurM').value,extH:document.getElementById('detExtH').value,extM:document.getElementById('detExtM').value,termino:document.getElementById('detTermino').value,local:document.getElementById('detLocal').value});alert("Salvo!");};
+
+    window.atualizarDadosEvento=async()=>{
+        if(!eventoID) return;
+        const dados = {
+            responsavel: document.getElementById('detResp').value,
+            telefone: document.getElementById('detTel').value,
+            dataEvento: document.getElementById('detData').value,
+            horaEvento: document.getElementById('detHora').value,
+            durH: document.getElementById('detDurH').value, durM: document.getElementById('detDurM').value,
+            extH: document.getElementById('detExtH').value, extM: document.getElementById('detExtM').value,
+            termino: document.getElementById('detTermino').value,
+            local: document.getElementById('detLocal').value,
+            // Financeiro
+            valorContrato: parseCurrencyInput(document.getElementById('finContrato').value),
+            valorHoraExtra: parseCurrencyInput(document.getElementById('finValorExtra').value),
+            valorCustosAdicionais: parseCurrencyInput(document.getElementById('finCustoExtra').value),
+            sinalPerc: parseFloat(document.getElementById('finSinalPerc').value) || 0
+        };
+        await updateDoc(doc(db,"eventos",eventoID), dados);
+        alert("Salvo com sucesso!");
+    };
     
     function renderLib(){const d=document.getElementById('lista-global-checkboxes');if(!d)return;d.innerHTML='';bibliotecaGlobal.sort((a,b)=>a.nome.localeCompare(b.nome));bibliotecaGlobal.forEach(x=>{const ja=idsNoEvento.includes(x.id);d.innerHTML+=`<div class="chk-item ${ja?'disabled':''}"><input type="checkbox" id="chk_${x.id}" value="${x.id}" class="chk-drink" ${ja?'disabled':''}><label for="chk_${x.id}"><b>${x.nome}</b> ${ja?'(Add)':''}</label></div>`;});}
     window.attItem=async(id,c,v)=>await updateDoc(doc(db,"eventos",eventoID,"cardapio",id),{[c]:parseFloat(v)});
@@ -511,24 +585,60 @@
         });
         const w = window.open("","_blank"); w.document.write(`<pre style="font-size:16px">${msg}</pre>`); w.document.close(); w.print();
     };
-    
-    // --- NOVO: EXTRATO ANALÍTICO (LINHA A LINHA) ---
-    window.baixarExtratoVendas = async () => {
-        const eid = document.getElementById('select-evento-analise').value;
-        if (!eid) return alert("Selecione um evento!");
-        const btn = document.querySelector('button[onclick="baixarExtratoVendas()"]'); const txtOrg=btn.innerText; btn.innerText="⏳";
-        try {
-            const snap = await getDocs(collection(db, "eventos", eid, "vendas"));
-            if (snap.empty) { btn.innerText=txtOrg; return alert("Sem vendas."); }
-            let csv = "Data,Hora,Bartender,Drink,Valor (R$),Custo (R$),Lucro (R$)\n";
-            snap.forEach(doc => {
-                const d = doc.data();
-                let dStr="", hStr=""; if(d.hora&&d.hora.toDate){const o=d.hora.toDate(); dStr=o.toLocaleDateString(); hStr=o.toLocaleTimeString();}
-                csv += `${dStr},${hStr},${d.usuario||'?'},${d.drink},"${parseFloat(d.preco||0).toFixed(2).replace('.',',')}","${parseFloat(d.custo||0).toFixed(2).replace('.',',')}","${(parseFloat(d.preco||0)-parseFloat(d.custo||0)).toFixed(2).replace('.',',')}"\n`;
-            });
-            const url = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
-            const link = document.createElement("a"); link.href=url; link.download="Extrato_Vendas.csv"; document.body.appendChild(link); link.click(); document.body.removeChild(link);
-        } catch(e){console.error(e);alert("Erro ao gerar");} finally{btn.innerText=txtOrg;}
+
+    // GERAR NOTA PDF (COM SINAL E RESTANTE)
+    window.gerarNotaServico = () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const evento = document.getElementById('titulo-evento').innerText;
+        const contrato = document.getElementById('finContrato').value;
+        const horaExtraVal = document.getElementById('finValorExtra').value;
+        const adicional = document.getElementById('finAdicional').value;
+        const extras = document.getElementById('finCustoExtra').value;
+        
+        // Totais e Sinal
+        const totalTexto = document.getElementById('finTotal').innerText;
+        const sinalPerc = document.getElementById('finSinalPerc').value;
+        const sinalValor = document.getElementById('finSinalValor').value;
+        
+        const vTotal = parseCurrencyInput(totalTexto);
+        const vSinal = parseCurrencyInput(sinalValor);
+        const restante = vTotal - vSinal;
+
+        const duracao = document.getElementById('detDurH').value + 'h ' + document.getElementById('detDurM').value + 'm';
+        const tempoExtra = document.getElementById('detExtH').value + 'h ' + document.getElementById('detExtM').value + 'm';
+
+        doc.setFontSize(18); doc.text("NOTA DE SERVIÇO - AURORA BARTENDERS", 105, 20, null, null, "center");
+        doc.setFontSize(12);
+        doc.text(`Evento: ${evento}`, 20, 40);
+        doc.text(`Data: ${new Date().toLocaleDateString()}`, 20, 50);
+        
+        doc.line(20, 55, 190, 55);
+        
+        let y = 70;
+        doc.text(`Valor Contrato (Base: ${duracao}):`, 20, y); doc.text(contrato, 180, y, null, null, "right");
+        y += 10;
+        doc.text(`Valor Hora Extra (Base: ${horaExtraVal}/h):`, 20, y); 
+        y += 10;
+        doc.text(`Tempo Excedente: ${tempoExtra}`, 30, y); doc.text(adicional, 180, y, null, null, "right");
+        y += 10;
+        doc.text(`Custos Adicionais:`, 20, y); doc.text(extras, 180, y, null, null, "right");
+        
+        y += 15; doc.line(20, y, 190, y); y += 10;
+        doc.setFont(undefined, 'bold');
+        doc.text(`TOTAL BRUTO:`, 20, y); doc.text(totalTexto, 180, y, null, null, "right");
+        
+        y += 10;
+        doc.setTextColor(231, 76, 60); // Vermelho
+        doc.text(`Sinal Pago (${sinalPerc}%):`, 20, y); doc.text(`- ${sinalValor}`, 180, y, null, null, "right");
+        
+        y += 15;
+        doc.setTextColor(0, 0, 0); // Preto
+        doc.setFontSize(14);
+        doc.text(`RESTANTE A PAGAR:`, 20, y); doc.text(formatCurrency(restante), 180, y, null, null, "right");
+
+        doc.save(`Nota_${evento}.pdf`);
     };
 
     window.abrirModalEquipe=(id)=>{document.getElementById('modalEquipe').style.display='flex';document.getElementById('eqTitulo').innerText=id?'✏️ Editar':'👤 Novo';document.getElementById('eqId').value=id||'';if(!id)['eqNome','eqTel','eqCPF','eqData','eqIdade','eqTaxa','eqAdicional'].forEach(i=>document.getElementById(i).value='');};
@@ -538,23 +648,33 @@
     window.editarEquipe=(id,n,t,c,d,s,f,tx,ad)=>{window.abrirModalEquipe(id);document.getElementById('eqNome').value=n;document.getElementById('eqTel').value=t;document.getElementById('eqCPF').value=c;document.getElementById('eqData').value=d;document.getElementById('eqSexo').value=s;document.getElementById('eqFuncao').value=f;document.getElementById('eqTaxa').value=tx;document.getElementById('eqAdicional').value=ad;calcIdade();};
     window.delEq=async(id)=>await deleteDoc(doc(db,"equipe",id));
 
-    // ANALYTICS (GRÁFICOS 10 MINUTOS)
+    // ANALYTICS (CORRIGIDO MACRO/MICRO)
     window.gerarRelatorio=async()=>{
-        const eid=document.getElementById('select-evento-analise').value;if(!eid)return alert("Selecione!");
-        try{
+        const eid=document.getElementById('select-evento-analise').value;
+        if(!eid) return alert("Selecione um evento!");
+        const periodo = document.getElementById('chartPeriod').value;
+        try {
             const s=await getDocs(collection(db,"eventos",eid,"vendas"));
-            if(s.empty)return alert("Sem dados");
+            if(s.empty) return alert("Sem vendas.");
+
             let fat=0,custo=0; const dc={},hc={};
             s.forEach(d=>{
-                const v=d.data(); const p=parseFloat(v.preco||0),c=parseFloat(v.custo||0); fat+=p; custo+=c;
-                // Drinks
+                const v=d.data(); 
+                const p=parseFloat(v.preco||0), c=parseFloat(v.custo||0); 
+                fat+=p; custo+=c;
                 if(!dc[v.drink])dc[v.drink]={qtd:0,val:0}; dc[v.drink].qtd++; dc[v.drink].val+=p;
-                // Tempo 10 min
+                
                 let date=v.hora&&v.hora.toDate?v.hora.toDate():new Date(v.hora);
-                let mm=Math.floor(date.getMinutes()/10)*10;
-                let hLabel=`${String(date.getHours()).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+                let hLabel;
+                if(periodo === '10'){
+                    let mm = Math.floor(date.getMinutes()/10)*10;
+                    hLabel = `${String(date.getHours()).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+                } else {
+                    hLabel = `${String(date.getHours()).padStart(2,'0')}:00`;
+                }
                 hc[hLabel]=(hc[hLabel]||0)+1;
             });
+
             document.getElementById('kpi-fat').innerText='R$ '+fat.toFixed(2);
             document.getElementById('kpi-custo').innerText='R$ '+custo.toFixed(2);
             document.getElementById('kpi-lucro').innerText='R$ '+(fat-custo).toFixed(2);
@@ -566,7 +686,25 @@
             
             const ctxH=document.getElementById('chartHorario').getContext('2d'); if(chartH)chartH.destroy();
             const sH=Object.keys(hc).sort();
-            chartH=new Chart(ctxH,{type:'line',data:{labels:sH,datasets:[{label:'Vendas (10 min)',data:sH.map(h=>hc[h]),borderColor:'#3498db',fill:true}]},options:{responsive:true,maintainAspectRatio:false}});
-        }catch(e){console.error(e);}
+            chartH=new Chart(ctxH,{type:'line',data:{labels:sH,datasets:[{label:`Vendas (${periodo} min)`,data:sH.map(h=>hc[h]),borderColor:'#3498db',fill:true}]},options:{responsive:true,maintainAspectRatio:false}});
+            
+        } catch(e){ console.error(e); }
+    };
+    
+    window.baixarExtratoVendas = async () => {
+        const eid = document.getElementById('select-evento-analise').value;
+        if (!eid) return alert("Selecione um evento!");
+        try {
+            const snap = await getDocs(collection(db, "eventos", eid, "vendas"));
+            if (snap.empty) return alert("Sem vendas.");
+            let csv = "Data,Hora,Bartender,Drink,Valor (R$),Custo (R$),Lucro (R$)\n";
+            snap.forEach(doc => {
+                const d = doc.data();
+                let dStr="", hStr=""; if(d.hora&&d.hora.toDate){const o=d.hora.toDate(); dStr=o.toLocaleDateString(); hStr=o.toLocaleTimeString();}
+                csv += `${dStr},${hStr},${d.usuario||'?'},${d.drink},"${parseFloat(d.preco||0).toFixed(2).replace('.',',')}","${parseFloat(d.custo||0).toFixed(2).replace('.',',')}","${(parseFloat(d.preco||0)-parseFloat(d.custo||0)).toFixed(2).replace('.',',')}"\n`;
+            });
+            const url = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+            const link = document.createElement("a"); link.href=url; link.download="Extrato_Vendas.csv"; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        } catch(e){ alert("Erro ao gerar"); }
     };
 </script>
