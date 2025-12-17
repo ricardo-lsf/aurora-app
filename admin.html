@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aurora Admin V63 (PDF Refinado)</title>
+    <title>Aurora Admin V64 (KDS Integrado)</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -28,7 +28,7 @@
         .mobile-header { display: none; background: #2c3e50; color: white; padding: 15px; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; width: 100%; z-index: 999; }
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 998; }
         .content { flex: 1; padding: 20px; overflow-y: auto; position: relative; }
-        .view-section { display: none; max-width: 1400px; margin: 0 auto; }
+        .view-section { display: none; max-width: 1400px; margin: 0 auto; height: 100%; } /* Height 100% para o KDS */
         .view-section.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity:0; transform: translateY(5px); } to { opacity:1; transform: translateY(0); } }
 
@@ -36,13 +36,9 @@
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e1e4e8; }
         .card-header { background: #f8f9fa; margin: -20px -20px 20px -20px; padding: 10px 20px; border-bottom: 1px solid #e1e4e8; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         h2 { border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top: 0; color: #2c3e50; }
-        h3 { margin: 0; font-size: 1.1em; color: #333; }
         
         input, select, textarea { padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; height: 38px; margin-bottom: 5px; font-family: inherit; }
-        textarea { height: auto; resize: vertical; }
-        input[readonly] { background-color: #e9ecef; color: #6c757d; }
-        label { font-size: 0.8em; font-weight: bold; color: #666; display: block; margin-bottom: 2px; }
-
+        
         /* BOTÕES */
         button { cursor: pointer; padding: 0 15px; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; height: 38px; }
         button:hover { opacity: 0.9; }
@@ -65,7 +61,7 @@
         .cmd-btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; font-size: 0.9em; display: flex; align-items: center; gap: 5px; }
         .btn-live { background: #8e44ad; } .btn-reset { background: #f1c40f; color: #333; } .btn-lock { background: #c0392b; } .btn-unlock { background: #27ae60; }
 
-        /* GRIDS */
+        /* LAYOUT GERAL */
         .grid-3 { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: end; }
         .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
@@ -75,13 +71,7 @@
         .split-input { display: flex; gap: 5px; align-items: center; }
         .grid-row-custom { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
         
-        /* FINANCEIRO */
-        .finance-panel { background: #fffde7; border: 1px solid #fbc02d; padding: 15px; border-radius: 6px; margin-top: 15px; }
-        .finance-total { font-size: 1.4em; font-weight: bold; color: #27ae60; text-align: right; border-top: 1px dashed #f9a825; padding-top: 10px; margin-top: 10px; }
-        .finance-sinal { border-top: 1px solid #ffe082; margin-top: 10px; padding-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .grid-financeiro-row2 { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 10px; margin-top: 10px; }
-
-        /* TABELAS */
+        /* TABELAS & OUTROS */
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; min-width: 600px; }
         th { background: #ecf0f1; color: #2c3e50; padding: 10px; text-align: left; }
@@ -90,7 +80,6 @@
         .input-table { border: 1px solid transparent; background: #f9f9f9; width: 100%; padding: 5px; height: 30px; }
         .input-table:focus { border: 1px solid #3498db; background: white; }
 
-        /* COMPONENTES */
         .event-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; border-left: 4px solid transparent; }
         .event-item:hover { background: #f0f4f8; }
         .event-item.active { background: #e8f0fe !important; border-left: 4px solid #3498db; }
@@ -103,32 +92,40 @@
         .chk-item input { width: 18px; height: 18px; margin: 0 12px 0 0; }
         .chk-item.disabled { background-color: #f0f0f0; opacity: 0.6; pointer-events: none; }
         
-        .tag-alcool { font-size: 0.7em; padding: 2px 6px; border-radius: 4px; margin-left: 5px; font-weight: bold; }
+        /* ESTILOS KDS (NOVO V64) */
+        .kds-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; height: calc(100vh - 140px); }
+        .kds-column { background: #eef2f7; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
+        .kds-header { padding: 10px; color: white; font-weight: bold; text-align: center; }
+        .col-pendente .kds-header { background: #f39c12; }
+        .col-preparo .kds-header { background: #3498db; }
+        .col-pronto .kds-header { background: #27ae60; }
         
-        /* AZUL CLARO PARA COCKTAIL (ÁLCOOL) */
-        .tag-com { background: #d1e7fc !important; color: #1565c0 !important; border: 1px solid #90caf9 !important; } 
-        /* VERDE PARA MOCKTAIL (SEM ÁLCOOL) */
-        .tag-sem { background: #e8f8f5; color: #27ae60; border: 1px solid #a9dfbf; }
-
-        .catalog-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
-        .catalog-item:hover { background-color: #e8f4fd; padding-left: 15px; border-left: 4px solid #3498db; }
+        .kds-body { flex: 1; padding: 10px; overflow-y: auto; }
         
-        .img-preview-box { width: 100%; height: 150px; background: #eee; border-radius: 6px; overflow: hidden; margin-top: 5px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; }
-        .img-preview-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .order-card { background: white; border-radius: 6px; padding: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 5px solid transparent; animation: slideIn 0.3s; }
+        .order-card.new { border-left-color: #f39c12; }
+        .order-card.doing { border-left-color: #3498db; }
+        .order-card.done { border-left-color: #27ae60; opacity: 0.8; }
+        
+        .order-meta { display: flex; justify-content: space-between; font-size: 0.8em; color: #7f8c8d; margin-bottom: 5px; }
+        .order-client { font-weight: bold; font-size: 1.1em; color: #2c3e50; }
+        .order-items { margin: 10px 0; border-top: 1px dashed #eee; padding-top: 5px; }
+        .order-item { display: flex; justify-content: space-between; padding: 2px 0; }
+        .order-actions { display: flex; gap: 5px; margin-top: 10px; }
+        .btn-kds { flex: 1; height: 35px; font-size: 0.9em; }
 
-        /* KPI GRID */
+        @keyframes slideIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+
+        /* KPI & MODAIS */
         .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 20px; }
         .kpi-card { background: white; padding: 15px 5px; border-radius: 8px; text-align: center; border-bottom: 4px solid #ddd; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
         .kpi-val { font-size: 1.2em; font-weight: bold; color: #2c3e50; display: block; word-wrap: break-word; }
-        
         .recipe-box { background: #f9f9f9; padding: 10px; border: 1px dashed #ccc; border-radius: 4px; }
         .danger-zone { margin-top: 30px; border-top: 2px dashed #e74c3c; padding-top: 20px; }
         .stock-tag { font-size: 0.7em; background: #eee; padding: 2px 6px; border-radius: 4px; color: #555; display: inline-block; margin-bottom: 2px; font-weight: bold; }
-
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; }
         .modal { background: white; padding: 25px; border-radius: 8px; width: 95%; max-width: 600px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 95vh; overflow-y: auto; }
         .close-modal { float: right; cursor: pointer; font-size: 1.5em; color: #999; }
-
         .orcamento-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fdfdfd; }
         .orcamento-item:hover { background: #f0f4f8; }
         .orc-id { font-weight: bold; color: #3498db; font-size: 0.9em; background: #e8f4fd; padding: 2px 5px; border-radius: 4px; margin-right: 5px; }
@@ -139,7 +136,8 @@
             .sidebar.active { transform: translateX(0); }
             .mobile-header { display: flex; }
             .content { padding: 80px 15px 20px 15px; }
-            .grid-3, .grid-2, .event-details-grid, .time-grid, .grid-form-row, .kpi-grid, .grid-4, .grid-financeiro-row2, .finance-sinal { grid-template-columns: 1fr !important; }
+            .grid-3, .grid-2, .event-details-grid, .time-grid, .grid-form-row, .kpi-grid, .grid-4, .grid-financeiro-row2, .finance-sinal, .kds-container { grid-template-columns: 1fr !important; }
+            .kds-container { height: auto; } /* KDS rola na vertical no mobile */
             .sidebar-overlay.active { display: block; }
         }
     </style>
@@ -158,7 +156,7 @@
         <div class="menu">
             <div class="menu-label">Gestão Principal</div>
             <a onclick="showView('view-eventos', this)" class="menu-item active"><span class="menu-icon">📅</span> Eventos</a>
-            <a onclick="showView('view-orcamentos', this)" class="menu-item"><span class="menu-icon">📑</span> Orçamentos</a>
+			<a onclick="showView('view-kds', this); iniciarKDS()" class="menu-item"><span class="menu-icon">🖥️</span> KDS / Produção</a> <a onclick="showView('view-orcamentos', this)" class="menu-item"><span class="menu-icon">📑</span> Orçamentos</a>
             <a onclick="showView('view-equipe', this)" class="menu-item"><span class="menu-icon">👥</span> Equipe</a>
             <div class="menu-label">Cadastros</div>
             <a onclick="showView('view-biblioteca', this)" class="menu-item"><span class="menu-icon">🍹</span> Biblioteca & Ficha</a>
@@ -242,6 +240,35 @@
                         <h4 style="color:#c0392b; margin-top:0;">⚠️ Zona de Perigo</h4>
                         <button onclick="excluirEventoAtual()" class="btn-delete-event">🗑️ EXCLUIR EVENTO PERMANENTEMENTE</button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-kds" class="view-section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h2 style="margin:0; border:none;">🖥️ Fila de Produção</h2>
+                <div>
+                    <span style="font-weight:bold;">Quem está operando?</span>
+                    <select id="kdsOperador" style="padding:5px; border:1px solid #3498db; border-radius:4px; font-weight:bold; color:#2c3e50;">
+                        <option value="">Selecione...</option>
+                        </select>
+                </div>
+            </div>
+            
+            <div class="kds-container">
+                <div class="kds-column col-pendente">
+                    <div class="kds-header">AGUARDANDO (<span id="count-pendente">0</span>)</div>
+                    <div class="kds-body" id="list-pendente"></div>
+                </div>
+
+                <div class="kds-column col-preparo">
+                    <div class="kds-header">PREPARANDO (<span id="count-preparo">0</span>)</div>
+                    <div class="kds-body" id="list-preparo"></div>
+                </div>
+
+                <div class="kds-column col-pronto">
+                    <div class="kds-header">PRONTOS / ENTREGUES</div>
+                    <div class="kds-body" id="list-pronto"></div>
                 </div>
             </div>
         </div>
@@ -551,7 +578,7 @@
     window.delInsumo = async(id) => { if(confirm("Excluir?")) await deleteDoc(doc(db,"insumos",id)); };
 
     // ============================================================
-    // 2. BIBLIOTECA & RENDERIZADOR DE ORÇAMENTO
+    // 2. BIBLIOTECA & ORÇAMENTO
     // ============================================================
     onSnapshot(collection(db,"drinks"), (s) => {
         bibliotecaGlobal = []; const l = document.getElementById('lista-biblioteca-visual'); if(l) l.innerHTML = '';
@@ -563,7 +590,7 @@
         renderLibOrcamento();
     });
     
-    // --- LISTA COM TERMINOLOGIA COCKTAIL/MOCKTAIL ---
+    // --- LISTA COM TERMINOLOGIA COCKTAIL/MOCKTAIL (V62) ---
     window.renderLibOrcamento = () => {
         const d = document.getElementById('orcamento-lista-drinks');
         if(!d) return;
@@ -571,7 +598,6 @@
         bibliotecaGlobal.sort((a,b)=>a.nome.localeCompare(b.nome));
         
         bibliotecaGlobal.forEach(x => {
-            // Compatibilidade com "Sem Álcool" antigo
             const isMocktail = x.tipo === 'Mocktail' || x.tipo === 'Sem Álcool';
             const tag = isMocktail 
                 ? '<span class="tag-alcool tag-sem">Mocktail</span>' 
@@ -673,6 +699,7 @@
         const selecionados = [];
         document.querySelectorAll('.chk-drink-orc:checked').forEach(chk => {
             const drink = bibliotecaGlobal.find(d => d.id === chk.value);
+            // Salva dados atuais para histórico
             if(drink) selecionados.push({id: drink.id, nome: drink.nome, tipo: drink.tipo, tecnica: drink.tecnica, classificacao: drink.classificacao});
         });
 
@@ -687,7 +714,7 @@
             
             let seq = 1;
             if (!snapLast.empty) {
-                const lastNum = snapLast.docs[0].data().numero; // Ex: 2025/0001
+                const lastNum = snapLast.docs[0].data().numero; 
                 if (lastNum && lastNum.startsWith(ano)) {
                     const parts = lastNum.split('/');
                     if (parts.length === 2) seq = parseInt(parts[1]) + 1;
@@ -1081,4 +1108,189 @@
         };
         reader.readAsText(file);
     };
+	
+// ============================================================
+    //  MÓDULO KDS (KITCHEN DISPLAY SYSTEM) - O MOTOR
+    // ============================================================
+    
+    let kdsUnsubscribe = null; // Para parar de ouvir quando sair da tela
+
+    // 1. INICIALIZAR KDS (Chamado ao abrir a aba)
+    window.iniciarKDS = () => {
+        if(!eventoAtivoID) return alert("Nenhum evento ativo para monitorar.");
+        
+        // Carrega lista de bartenders para o select
+        const sel = document.getElementById('kdsOperador');
+        sel.innerHTML = '<option value="">Quem é você?</option>';
+        // Pega do cache da equipe ou busca rapidinho
+        getDocs(collection(db, "equipe")).then(snap => {
+            snap.forEach(d => {
+                sel.innerHTML += `<option value="${d.data().nome}">${d.data().nome}</option>`;
+            });
+        });
+
+        // Limpa colunas visualmente
+        ['list-pendente', 'list-preparo', 'list-pronto'].forEach(id => document.getElementById(id).innerHTML = '');
+
+        // CANCELA LISTENER ANTERIOR SE HOUVER
+        if(kdsUnsubscribe) kdsUnsubscribe();
+
+        // INICIA NOVO LISTENER (SÓ PEDIDOS NÃO ENTREGUES)
+        const q = query(
+            collection(db, "eventos", eventoAtivoID, "pedidos"),
+            where("status", "in", ["Pendente", "Preparando", "Pronto"]),
+            orderBy("data", "asc")
+        );
+
+        kdsUnsubscribe = onSnapshot(q, (snap) => {
+            // Limpa containers para redesenhar (poderia ser otimizado, mas assim é mais seguro contra bugs visuais)
+            const cols = {
+                'Pendente': document.getElementById('list-pendente'),
+                'Preparando': document.getElementById('list-preparo'),
+                'Pronto': document.getElementById('list-pronto')
+            };
+            
+            // Contadores
+            let counts = { 'Pendente': 0, 'Preparando': 0, 'Pronto': 0 };
+            
+            cols['Pendente'].innerHTML = '';
+            cols['Preparando'].innerHTML = '';
+            cols['Pronto'].innerHTML = '';
+
+            snap.forEach(doc => {
+                const p = doc.data();
+                p.id = doc.id;
+                counts[p.status]++;
+                
+                // Renderiza Card
+                const card = criarCardKDS(p);
+                if(cols[p.status]) cols[p.status].appendChild(card);
+            });
+
+            // Atualiza números no header
+            document.getElementById('count-pendente').innerText = counts['Pendente'];
+            document.getElementById('count-preparo').innerText = counts['Preparando'];
+        });
+    };
+
+    // 2. DESENHAR O CARD DO PEDIDO
+    function criarCardKDS(p) {
+        const div = document.createElement('div');
+        // Define classe pela fase
+        let classeStatus = '';
+        if(p.status === 'Pendente') classeStatus = 'new';
+        if(p.status === 'Preparando') classeStatus = 'doing';
+        if(p.status === 'Pronto') classeStatus = 'done';
+        
+        div.className = `order-card ${classeStatus}`;
+        
+        // Calcula tempo de espera (opcional, mas legal)
+        const hora = p.data ? p.data.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--';
+        
+        // Lista de Itens
+        let itensHtml = p.itens.map(i => `
+            <div class="order-item">
+                <span><b>${i.qtd}x</b> ${i.nome}</span>
+            </div>
+        `).join('');
+
+        // Botões de Ação dependendo do Status
+        let botoes = '';
+        if(p.status === 'Pendente') {
+            botoes = `<button onclick="moverPedido('${p.id}', 'Preparando')" class="btn-kds" style="background:#3498db; color:white;">🔥 BORA (Preparar)</button>`;
+        } else if (p.status === 'Preparando') {
+            botoes = `
+                <div style="font-size:0.8em; color:#666; margin-bottom:5px;">Bartender: <b>${p.bartender || '?'}</b></div>
+                <button onclick="moverPedido('${p.id}', 'Pronto')" class="btn-kds" style="background:#27ae60; color:white;">✅ PRONTO</button>
+            `;
+        } else if (p.status === 'Pronto') {
+            botoes = `<button onclick="finalizarPedido('${p.id}')" class="btn-kds" style="background:#7f8c8d; color:white;">🚀 ENTREGUE (Baixar)</button>`;
+        }
+
+        div.innerHTML = `
+            <div class="order-meta">
+                <span>🕒 ${hora}</span>
+                <span>#${p.id.substr(-4).toUpperCase()}</span>
+            </div>
+            <div class="order-client">${p.cliente} <small>(${p.origem || 'App'})</small></div>
+            <div class="order-items">${itensHtml}</div>
+            <div class="order-actions">${botoes}</div>
+        `;
+        
+        return div;
+    }
+
+    // 3. AÇÕES DE MUDANÇA DE STATUS
+    window.moverPedido = async (id, novoStatus) => {
+        const dados = { status: novoStatus };
+        
+        // Se for começar a preparar, grava QUEM está fazendo (Produtividade)
+        if(novoStatus === 'Preparando') {
+            const operador = document.getElementById('kdsOperador').value;
+            if(!operador) return alert("Selecione seu nome no topo da tela antes de pegar o pedido!");
+            dados.bartender = operador;
+        }
+
+        await updateDoc(doc(db, "eventos", eventoAtivoID, "pedidos", id), dados);
+    };
+
+    // 4. FINALIZAR (A MÁGICA DA INTEGRAÇÃO)
+    window.finalizarPedido = async (id) => {
+        // 1. Busca dados do pedido
+        const docRef = doc(db, "eventos", eventoAtivoID, "pedidos", id);
+        const snap = await getDoc(docRef);
+        if(!snap.exists()) return;
+        const pedido = snap.data();
+
+        if(!confirm(`Confirmar entrega para ${pedido.cliente}?`)) return;
+
+        // 2. Lança Vendas e Baixa Estoque (Loop nos itens)
+        const batch = writeBatch(db);
+        
+        // Para cada drink no pedido...
+        for (const item of pedido.itens) {
+            // A. Achar info do drink (preço/custo) no cardápio
+            // Obs: Aqui fazemos uma busca pelo nome, ideal seria ter salvo o ID e Preço no pedido, 
+            // mas vamos buscar no cache 'bibliotecaGlobal' ou 'cardapio'
+            
+            // Vamos tentar achar no DOM ou cache. O mais seguro é buscar no banco ou salvar snapshot no pedido.
+            // Na V2 do cardapio.html salvamos {nome, qtd}. 
+            // Vamos fazer uma busca rápida no cardapio do evento para pegar preço e custo.
+            
+            const qCardapio = query(collection(db, "eventos", eventoAtivoID, "cardapio"), where("nome", "==", item.nome));
+            const snapCardapio = await getDocs(qCardapio);
+            
+            let preco = 0, custo = 0;
+            if(!snapCardapio.empty) {
+                const dData = snapCardapio.docs[0].data();
+                preco = dData.precoVenda || 0;
+                custo = dData.precoCusto || 0;
+                
+                // B. Baixa de Estoque (Simples: -1 no estoque do drink no evento)
+                // Se quiser baixar insumo por insumo, seria mais complexo. Vamos baixar o "Estoque do Drink" (se houver)
+                // ou apenas registrar a venda. Na V55 focamos em registrar VENDA.
+                
+                // C. Registrar Venda (Para Analytics e Financeiro)
+                const vendaRef = doc(collection(db, "eventos", eventoAtivoID, "vendas"));
+                batch.set(vendaRef, {
+                    drink: item.nome,
+                    preco: preco,
+                    custo: custo,
+                    usuario: pedido.bartender || 'KDS', // Quem preparou ganha a venda
+                    hora: new Date(),
+                    origem: 'KDS'
+                });
+            }
+        }
+
+        // 3. Atualiza status do pedido para Entregue (sai da tela KDS)
+        batch.update(docRef, { status: 'Entregue', entregueEm: new Date() });
+
+        await batch.commit();
+    };
+
+    // GANCHO PARA INICIAR KDS QUANDO CLICAR NO MENU
+    // Adicione isso dentro da sua função window.showView existente ou altere o onclick no HTML:
+    // <a onclick="showView('view-kds', this); iniciarKDS();" ...>	
+	
 </script>
