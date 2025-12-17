@@ -63,14 +63,17 @@
 
         /* LAYOUT GERAL */
         .grid-3 { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: end; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
         .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
         .grid-form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         .event-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #e8f4fd; padding: 15px; border-radius: 6px; margin-bottom: 15px; align-items: end; }
         .split-input { display: flex; gap: 5px; align-items: center; }
         .grid-row-custom { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
-        
+
+        .img-preview-box { width: 100%; height: 150px; background: #eee; border-radius: 6px; overflow: hidden; margin-top: 5px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; }
+        .img-preview-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
+
         /* TABELAS & OUTROS */
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; min-width: 600px; }
@@ -454,6 +457,25 @@
                 <div class="kpi-card" style="border-color:#e67e22"><small>Ticket Médio</small><span class="kpi-val" id="kpi-ticket">0</span></div>
             </div>
 
+			<div class="card" style="margin-top:20px;">
+                <h3>🏆 Top Convidados / Consumo</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Pos</th>
+                                <th>Nome do Convidado</th>
+                                <th>Qtd Drinks</th>
+                                <th>Total Gasto (Est.)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-top-clientes">
+                            <tr><td colspan="4" style="text-align:center">Carregando dados...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>			
+						
             <div class="grid-2" style="margin-top:20px;">
                 <div class="card" style="height:300px"><canvas id="chartDrinks"></canvas></div>
                 <div class="card" style="height:300px"><canvas id="chartHorario"></canvas></div>
@@ -476,8 +498,8 @@
     <div id="modalEquipe" class="modal-overlay"><div class="modal"><span class="close-modal" onclick="fecharModalEquipe()">×</span><h3 id="eqTitulo">👤 Membro</h3><div style="display:grid; gap:10px"><input type="hidden" id="eqId"><div><label>Nome</label><input type="text" id="eqNome"></div><div class="grid-2"><div><label>Telefone</label><input type="text" id="eqTel" onkeyup="mascaraTelefone(this)"></div><div><label>CPF</label><input type="text" id="eqCPF" onkeyup="mascaraCPF(this)"></div></div><div class="grid-2"><div><label>Data Nasc</label><input type="date" id="eqData" onchange="calcIdade()"></div><div><label>Idade</label><input type="text" id="eqIdade" readonly></div></div><div class="grid-2"><select id="eqSexo"><option value="M">M</option><option value="F">F</option></select><select id="eqFuncao"><option>Bartender</option><option>Barback</option><option>Chefe de Bar</option><option>Garçom</option><option>Copeiro</option><option>Gerente</option></select></div><div class="grid-2"><input type="number" id="eqTaxa" placeholder="Taxa"><input type="number" id="eqAdicional" placeholder="Add"></div><button onclick="salvarEquipe()" class="btn-success" style="margin-top:10px;padding:12px">SALVAR</button></div></div></div>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, query, orderBy, writeBatch, where, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+	import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, query, orderBy, writeBatch, where, getDocs, limit, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // ⚠️ COLE SUA CONFIG AQUI ⚠️
 	const firebaseConfig = {
@@ -1079,7 +1101,113 @@
     window.delEq=async(id)=>await deleteDoc(doc(db,"equipe",id));
 
     // ANALYTICS V55 (COM RESGATE)
-    window.gerarRelatorio=async()=>{const eid=document.getElementById('select-evento-analise').value;if(!eid)return alert("Selecione!");const periodo=document.getElementById('chartPeriod').value;const filterVal=document.getElementById('filterBartender').value;try{const s=await getDocs(collection(db,"eventos",eid,"vendas"));if(s.empty)return alert("Sem vendas");let fat=0,custo=0,totalQtd=0;const dc={},hc={};s.forEach(d=>{const v=d.data();if(filterVal==='all'||v.usuario===filterVal){const p=parseFloat(v.preco||0),c=parseFloat(v.custo||0);fat+=p;custo+=c;totalQtd++;if(!dc[v.drink])dc[v.drink]={qtd:0,val:0};dc[v.drink].qtd++;dc[v.drink].val+=p;let date=v.hora&&v.hora.toDate?v.hora.toDate():new Date(v.hora);let hLabel;if(periodo==='10'){let mm=Math.floor(date.getMinutes()/10)*10;hLabel=`${String(date.getHours()).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;}else{hLabel=`${String(date.getHours()).padStart(2,'0')}:00`;}hc[hLabel]=(hc[hLabel]||0)+1;}});document.getElementById('kpi-fat').innerText='R$ '+fat.toFixed(2);document.getElementById('kpi-custo').innerText='R$ '+custo.toFixed(2);document.getElementById('kpi-lucro').innerText='R$ '+(fat-custo).toFixed(2);document.getElementById('kpi-cmv').innerText=fat>0?((custo/fat)*100).toFixed(1)+'%':'0%';if(document.getElementById('kpi-qtd'))document.getElementById('kpi-qtd').innerText=totalQtd;if(document.getElementById('kpi-ticket'))document.getElementById('kpi-ticket').innerText='R$ '+(totalQtd>0?(fat/totalQtd).toFixed(2):'0.00');const ctxD=document.getElementById('chartDrinks').getContext('2d');if(chartD)chartD.destroy();const lbs=Object.keys(dc);chartD=new Chart(ctxD,{type:'bar',data:{labels:lbs,datasets:[{label:'Qtd',data:lbs.map(k=>dc[k].qtd),backgroundColor:'#2ecc71',yAxisID:'y'},{label:'Valor',data:lbs.map(k=>dc[k].val),backgroundColor:'#f1c40f',type:'bar',yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{position:'left'},y1:{position:'right',grid:{display:false}}}}});const ctxH=document.getElementById('chartHorario').getContext('2d');if(chartH)chartH.destroy();const sH=Object.keys(hc).sort();chartH=new Chart(ctxH,{type:'line',data:{labels:sH,datasets:[{label:`Vendas (${periodo} min)`,data:sH.map(h=>hc[h]),borderColor:'#3498db',fill:true}]},options:{responsive:true,maintainAspectRatio:false}});}catch(e){console.error(e);}};
+
+	// CORREÇÃO: Analytics com Histórico de Clientes
+    window.gerarRelatorio = async () => {
+        const eid = document.getElementById('select-evento-analise').value;
+        if(!eid) return alert("Selecione!");
+        const periodo = document.getElementById('chartPeriod').value;
+        const filterVal = document.getElementById('filterBartender').value;
+
+        try {
+            const s = await getDocs(collection(db, "eventos", eid, "vendas"));
+            if(s.empty) return alert("Sem vendas");
+            
+            let fat = 0, custo = 0, totalQtd = 0;
+            const dc = {}, hc = {}, clientes = {}; // Novo objeto clientes
+
+            s.forEach(d => {
+                const v = d.data();
+                if(filterVal === 'all' || v.usuario === filterVal) {
+                    const p = parseFloat(v.preco || 0), c = parseFloat(v.custo || 0);
+                    fat += p;
+                    custo += c;
+                    totalQtd++;
+                    
+                    // Drinks
+                    if(!dc[v.drink]) dc[v.drink] = {qtd:0, val:0};
+                    dc[v.drink].qtd++;
+                    dc[v.drink].val += p;
+                    
+                    // Clientes (Histórico)
+                    const nomeCliente = v.cliente || 'Balcão/Anônimo';
+                    if(!clientes[nomeCliente]) clientes[nomeCliente] = {qtd:0, val:0};
+                    clientes[nomeCliente].qtd++;
+                    clientes[nomeCliente].val += p;
+
+                    // Horário
+                    let date = v.hora && v.hora.toDate ? v.hora.toDate() : new Date(v.hora);
+                    let hLabel;
+                    if(periodo === '10') {
+                        let mm = Math.floor(date.getMinutes()/10)*10;
+                        hLabel = `${String(date.getHours()).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+                    } else {
+                        hLabel = `${String(date.getHours()).padStart(2,'0')}:00`;
+                    }
+                    hc[hLabel] = (hc[hLabel]||0) + 1;
+                }
+            });
+
+            // Preencher KPIs
+            document.getElementById('kpi-fat').innerText = 'R$ '+fat.toFixed(2);
+            document.getElementById('kpi-custo').innerText = 'R$ '+custo.toFixed(2);
+            document.getElementById('kpi-lucro').innerText = 'R$ '+(fat-custo).toFixed(2);
+            document.getElementById('kpi-cmv').innerText = fat > 0 ? ((custo/fat)*100).toFixed(1)+'%' : '0%';
+            if(document.getElementById('kpi-qtd')) document.getElementById('kpi-qtd').innerText = totalQtd;
+            if(document.getElementById('kpi-ticket')) document.getElementById('kpi-ticket').innerText = 'R$ '+(totalQtd>0 ? (fat/totalQtd).toFixed(2) : '0.00');
+
+            // Renderizar Gráficos (Mantido)
+            const ctxD = document.getElementById('chartDrinks').getContext('2d');
+            if(chartD) chartD.destroy();
+            const lbs = Object.keys(dc);
+            chartD = new Chart(ctxD, {
+                type: 'bar',
+                data: {
+                    labels: lbs,
+                    datasets: [
+                        { label: 'Qtd', data: lbs.map(k=>dc[k].qtd), backgroundColor: '#2ecc71', yAxisID: 'y' },
+                        { label: 'Valor', data: lbs.map(k=>dc[k].val), backgroundColor: '#f1c40f', type: 'bar', yAxisID: 'y1' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: {position:'left'}, y1: {position:'right', grid:{display:false}} } }
+            });
+
+            const ctxH = document.getElementById('chartHorario').getContext('2d');
+            if(chartH) chartH.destroy();
+            const sH = Object.keys(hc).sort();
+            chartH = new Chart(ctxH, {
+                type: 'line',
+                data: {
+                    labels: sH,
+                    datasets: [{ label: `Vendas (${periodo} min)`, data: sH.map(h=>hc[h]), borderColor: '#3498db', fill: true }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // RENDERIZAR LISTA DE CLIENTES (NOVO)
+            const listaClientes = document.getElementById('lista-top-clientes');
+            if(listaClientes) {
+                listaClientes.innerHTML = '';
+                // Ordenar por qtd de drinks
+                const sortedClientes = Object.entries(clientes)
+                    .sort(([,a], [,b]) => b.qtd - a.qtd)
+                    .slice(0, 10); // Top 10
+
+                sortedClientes.forEach(([nome, dados], index) => {
+                    listaClientes.innerHTML += `
+                        <tr>
+                            <td>#${index + 1}</td>
+                            <td><b>${nome}</b></td>
+                            <td style="color:#3498db; font-weight:bold;">${dados.qtd}</td>
+                            <td style="color:#27ae60;">R$ ${dados.val.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+        } catch(e) { console.error(e); alert("Erro ao gerar: " + e.message); }
+    };
+
     window.carregarBartenders=async(eid)=>{if(!eid)return;const s=await getDocs(collection(db,"eventos",eid,"vendas"));const usersSet=new Set();s.forEach(d=>usersSet.add(d.data().usuario||'Desconhecido'));const selBar=document.getElementById('filterBartender');while(selBar.options.length>1)selBar.remove(1);usersSet.forEach(u=>selBar.add(new Option(u,u)));};
     window.baixarExtratoVendas = async () => { const eid = document.getElementById('select-evento-analise').value; if (!eid) return alert("Selecione!"); try { const snap = await getDocs(collection(db, "eventos", eid, "vendas")); if (snap.empty) return alert("Sem vendas."); let csv = "Data,Hora,Bartender,Drink,Valor,Custo,Lucro\n"; snap.forEach(doc => { const d = doc.data(); let dStr="", hStr=""; if(d.hora&&d.hora.toDate){const o=d.hora.toDate(); dStr=o.toLocaleDateString(); hStr=o.toLocaleTimeString();} csv += `${dStr},${hStr},${d.usuario||'?'},${d.drink},"${parseFloat(d.preco||0).toFixed(2)}","${parseFloat(d.custo||0).toFixed(2)}","${(parseFloat(d.preco||0)-parseFloat(d.custo||0)).toFixed(2)}"\n`; }); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); link.download = "Extrato.csv"; link.click(); } catch(e){ alert("Erro"); } };
     
@@ -1235,8 +1363,8 @@
     };
 
     // 4. FINALIZAR (A MÁGICA DA INTEGRAÇÃO)
+	// CORREÇÃO: Lógica de Finalização (Loop para Qtd e Salvar Cliente)
     window.finalizarPedido = async (id) => {
-        // 1. Busca dados do pedido
         const docRef = doc(db, "eventos", eventoAtivoID, "pedidos", id);
         const snap = await getDoc(docRef);
         if(!snap.exists()) return;
@@ -1244,48 +1372,39 @@
 
         if(!confirm(`Confirmar entrega para ${pedido.cliente}?`)) return;
 
-        // 2. Lança Vendas e Baixa Estoque (Loop nos itens)
         const batch = writeBatch(db);
         
-        // Para cada drink no pedido...
         for (const item of pedido.itens) {
-            // A. Achar info do drink (preço/custo) no cardápio
-            // Obs: Aqui fazemos uma busca pelo nome, ideal seria ter salvo o ID e Preço no pedido, 
-            // mas vamos buscar no cache 'bibliotecaGlobal' ou 'cardapio'
-            
-            // Vamos tentar achar no DOM ou cache. O mais seguro é buscar no banco ou salvar snapshot no pedido.
-            // Na V2 do cardapio.html salvamos {nome, qtd}. 
-            // Vamos fazer uma busca rápida no cardapio do evento para pegar preço e custo.
-            
+            // Busca dados financeiros do drink
             const qCardapio = query(collection(db, "eventos", eventoAtivoID, "cardapio"), where("nome", "==", item.nome));
             const snapCardapio = await getDocs(qCardapio);
-            
             let preco = 0, custo = 0;
+            
             if(!snapCardapio.empty) {
                 const dData = snapCardapio.docs[0].data();
                 preco = dData.precoVenda || 0;
                 custo = dData.precoCusto || 0;
-                
-                // B. Baixa de Estoque (Simples: -1 no estoque do drink no evento)
-                // Se quiser baixar insumo por insumo, seria mais complexo. Vamos baixar o "Estoque do Drink" (se houver)
-                // ou apenas registrar a venda. Na V55 focamos em registrar VENDA.
-                
-                // C. Registrar Venda (Para Analytics e Financeiro)
+            }
+
+            // CORREÇÃO BUG DA CONTAGEM: Loop pela quantidade
+            // Se o cliente pediu 2x Moscow Mule, cria 2 registros de venda
+            const qtdInt = parseInt(item.qtd) || 1;
+            
+            for (let i = 0; i < qtdInt; i++) {
                 const vendaRef = doc(collection(db, "eventos", eventoAtivoID, "vendas"));
                 batch.set(vendaRef, {
                     drink: item.nome,
                     preco: preco,
                     custo: custo,
-                    usuario: pedido.bartender || 'KDS', // Quem preparou ganha a venda
+                    usuario: pedido.bartender || 'KDS', // Quem fez
+                    cliente: pedido.cliente || 'Balcão', // NOVO: Quem pediu (Histórico)
                     hora: new Date(),
                     origem: 'KDS'
                 });
             }
         }
-
-        // 3. Atualiza status do pedido para Entregue (sai da tela KDS)
+        
         batch.update(docRef, { status: 'Entregue', entregueEm: new Date() });
-
         await batch.commit();
     };
 
