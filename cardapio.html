@@ -28,6 +28,12 @@
         .menu-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
         .drink-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; align-items: center; padding: 10px; transition: 0.2s; border: 2px solid transparent; }
         .drink-card.selected { border-color: #3498db; background: #eef7fc; }
+        
+        /* NOVO: ESTILO PARA ESGOTADO */
+        .drink-card.esgotado { opacity: 0.6; background: #fdfdfd; pointer-events: none; /* Impede clique no card */ }
+        .drink-card.esgotado .drink-img { filter: grayscale(100%); }
+        .tag-esgotado { background: #c0392b; color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 4px; margin-top: 2px; display: inline-block; font-weight: bold; }
+
         .drink-img { width: 70px; height: 70px; border-radius: 8px; object-fit: cover; background: #eee; }
         .drink-info { flex: 1; padding: 0 15px; }
         .drink-name { font-weight: bold; font-size: 1.1em; color: #2c3e50; }
@@ -37,6 +43,7 @@
         .qty-control { display: flex; align-items: center; gap: 10px; }
         .btn-qty { width: 35px; height: 35px; border-radius: 50%; border: none; background: #ecf0f1; color: #2c3e50; font-weight: bold; font-size: 1.2em; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .btn-qty.active { background: #3498db; color: white; }
+        .btn-qty:disabled { background: #ccc; cursor: not-allowed; color: #888; } /* Estilo desativado */
         .qty-val { font-weight: bold; width: 20px; text-align: center; }
 
         /* FLOATING CART */
@@ -110,12 +117,12 @@
 
     // ⚠️ COLE SUA CONFIG AQUI ⚠️
 	const firebaseConfig = {
-	  apiKey: "AIzaSyBu8y9RQMv9fbxORcRLAZN4OlA1IEXyZUU",
-	  authDomain: "aurora-bar-system.firebaseapp.com",
-	  projectId: "aurora-bar-system",
-	  storageBucket: "aurora-bar-system.firebasestorage.app",
-	  messagingSenderId: "380441809814",
-	  appId: "1:380441809814:web:ad008f37d30a5b0abe03b7"
+	  apiKey: "AIzaSyBu8y9RQMv9fbxORcRLAZN4OlA1IEXyZUU",
+	  authDomain: "aurora-bar-system.firebaseapp.com",
+	  projectId: "aurora-bar-system",
+	  storageBucket: "aurora-bar-system.firebasestorage.app",
+	  messagingSenderId: "380441809814",
+	  appId: "1:380441809814:web:ad008f37d30a5b0abe03b7"
 	};
 
     const app = initializeApp(firebaseConfig);
@@ -138,12 +145,10 @@
             const data = configSnap.data();
             eventoAtivoID = data.eventoAtivoID;
             
-            // 1. MELHORIA: MOSTRAR NOME DO EVENTO
             document.getElementById('headerEventName').innerText = data.eventoAtivoNome || "Evento Aurora";
 
             if (!eventoAtivoID) return alert("Nenhum evento ativo.");
             
-            // 3. PERSISTÊNCIA: Se já tem usuário, restaura sessão
             if (usuario.nome) {
                 aplicarUsuarioNaTela();
                 verificarPedidoAtivo(); 
@@ -167,7 +172,6 @@
         let nome = document.getElementById('inputNome').value.trim().toUpperCase(); // Força maiúsculo
         if (!nome) return alert("Digite seu nome.");
         
-        // 4. LÓGICA MODO BALCÃO
         const isBalcao = (nome === 'BALCAO' || nome === 'BALCÃO' || nome === 'CAIXA');
         
         if (!usuario.id) {
@@ -195,7 +199,6 @@
     // --- CARDÁPIO ---
     function carregarCardapio() {
         const lista = document.getElementById('menu-list');
-        // Não limpa com "Carregando..." se já tiver itens para evitar flick
         if(lista.children.length === 0) lista.innerHTML = '<p style="text-align:center">Carregando...</p>';
 
         onSnapshot(collection(db, "eventos", eventoAtivoID, "cardapio"), (snap) => {
@@ -203,21 +206,35 @@
             snap.forEach(doc => {
                 const d = doc.data();
                 const id = doc.id;
-                // Detecta se é sem álcool pela flag nova ou pelo nome
+                
                 const isMocktail = (d.tipo === 'Mocktail' || d.tipo === 'Sem Álcool' || d.nome.toLowerCase().includes('sem álcool')); 
                 
+                // --- LÓGICA DE BLOQUEIO DE ESTOQUE ---
+                const semEstoque = (d.estoque !== undefined && d.estoque <= 0);
+                const classeExtra = semEstoque ? 'esgotado' : '';
+                const botaoMenos = semEstoque ? 'disabled' : '';
+                // Se for STAFF (Balcão), permite pedir mesmo sem estoque (opcional, aqui mantive bloqueado para segurança)
+                const botaoMais = semEstoque ? 'disabled' : ''; 
+                
                 const div = document.createElement('div');
-                div.className = `drink-card ${carrinho[id] ? 'selected' : ''}`;
+                div.className = `drink-card ${classeExtra} ${carrinho[id] ? 'selected' : ''}`;
+                
+                // Se esgotado, mostra tag vermelha em vez de mocktail (ou ambas)
+                let tag = isMocktail ? '<span class="tag-mocktail">Sem Álcool</span>' : '';
+                if(semEstoque) tag = '<span class="tag-esgotado">ESGOTADO</span>';
+
                 div.innerHTML = `
-                    <img src="${d.imagem || './imagens/foto.jpg'}" class="drink-img">
+                    <div style="position:relative">
+                        <img src="${d.imagem || './imagens/foto.jpg'}" class="drink-img">
+                    </div>
                     <div class="drink-info">
                         <div class="drink-name">${d.nome}</div>
-                        ${isMocktail ? '<span class="tag-mocktail">Sem Álcool</span>' : ''}
+                        ${tag}
                     </div>
                     <div class="qty-control">
-                        <button class="btn-qty" onclick="alterarQtd('${id}', '${d.nome}', -1)">-</button>
+                        <button class="btn-qty" onclick="alterarQtd('${id}', '${d.nome}', -1)" ${botaoMenos}>-</button>
                         <span class="qty-val" id="qty_${id}">${carrinho[id] ? carrinho[id].qtd : 0}</span>
-                        <button class="btn-qty active" onclick="alterarQtd('${id}', '${d.nome}', 1)">+</button>
+                        <button class="btn-qty active" onclick="alterarQtd('${id}', '${d.nome}', 1)" ${botaoMais}>+</button>
                     </div>
                 `;
                 lista.appendChild(div);
@@ -263,7 +280,6 @@
 
     // --- TRAVA DE FILA ---
     function verificarPedidoAtivo() {
-        // SE FOR BALCÃO, PULA A TRAVA
         if (usuario.isBalcao) {
             carregarCardapio();
             return;
@@ -278,12 +294,10 @@
 
         onSnapshot(q, (snap) => {
             if (!snap.empty) {
-                // TEM PEDIDO -> MOSTRA STATUS
                 const pedido = snap.docs[0].data();
                 atualizarTelaStatus(pedido.status, pedido.itens);
                 mostrarView('view-status');
             } else {
-                // LIVRE -> MOSTRA MENU
                 carregarCardapio();
             }
         });
@@ -294,8 +308,6 @@
         const title = document.getElementById('statusTitle');
         const desc = document.getElementById('statusDesc');
 
-        // 2. CORREÇÃO: FILTRAR APENAS ITENS COM QTD > 0 NA VISUALIZAÇÃO
-        // (Embora o envio já filtre, é bom garantir na visualização também)
         let listaHTML = itens
             .filter(i => i.qtd > 0)
             .map(i => `<div style="padding:5px; border-bottom:1px solid #eee;">${i.qtd}x ${i.nome}</div>`)
@@ -319,14 +331,12 @@
             title.style.color = '#27ae60';
             desc.innerText = 'Pode vir retirar no balcão.';
             
-            // EFEITO VIBRAR SE O NAVEGADOR PERMITIR
             if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
         }
     }
 
     // --- ENVIAR PEDIDO ---
     window.enviarPedido = async () => {
-        // 2. CORREÇÃO: FILTRAR ITENS ZERADOS NO ENVIO
         const itensValidos = Object.values(carrinho).filter(i => i.qtd > 0);
         
         if (itensValidos.length === 0) return alert("Selecione algum drink!");
@@ -343,7 +353,6 @@
                 data: serverTimestamp()
             });
             
-            // Limpa carrinho local
             carrinho = {};
             document.querySelectorAll('.qty-val').forEach(el => el.innerText = '0');
             document.querySelectorAll('.drink-card').forEach(el => el.classList.remove('selected'));
@@ -351,9 +360,7 @@
 
             if (usuario.isBalcao) {
                 alert("Pedido Balcão Enviado! ✅");
-                // Não muda de tela, continua no menu
             }
-            // Se for usuário normal, o listener do 'verificarPedidoAtivo' vai jogar ele pra tela de status automaticamente.
             
         } catch (e) {
             alert("Erro ao enviar: " + e.message);

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aurora App V19 (Chart & Click Fix)</title>
+    <title>Aurora App V20 (Estorno Automático)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e1e1e">
     
@@ -70,16 +70,16 @@
         .rec-list li { padding: 8px 0; border-bottom: 1px solid #333; color: #ccc; font-size: 0.95em; display: flex; justify-content: space-between; }
         .rec-list li span { color: #fff; font-weight: bold; }
 
-        /* DASHBOARD (LAYOUT RESTAURADO) */
+        /* DASHBOARD */
         .dashboard { padding: 20px 12px; display: grid; grid-template-columns: 1fr; gap: 20px; }
-        @media (min-width: 700px) { .dashboard { grid-template-columns: 2fr 1fr; } } /* PC: Grafico 2/3, Lista 1/3 */
+        @media (min-width: 700px) { .dashboard { grid-template-columns: 2fr 1fr; } } 
         
         .panel { background: #1e1e1e; padding: 15px; border-radius: 12px; border: 1px solid #333; }
         .chart-wrapper { position: relative; height: 300px; width: 100%; margin-top:15px; }
         .total-display { font-size: 1.6rem; font-weight: 800; color: #fff; }
         .export-btn { background: #27ae60; width: 100%; padding: 12px; border-radius: 8px; color: white; border: none; font-weight: bold; margin-top: 15px; font-size: 1rem; }
         
-        /* HISTÓRICO (LAYOUT RESTAURADO) */
+        /* HISTÓRICO */
         #log-list { max-height: 300px; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
         #log-list li { 
             padding: 8px 0; 
@@ -87,7 +87,7 @@
             font-size: 0.85rem; 
             color: #ccc; 
             display: grid; 
-            grid-template-columns: 50px 1fr 30px; /* HORA | TEXTO | QTD */
+            grid-template-columns: 50px 1fr 30px; 
             align-items: center; 
         }
         .log-time { color:#666; font-size:0.8em; }
@@ -143,16 +143,16 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, increment, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, increment, query, where, getDocs, getDoc, orderBy, limit, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ⚠️ COLE SUA CONFIG AQUI ⚠️
 		const firebaseConfig = {
-		  apiKey: "AIzaSyBu8y9RQMv9fbxORcRLAZN4OlA1IEXyZUU",
-		  authDomain: "aurora-bar-system.firebaseapp.com",
-		  projectId: "aurora-bar-system",
-		  storageBucket: "aurora-bar-system.firebasestorage.app",
-		  messagingSenderId: "380441809814",
-		  appId: "1:380441809814:web:ad008f37d30a5b0abe03b7"
+		  apiKey: "AIzaSyBu8y9RQMv9fbxORcRLAZN4OlA1IEXyZUU",
+		  authDomain: "aurora-bar-system.firebaseapp.com",
+		  projectId: "aurora-bar-system",
+		  storageBucket: "aurora-bar-system.firebasestorage.app",
+		  messagingSenderId: "380441809814",
+		  appId: "1:380441809814:web:ad008f37d30a5b0abe03b7"
 		};
 
         const app = initializeApp(firebaseConfig);
@@ -209,6 +209,56 @@
             });
         }
 
+        // --- FUNÇÃO MUDAR (Controlador + / -) ---
+        window.mudar = async (id, q) => {
+            if (!eventoID || eventoStatus === 'fechado') return;
+            const d = drinks.find(x => x.id === id);
+
+            // Bloqueios Visuais
+            if (q > 0 && d.estoque <= 0) return navigator.vibrate(200); 
+            if (q < 0 && (!counts[id] || counts[id] <= 0)) return;
+
+            // Atualiza contador Local
+            if (!counts[id]) counts[id] = 0;
+            counts[id] += q;
+            localStorage.setItem('counts_ev_' + eventoID, JSON.stringify(counts));
+            
+            renderizar();
+            if (q > 0) navigator.vibrate(50);
+            adicionarLog(d.nome, q);
+
+            try {
+                if (q > 0) {
+                    // ADICIONAR (+): Baixa estoque e Cria Venda
+                    await updateDoc(doc(db, "eventos", eventoID, "cardapio", id), { estoque: increment(-1) });
+                    await addDoc(collection(db, "eventos", eventoID, "vendas"), {
+                        drink: d.nome,
+                        preco: parseFloat(d.precoVenda || 0),
+                        custo: parseFloat(d.precoCusto || 0),
+                        hora: new Date(),
+                        usuario: usuarioAtual
+                    });
+                } else {
+                    // REMOVER (-): Estorno Automático
+                    // 1. Busca a última venda deste drink
+                    const vendasRef = collection(db, "eventos", eventoID, "vendas");
+                    const qEstorno = query(vendasRef, where("drink", "==", d.nome), orderBy("hora", "desc"), limit(1));
+                    const snapEstorno = await getDocs(qEstorno);
+
+                    if (!snapEstorno.empty) {
+                        // 2. Apaga a venda (corrige financeiro/gráfico)
+                        await deleteDoc(snapEstorno.docs[0].ref);
+                        
+                        // 3. Devolve estoque
+                        await updateDoc(doc(db, "eventos", eventoID, "cardapio", id), { estoque: increment(1) });
+                    }
+                }
+            } catch (e) {
+                console.error("Erro ao sincronizar:", e);
+                // Opcional: Reverter contador local em caso de erro crítico
+            }
+        };
+
         function carregarDrinks(id){
             onSnapshot(collection(db,"eventos",id,"cardapio"), (s)=>{
                 drinks=[]; s.forEach(d=>drinks.push({...d.data(), id:d.id}));
@@ -224,7 +274,6 @@
                 const p=d.precoVenda||d.VlCusto||0; const sold=d.estoque<=0; const low=d.estoque<10&&!sold;
                 let cls='drink-card'; if(low)cls+=' stock-low'; if(sold)cls+=' stock-out';
                 
-                // CLIQUE INTELIGENTE: Verifica se tem ID Original
                 const clickAction = d.idOriginal ? `onclick="verReceita('${d.idOriginal}')"` : `onclick="alert('Receita não vinculada!')"`;
 
                 g.innerHTML+=`
@@ -268,15 +317,7 @@
             } catch(e) { console.error(e); }
         };
 
-        window.mudar=async(id,q)=>{
-            if(!eventoID||eventoStatus==='fechado')return; const d=drinks.find(x=>x.id===id);
-            if(q>0&&d.estoque<=0)return navigator.vibrate(200); if(q<0&&(!counts[id]||counts[id]<=0))return;
-            if(!counts[id])counts[id]=0; counts[id]+=q; localStorage.setItem('counts_ev_'+eventoID,JSON.stringify(counts));
-            renderizar(); if(q>0)navigator.vibrate(50); adicionarLog(d.nome,q);
-            try{ await updateDoc(doc(db,"eventos",eventoID,"cardapio",id),{estoque:increment(-q)}); if(q>0)await addDoc(collection(db,"eventos",eventoID,"vendas"),{drink:d.nome,preco:parseFloat(d.precoVenda||0),custo:parseFloat(d.precoCusto||0),hora:new Date(),usuario:usuarioAtual}); }catch(e){}
-        };
-
-        // GRÁFICO CORRIGIDO (2 BARRAS)
+        // GRÁFICO
         function atualizarTotais(){
             let tQ=0, tV=0; drinks.forEach(d=>{const q=counts[d.id]||0; tQ+=q; tV+=q*parseFloat(d.precoVenda||d.VlCusto||0);});
             document.getElementById('total-count').innerText=tQ; document.getElementById('total-valor').innerText='R$ '+tV.toFixed(2);
@@ -309,7 +350,6 @@
         function adicionarLog(n,q){const i={n,q,h:new Date().toLocaleTimeString().substring(0,5),u:usuarioAtual};localLogs.unshift(i);if(localLogs.length>30)localLogs.pop();localStorage.setItem('logs_ev_'+eventoID,JSON.stringify(localLogs));renderLog(i,true);}
         function carregarLogsAntigos(){document.getElementById('log-list').innerHTML='';const s=localStorage.getItem('logs_ev_'+eventoID);if(s){localLogs=JSON.parse(s);localLogs.forEach(i=>renderLog(i,false));}}
         
-        // HISTÓRICO RESTAURADO (ALINHADO À ESQUERDA)
         function renderLog(i,pre){
             const li=document.createElement('li');
             li.innerHTML=`<span class="log-time">${i.h}</span> <span class="log-msg"><span class="log-user">${i.u.split(' ')[0]}:</span> ${i.n}</span> <b style="color:${i.q>0?'#2ecc71':'#c0392b'}">${i.q>0?'+1':'-1'}</b>`;

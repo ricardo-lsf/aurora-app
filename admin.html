@@ -231,6 +231,12 @@
                             <button onclick="adicionarMuitos()" class="btn-primary">⬇️ Importar Selecionados</button>
                         </div>
                     </div>
+					
+					<div style="display:flex; gap:10px; align-items:center; background:#e8f6f3; padding:10px; border-radius:4px; margin-bottom:5px; border:1px solid #a2d9ce;">
+                        <span style="font-weight:bold; color:#16a085;">⚡ Ação em Massa:</span>
+                        <input type="number" id="estoqueMassa" value="25" style="width:60px; text-align:center;">
+                        <button onclick="aplicarEstoqueMassa()" class="btn-info" style="height:32px; font-size:0.85em;">Aplicar Estoque a Todos</button>
+                    </div>
 
                     <h4>📋 Cardápio Confirmado</h4>
                     <div class="table-responsive">
@@ -474,7 +480,7 @@
                         </tbody>
                     </table>
                 </div>
-            </div>			
+            </div>		
 						
             <div class="grid-2" style="margin-top:20px;">
                 <div class="card" style="height:300px"><canvas id="chartDrinks"></canvas></div>
@@ -499,7 +505,7 @@
 
 <script type="module">
 	import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, query, orderBy, writeBatch, where, getDocs, limit, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, query, orderBy, writeBatch, where, getDocs, limit, getDoc, serverTimestamp, increment, collectionGroup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // ⚠️ COLE SUA CONFIG AQUI ⚠️
 	const firebaseConfig = {
@@ -824,17 +830,29 @@
     onSnapshot(doc(db,"config","geral"), (s) => { if(s.exists()) { eventoAtivoID = s.data().eventoAtivoID; renderizarListaEventos(); }});
     let listaEventosCache=[]; onSnapshot(query(collection(db,"eventos"),orderBy("criadoEm","desc")),(snap)=>{listaEventosCache=[];snap.forEach(d=>listaEventosCache.push({...d.data(),id:d.id}));renderizarListaEventos();});
     
-    function renderizarListaEventos(){ 
-        const d=document.getElementById('lista-eventos'), sA=document.getElementById('select-evento-analise'); d.innerHTML=''; sA.innerHTML='<option value="">-- Escolha --</option>'; 
-        listaEventosCache.forEach(ev=>{
-            const activeClass = (eventoID === ev.id) ? 'active' : '';
-            const item=document.createElement('div');
-            item.className=`event-item ${activeClass}`;
-            const b=(ev.status==='fechado'?'<span class="badge-closed">FECHADO</span>':'')+(eventoAtivoID===ev.id?' <span class="badge-live">NO AR</span>':'');
-            item.innerHTML=`<div><b>${ev.nome}</b><br><small>${new Date(ev.criadoEm?.toDate()).toLocaleDateString()}</small></div><div>${b}</div>`;
-            item.onclick=()=>carregarEvento(ev.id,ev,ev.status||'aberto');
-            d.appendChild(item); sA.appendChild(new Option(ev.nome,ev.id));
-        });
+	function renderizarListaEventos(){ 
+        const d=document.getElementById('lista-eventos'), sA=document.getElementById('select-evento-analise'); 
+        d.innerHTML=''; 
+        
+        // AQUI ESTÁ A MUDANÇA: Adiciona a opção GLOBAL
+        sA.innerHTML='<option value="">-- Escolha --</option><option value="ALL" style="font-weight:bold; color:#2980b9;">🌟 TODOS OS EVENTOS (Global)</option>'; 
+        
+        listaEventosCache.forEach(ev=>{ 
+            const activeClass = (eventoID === ev.id) ? 'active' : ''; 
+            const item=document.createElement('div'); 
+            
+            // CORREÇÃO 1: Adicionei crases (backticks)
+            item.className=`event-item ${activeClass}`; 
+            
+            const b=(ev.status==='fechado'?'<span class="badge-closed">FECHADO</span>':'')+(eventoAtivoID===ev.id?' <span class="badge-live">NO AR</span>':''); 
+            
+            // CORREÇÃO 2: Adicionei crases (backticks) no HTML inteiro
+            item.innerHTML=`<div><b>${ev.nome}</b><br><small>${new Date(ev.criadoEm?.toDate()).toLocaleDateString()}</small></div><div>${b}</div>`; 
+            
+            item.onclick=()=>carregarEvento(ev.id,ev,ev.status||'aberto'); 
+            d.appendChild(item); 
+            sA.appendChild(new Option(ev.nome,ev.id)); 
+        }); 
     }
     
     window.abrirModalNovo=()=>{document.getElementById('modalNovoEvento').style.display='flex';['mNome','mResp','mTel','mData','mHora','mLocal','mTermino'].forEach(i=>document.getElementById(i).value='');};
@@ -878,10 +896,46 @@
     window.mudarStatus=async(s)=>await updateDoc(doc(db,"eventos",eventoID),{status:s});
     window.ativarEvento=async()=>{if(confirm("Ativar?"))await setDoc(doc(db,"config","geral"),{eventoAtivoID:eventoID,eventoAtivoNome:document.getElementById('titulo-evento').innerText},{merge:true});};
     window.reiniciarEvento=async()=>{if(confirm("ZERAR?")){const b=writeBatch(db);(await getDocs(collection(db,"eventos",eventoID,"vendas"))).forEach(d=>b.delete(d.ref));(await getDocs(collection(db,"eventos",eventoID,"cardapio"))).forEach(d=>b.update(d.ref,{estoque:50}));b.update(doc(db,"eventos",eventoID),{resetSignal:Date.now()});await b.commit();alert("Ok!");}};
-    window.excluirEventoAtual=async()=>{if(confirm("Apagar?")){await deleteDoc(doc(db,"eventos",eventoID));location.reload();}};
+
+// CORREÇÃO: Exclusão Completa (Deep Delete)
+    window.excluirEventoAtual = async () => {
+        if (!eventoID) return;
+        
+        const confirmacao = prompt("⚠️ PERIGO: Isso apagará VENDAS, PEDIDOS e HISTÓRICO deste evento para sempre.\n\nPara confirmar, digite DELETAR abaixo:");
+        
+        if (confirmacao !== "DELETAR") return alert("Ação cancelada.");
+
+        try {
+            // 1. Lista de subcoleções que devem ser apagadas
+            const subColecoes = ["vendas", "pedidos", "cardapio"];
+
+            // 2. Loop para limpar cada subcoleção
+            for (const sub of subColecoes) {
+                const snap = await getDocs(collection(db, "eventos", eventoID, sub));
+                
+                // Cria um array de promessas de exclusão para ser rápido
+                const deletePromises = snap.docs.map(doc => deleteDoc(doc.ref));
+                await Promise.all(deletePromises);
+            }
+
+            // 3. Só agora apaga o evento principal
+            await deleteDoc(doc(db, "eventos", eventoID));
+
+            alert("Evento e todos os seus dados foram excluídos!");
+            location.reload();
+
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao excluir: " + e.message);
+        }
+    };
+
     window.marcarTodos=(m)=>document.querySelectorAll('.chk-drink:not([disabled])').forEach(c=>c.checked=m);
-    window.adicionarMuitos=async()=>{const c=document.querySelectorAll('.chk-drink:checked');if(!c.length)return;const b=writeBatch(db);c.forEach(chk=>{const d=bibliotecaGlobal.find(x=>x.id===chk.value);if(d)b.set(doc(collection(db,"eventos",eventoID,"cardapio")),{nome:d.nome,imagem:d.imagem,precoVenda:d.precoVenda||0,precoCusto:d.precoCusto||0,estoque:50,idOriginal:d.id});});await b.commit();document.querySelectorAll('.chk-drink').forEach(c=>c.checked=false);};
-    
+	// 1. AJUSTE DO PADRÃO PARA 25 (Substitua a função adicionarMuitos existente)
+	window.adicionarMuitos=async()=>{const c=document.querySelectorAll('.chk-drink:checked');if(!c.length)return;const b=writeBatch(db);c.forEach(chk=>{const d=bibliotecaGlobal.find(x=>x.id===chk.value);if(d){b.set(doc(collection(db,"eventos",eventoID,"cardapio")),{nome:d.nome,imagem:d.imagem,precoVenda:d.precoVenda||0,precoCusto:d.precoCusto||0,estoque:25,idOriginal:d.id});}});await b.commit();document.querySelectorAll('.chk-drink').forEach(c => c.checked = false);};
+    // 2. NOVA FUNÇÃO: APLICAR ESTOQUE EM MASSA
+    window.aplicarEstoqueMassa=async()=>{if(!eventoID) return;const qtd = parseInt(document.getElementById('estoqueMassa').value);if(!qtd || qtd < 0) return alert("Digite um valor válido.");if(!confirm(`ATENÇÃO: Isso vai mudar o estoque de TODOS os drinks deste evento para ${qtd}.\nDeseja continuar?`)) return;const snap = await getDocs(collection(db, "eventos", eventoID, "cardapio"));const batch = writeBatch(db);snap.forEach(doc => {batch.update(doc.ref, { estoque: qtd });});await batch.commit();alert("Estoque atualizado em massa!");};
+	
     // --- LISTA DE COMPRAS V53 (COM CACHE E MODAL) ---
     window.gerarListaCompras = async () => {
         if(!eventoID) return;
@@ -1103,52 +1157,77 @@
     // ANALYTICS V55 (COM RESGATE)
 
 	// CORREÇÃO: Analytics com Histórico de Clientes
+	// RELATÓRIO COM MODO GLOBAL (ALL)
+	// CORREÇÃO FINAL V66: Relatório Global + Gráfico com Valor e Qtd
     window.gerarRelatorio = async () => {
         const eid = document.getElementById('select-evento-analise').value;
-        if(!eid) return alert("Selecione!");
+        if(!eid) return alert("Selecione um evento ou a opção Global!");
+        
         const periodo = document.getElementById('chartPeriod').value;
         const filterVal = document.getElementById('filterBartender').value;
 
         try {
-            const s = await getDocs(collection(db, "eventos", eid, "vendas"));
-            if(s.empty) return alert("Sem vendas");
+            let q;
+            // 1. LÓGICA DE SELEÇÃO (GLOBAL vs ÚNICO)
+            if(eid === 'ALL') {
+                // Busca em TODOS os eventos (Exige Índice de Grupo de Coleções)
+                q = query(collectionGroup(db, "vendas"), orderBy("hora", "desc"));
+            } else {
+                // Busca no evento específico
+                q = query(collection(db, "eventos", eid, "vendas"), orderBy("hora", "desc"));
+            }
+
+            const s = await getDocs(q);
+            
+            if(s.empty) return alert("Nenhuma venda encontrada para este filtro.");
             
             let fat = 0, custo = 0, totalQtd = 0;
-            const dc = {}, hc = {}, clientes = {}; // Novo objeto clientes
+            const dc = {}, hc = {}, clientes = {};
+            
+            // Limpa tabela de auditoria se não for global
+            const tbodyAudit = document.getElementById('lista-vendas-audit');
+            if(tbodyAudit) tbodyAudit.innerHTML = '';
 
             s.forEach(d => {
                 const v = d.data();
+                // Filtro de Bartender (funciona tanto no global quanto no local)
                 if(filterVal === 'all' || v.usuario === filterVal) {
                     const p = parseFloat(v.preco || 0), c = parseFloat(v.custo || 0);
-                    fat += p;
-                    custo += c;
+                    fat += p; 
+                    custo += c; 
                     totalQtd++;
                     
-                    // Drinks
-                    if(!dc[v.drink]) dc[v.drink] = {qtd:0, val:0};
-                    dc[v.drink].qtd++;
+                    // Dados para Gráfico de Drinks
+                    if(!dc[v.drink]) dc[v.drink] = {qtd:0, val:0}; 
+                    dc[v.drink].qtd++; 
                     dc[v.drink].val += p;
                     
-                    // Clientes (Histórico)
+                    // Dados para Top Clientes
                     const nomeCliente = v.cliente || 'Balcão/Anônimo';
-                    if(!clientes[nomeCliente]) clientes[nomeCliente] = {qtd:0, val:0};
-                    clientes[nomeCliente].qtd++;
+                    if(!clientes[nomeCliente]) clientes[nomeCliente] = {qtd:0, val:0}; 
+                    clientes[nomeCliente].qtd++; 
                     clientes[nomeCliente].val += p;
 
-                    // Horário
+                    // Dados para Gráfico de Horário
                     let date = v.hora && v.hora.toDate ? v.hora.toDate() : new Date(v.hora);
                     let hLabel;
                     if(periodo === '10') {
                         let mm = Math.floor(date.getMinutes()/10)*10;
-                        hLabel = `${String(date.getHours()).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+                        hLabel = String(date.getHours()).padStart(2,'0') + ':' + String(mm).padStart(2,'0');
                     } else {
-                        hLabel = `${String(date.getHours()).padStart(2,'0')}:00`;
+                        hLabel = String(date.getHours()).padStart(2,'0') + ':00';
                     }
                     hc[hLabel] = (hc[hLabel]||0) + 1;
+
+                    // Auditoria (Apenas para evento único para evitar confusão)
+                    if(eid !== 'ALL' && totalQtd <= 50 && tbodyAudit) {
+                        const horaF = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        tbodyAudit.innerHTML += '<tr><td>'+horaF+'</td><td><b>'+v.drink+'</b></td><td>'+(v.usuario||'?')+'</td><td>R$ '+p.toFixed(2)+'</td><td><button onclick="excluirVenda(\''+d.id+'\')" class="btn-trash">🗑️</button></td></tr>';
+                    }
                 }
             });
 
-            // Preencher KPIs
+            // ATUALIZA KPIS
             document.getElementById('kpi-fat').innerText = 'R$ '+fat.toFixed(2);
             document.getElementById('kpi-custo').innerText = 'R$ '+custo.toFixed(2);
             document.getElementById('kpi-lucro').innerText = 'R$ '+(fat-custo).toFixed(2);
@@ -1156,47 +1235,75 @@
             if(document.getElementById('kpi-qtd')) document.getElementById('kpi-qtd').innerText = totalQtd;
             if(document.getElementById('kpi-ticket')) document.getElementById('kpi-ticket').innerText = 'R$ '+(totalQtd>0 ? (fat/totalQtd).toFixed(2) : '0.00');
 
-            // Renderizar Gráficos (Mantido)
+            // --- GRÁFICO 1: DRINKS (QTD + VALOR RESTAURADO) ---
             const ctxD = document.getElementById('chartDrinks').getContext('2d');
-            if(chartD) chartD.destroy();
+            // Importante: Destroi gráfico anterior se existir
+            if(window.chartD instanceof Chart) window.chartD.destroy();
+            
             const lbs = Object.keys(dc);
-            chartD = new Chart(ctxD, {
+            window.chartD = new Chart(ctxD, {
                 type: 'bar',
                 data: {
                     labels: lbs,
                     datasets: [
-                        { label: 'Qtd', data: lbs.map(k=>dc[k].qtd), backgroundColor: '#2ecc71', yAxisID: 'y' },
-                        { label: 'Valor', data: lbs.map(k=>dc[k].val), backgroundColor: '#f1c40f', type: 'bar', yAxisID: 'y1' }
+                        { 
+                            label: 'Qtd', 
+                            data: lbs.map(k=>dc[k].qtd), 
+                            backgroundColor: '#2ecc71', 
+                            yAxisID: 'y' 
+                        },
+                        { 
+                            label: 'Valor (R$)', 
+                            data: lbs.map(k=>dc[k].val), 
+                            backgroundColor: '#f1c40f', 
+                            type: 'bar', // Garante que seja barra
+                            yAxisID: 'y1' // Eixo da direita
+                        }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: {position:'left'}, y1: {position:'right', grid:{display:false}} } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { position: 'left', beginAtZero: true },
+                        y1: { position: 'right', beginAtZero: true, grid: {drawOnChartArea: false} } // Remove grade do eixo 2 para limpar visual
+                    }
+                }
             });
 
+            // --- GRÁFICO 2: HORÁRIO ---
             const ctxH = document.getElementById('chartHorario').getContext('2d');
-            if(chartH) chartH.destroy();
+            if(window.chartH instanceof Chart) window.chartH.destroy();
+            
             const sH = Object.keys(hc).sort();
-            chartH = new Chart(ctxH, {
+            window.chartH = new Chart(ctxH, {
                 type: 'line',
                 data: {
                     labels: sH,
-                    datasets: [{ label: `Vendas (${periodo} min)`, data: sH.map(h=>hc[h]), borderColor: '#3498db', fill: true }]
+                    datasets: [{ label: 'Vendas (' + periodo + ' min)', data: sH.map(h=>hc[h]), borderColor: '#3498db', fill: true }]
                 },
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
-            // RENDERIZAR LISTA DE CLIENTES (NOVO)
+            // --- LISTA TOP CLIENTES ---
+            // RENDERIZAR RANKING GLOBAL
             const listaClientes = document.getElementById('lista-top-clientes');
             if(listaClientes) {
                 listaClientes.innerHTML = '';
-                // Ordenar por qtd de drinks
                 const sortedClientes = Object.entries(clientes)
-                    .sort(([,a], [,b]) => b.qtd - a.qtd)
-                    .slice(0, 10); // Top 10
+                    .sort(([,a], [,b]) => b.qtd - a.qtd); // Sem limite, mostra todo mundo
 
                 sortedClientes.forEach(([nome, dados], index) => {
+                    // Destaque para o TOP 3
+                    let corPos = '#333';
+                    let icone = '';
+                    if(index === 0) { corPos = '#f1c40f'; icone = '👑 '; } // Ouro
+                    if(index === 1) { corPos = '#95a5a6'; icone = '🥈 '; } // Prata
+                    if(index === 2) { corPos = '#cd7f32'; icone = '🥉 '; } // Bronze
+
                     listaClientes.innerHTML += `
-                        <tr>
-                            <td>#${index + 1}</td>
+                        <tr style="${index < 3 ? 'background:#fffbf0' : ''}">
+                            <td style="font-weight:bold; color:${corPos}">${icone}#${index + 1}</td>
                             <td><b>${nome}</b></td>
                             <td style="color:#3498db; font-weight:bold;">${dados.qtd}</td>
                             <td style="color:#27ae60;">R$ ${dados.val.toFixed(2)}</td>
@@ -1205,9 +1312,17 @@
                 });
             }
 
-        } catch(e) { console.error(e); alert("Erro ao gerar: " + e.message); }
+        } catch(e) {
+            console.error(e);
+            // Tratamento Específico para Erro de Índice Global
+            if(e.message.includes("requires an index")) {
+                alert("⚠️ ATENÇÃO: Para ver 'TODOS OS EVENTOS', o Firebase exige um índice ESPECIAL.\n\nAbra o Console (F12) agora e clique no link que apareceu lá para criar o índice 'Collection Group'.");
+            } else {
+                alert("Erro ao gerar relatório: " + e.message);
+            }
+        }
     };
-
+	
     window.carregarBartenders=async(eid)=>{if(!eid)return;const s=await getDocs(collection(db,"eventos",eid,"vendas"));const usersSet=new Set();s.forEach(d=>usersSet.add(d.data().usuario||'Desconhecido'));const selBar=document.getElementById('filterBartender');while(selBar.options.length>1)selBar.remove(1);usersSet.forEach(u=>selBar.add(new Option(u,u)));};
     window.baixarExtratoVendas = async () => { const eid = document.getElementById('select-evento-analise').value; if (!eid) return alert("Selecione!"); try { const snap = await getDocs(collection(db, "eventos", eid, "vendas")); if (snap.empty) return alert("Sem vendas."); let csv = "Data,Hora,Bartender,Drink,Valor,Custo,Lucro\n"; snap.forEach(doc => { const d = doc.data(); let dStr="", hStr=""; if(d.hora&&d.hora.toDate){const o=d.hora.toDate(); dStr=o.toLocaleDateString(); hStr=o.toLocaleTimeString();} csv += `${dStr},${hStr},${d.usuario||'?'},${d.drink},"${parseFloat(d.preco||0).toFixed(2)}","${parseFloat(d.custo||0).toFixed(2)}","${(parseFloat(d.preco||0)-parseFloat(d.custo||0)).toFixed(2)}"\n`; }); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); link.download = "Extrato.csv"; link.click(); } catch(e){ alert("Erro"); } };
     
@@ -1364,48 +1479,61 @@
 
     // 4. FINALIZAR (A MÁGICA DA INTEGRAÇÃO)
 	// CORREÇÃO: Lógica de Finalização (Loop para Qtd e Salvar Cliente)
+// CORREÇÃO V65: Baixa de Estoque + Registro Financeiro + Histórico
     window.finalizarPedido = async (id) => {
         const docRef = doc(db, "eventos", eventoAtivoID, "pedidos", id);
         const snap = await getDoc(docRef);
         if(!snap.exists()) return;
         const pedido = snap.data();
 
-        if(!confirm(`Confirmar entrega para ${pedido.cliente}?`)) return;
+        if(!confirm('Confirmar entrega para ' + pedido.cliente + '?')) return;
 
         const batch = writeBatch(db);
         
         for (const item of pedido.itens) {
-            // Busca dados financeiros do drink
+            // 1. Busca dados do drink no cardápio para pegar preço e ID original
             const qCardapio = query(collection(db, "eventos", eventoAtivoID, "cardapio"), where("nome", "==", item.nome));
             const snapCardapio = await getDocs(qCardapio);
-            let preco = 0, custo = 0;
             
+            let preco = 0, custo = 0;
+            let cardapioItemRef = null; // Referência para baixar estoque
+
             if(!snapCardapio.empty) {
-                const dData = snapCardapio.docs[0].data();
+                const docCardapio = snapCardapio.docs[0];
+                const dData = docCardapio.data();
                 preco = dData.precoVenda || 0;
                 custo = dData.precoCusto || 0;
+                cardapioItemRef = docCardapio.ref;
             }
 
-            // CORREÇÃO BUG DA CONTAGEM: Loop pela quantidade
-            // Se o cliente pediu 2x Moscow Mule, cria 2 registros de venda
             const qtdInt = parseInt(item.qtd) || 1;
             
+            // 2. Loop para registrar CADA drink individualmente (Melhora estatística)
             for (let i = 0; i < qtdInt; i++) {
+                // A. Registra a Venda
                 const vendaRef = doc(collection(db, "eventos", eventoAtivoID, "vendas"));
                 batch.set(vendaRef, {
                     drink: item.nome,
                     preco: preco,
                     custo: custo,
-                    usuario: pedido.bartender || 'KDS', // Quem fez
-                    cliente: pedido.cliente || 'Balcão', // NOVO: Quem pediu (Histórico)
+                    usuario: pedido.bartender || 'KDS',
+                    cliente: pedido.cliente || 'Balcão', 
                     hora: new Date(),
                     origem: 'KDS'
                 });
+
+                // B. Baixa no Estoque (Se achou o item no cardápio)
+                if (cardapioItemRef) {
+                    batch.update(cardapioItemRef, { estoque: increment(-1) });
+                }
             }
         }
         
+        // 3. Marca pedido como entregue
         batch.update(docRef, { status: 'Entregue', entregueEm: new Date() });
+
         await batch.commit();
+        // Não precisamos de alert aqui para ser mais ágil no fluxo
     };
 
     // GANCHO PARA INICIAR KDS QUANDO CLICAR NO MENU
