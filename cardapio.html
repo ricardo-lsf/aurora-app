@@ -29,21 +29,22 @@
         .drink-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; align-items: center; padding: 10px; transition: 0.2s; border: 2px solid transparent; }
         .drink-card.selected { border-color: #3498db; background: #eef7fc; }
         
-        /* NOVO: ESTILO PARA ESGOTADO */
-        .drink-card.esgotado { opacity: 0.6; background: #fdfdfd; pointer-events: none; /* Impede clique no card */ }
+        /* ESTILO PARA ESGOTADO */
+        .drink-card.esgotado { opacity: 0.6; background: #fdfdfd; pointer-events: none; }
         .drink-card.esgotado .drink-img { filter: grayscale(100%); }
         .tag-esgotado { background: #c0392b; color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 4px; margin-top: 2px; display: inline-block; font-weight: bold; }
 
         .drink-img { width: 70px; height: 70px; border-radius: 8px; object-fit: cover; background: #eee; }
         .drink-info { flex: 1; padding: 0 15px; }
         .drink-name { font-weight: bold; font-size: 1.1em; color: #2c3e50; }
+        .stock-info { font-size: 0.75em; color: #7f8c8d; margin-top: 2px; } /* Novo: Info de estoque visual */
         .tag-mocktail { font-size: 0.7em; background: #e8f8f5; color: #27ae60; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px; border: 1px solid #a9dfbf; }
         
         /* CONTROLS (+/-) */
         .qty-control { display: flex; align-items: center; gap: 10px; }
         .btn-qty { width: 35px; height: 35px; border-radius: 50%; border: none; background: #ecf0f1; color: #2c3e50; font-weight: bold; font-size: 1.2em; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .btn-qty.active { background: #3498db; color: white; }
-        .btn-qty:disabled { background: #ccc; cursor: not-allowed; color: #888; } /* Estilo desativado */
+        .btn-qty:disabled { background: #ccc; cursor: not-allowed; color: #888; } 
         .qty-val { font-weight: bold; width: 20px; text-align: center; }
 
         /* FLOATING CART */
@@ -113,7 +114,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, addDoc, doc, getDoc, query, where, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, addDoc, doc, getDoc, query, where, orderBy, limit, serverTimestamp, writeBatch, increment} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // ⚠️ COLE SUA CONFIG AQUI ⚠️
 	const firebaseConfig = {
@@ -133,7 +134,7 @@
     let usuario = { 
         nome: localStorage.getItem('aurora_user_nome') || null, 
         id: localStorage.getItem('aurora_user_id') || null,
-        isBalcao: localStorage.getItem('aurora_is_balcao') === 'true' // Flag especial
+        isBalcao: localStorage.getItem('aurora_is_balcao') === 'true' 
     };
     let carrinho = {}; 
 
@@ -167,9 +168,9 @@
         document.getElementById('floatCart').className = (id === 'view-menu' && total > 0) ? 'float-cart visible' : 'float-cart';
     };
 
-    // --- LOGIN / IDENTIFICAÇÃO ---
+    // --- LOGIN ---
     window.entrar = () => {
-        let nome = document.getElementById('inputNome').value.trim().toUpperCase(); // Força maiúsculo
+        let nome = document.getElementById('inputNome').value.trim().toUpperCase(); 
         if (!nome) return alert("Digite seu nome.");
         
         const isBalcao = (nome === 'BALCAO' || nome === 'BALCÃO' || nome === 'CAIXA');
@@ -209,20 +210,21 @@
                 
                 const isMocktail = (d.tipo === 'Mocktail' || d.tipo === 'Sem Álcool' || d.nome.toLowerCase().includes('sem álcool')); 
                 
-                // --- LÓGICA DE BLOQUEIO DE ESTOQUE ---
-                const semEstoque = (d.estoque !== undefined && d.estoque <= 0);
+                // --- LÓGICA DE ESTOQUE ---
+                const estoqueAtual = d.estoque !== undefined ? d.estoque : 0;
+                const semEstoque = estoqueAtual <= 0;
+                
                 const classeExtra = semEstoque ? 'esgotado' : '';
                 const botaoMenos = semEstoque ? 'disabled' : '';
-                // Se for STAFF (Balcão), permite pedir mesmo sem estoque (opcional, aqui mantive bloqueado para segurança)
                 const botaoMais = semEstoque ? 'disabled' : ''; 
                 
                 const div = document.createElement('div');
                 div.className = `drink-card ${classeExtra} ${carrinho[id] ? 'selected' : ''}`;
                 
-                // Se esgotado, mostra tag vermelha em vez de mocktail (ou ambas)
                 let tag = isMocktail ? '<span class="tag-mocktail">Sem Álcool</span>' : '';
                 if(semEstoque) tag = '<span class="tag-esgotado">ESGOTADO</span>';
 
+                // CORREÇÃO: Passando o 'estoqueAtual' na função alterarQtd
                 div.innerHTML = `
                     <div style="position:relative">
                         <img src="${d.imagem || './imagens/foto.jpg'}" class="drink-img">
@@ -230,11 +232,12 @@
                     <div class="drink-info">
                         <div class="drink-name">${d.nome}</div>
                         ${tag}
+                        ${!semEstoque && !usuario.isBalcao ? `<div class="stock-info">Restam: ${estoqueAtual}</div>` : ''}
                     </div>
                     <div class="qty-control">
-                        <button class="btn-qty" onclick="alterarQtd('${id}', '${d.nome}', -1)" ${botaoMenos}>-</button>
+                        <button class="btn-qty" onclick="alterarQtd('${id}', '${d.nome}', -1, ${estoqueAtual})" ${botaoMenos}>-</button>
                         <span class="qty-val" id="qty_${id}">${carrinho[id] ? carrinho[id].qtd : 0}</span>
-                        <button class="btn-qty active" onclick="alterarQtd('${id}', '${d.nome}', 1)" ${botaoMais}>+</button>
+                        <button class="btn-qty active" onclick="alterarQtd('${id}', '${d.nome}', 1, ${estoqueAtual})" ${botaoMais}>+</button>
                     </div>
                 `;
                 lista.appendChild(div);
@@ -244,23 +247,30 @@
         mostrarView('view-menu');
     }
 
-    window.alterarQtd = (id, nome, delta) => {
+    // CORREÇÃO: Função recebe agora o 'estoqueMax' para validar
+    window.alterarQtd = (id, nome, delta, estoqueMax) => {
         if (!carrinho[id]) carrinho[id] = { qtd: 0, nome: nome };
         const totalAtual = Object.values(carrinho).reduce((acc, item) => acc + item.qtd, 0);
 
-        // TRAVA DE 2 DRINKS (EXCETO PARA BALCÃO)
+        // 1. VERIFICAÇÃO DE LIMITE DE PEDIDO (2 DRINKS)
         if (!usuario.isBalcao && delta > 0 && totalAtual >= 2) {
             return alert("✋ Limite de 2 drinks por pedido para agilizar a fila!");
+        }
+
+        // 2. VERIFICAÇÃO DE ESTOQUE (CORREÇÃO PEDIDA)
+        if (!usuario.isBalcao && delta > 0) {
+            // Se tentar adicionar e a qtd nova for maior que o estoque...
+            if (carrinho[id].qtd + 1 > estoqueMax) {
+                return alert(`⚠️ Ops! Só temos ${estoqueMax} unidades deste drink disponíveis.`);
+            }
         }
 
         carrinho[id].qtd += delta;
         if (carrinho[id].qtd <= 0) delete carrinho[id];
 
-        // Atualiza UI local
         const elQty = document.getElementById(`qty_${id}`);
         if(elQty) elQty.innerText = carrinho[id] ? carrinho[id].qtd : 0;
         
-        // Atualiza borda do card
         const card = elQty?.parentElement?.parentElement;
         if(card) {
             if(carrinho[id]) card.classList.add('selected');
@@ -336,23 +346,51 @@
     }
 
     // --- ENVIAR PEDIDO ---
+	// CORREÇÃO V68: Enviar Pedido + Baixa de Estoque IMEDIATA (Trava o Gap)
+
     window.enviarPedido = async () => {
-        const itensValidos = Object.values(carrinho).filter(i => i.qtd > 0);
+        const idsCarrinho = Object.keys(carrinho);
+        const itensValidos = idsCarrinho.filter(id => carrinho[id].qtd > 0);
         
         if (itensValidos.length === 0) return alert("Selecione algum drink!");
 
-        const itensPedido = itensValidos.map(i => ({ nome: i.nome, qtd: i.qtd }));
+        // Monta array de itens com Nome e Qtd para salvar no pedido
+        const itensPedido = itensValidos.map(id => ({ 
+            idOriginal: id, // Guardamos o ID para referência futura
+            nome: carrinho[id].nome, 
+            qtd: carrinho[id].qtd 
+        }));
 
         try {
-            await addDoc(collection(db, "eventos", eventoAtivoID, "pedidos"), {
+            const batch = writeBatch(db);
+
+            // 1. CRIA O PEDIDO NA COLEÇÃO
+            const pedidoRef = doc(collection(db, "eventos", eventoAtivoID, "pedidos"));
+            batch.set(pedidoRef, {
                 cliente: usuario.nome,
                 clienteID: usuario.id,
                 itens: itensPedido,
-                status: 'Pendente', // Começa na fila
+                status: 'Pendente', 
                 origem: usuario.isBalcao ? 'Balcao' : 'App',
                 data: serverTimestamp()
             });
+
+            // 2. DÁ BAIXA NO ESTOQUE IMEDIATAMENTE (Para travar outros clientes)
+            // Só baixa estoque se NÃO for o Balcão (Staff geralmente controla visualmente)
+            // Ou se você quiser que o Staff também baixe estoque, remova o 'if'
+            if (!usuario.isBalcao) { 
+                itensValidos.forEach(id => {
+                    const itemRef = doc(db, "eventos", eventoAtivoID, "cardapio", id);
+                    batch.update(itemRef, { 
+                        estoque: increment(-carrinho[id].qtd) 
+                    });
+                });
+            }
+
+            // Executa tudo de uma vez (Atômico)
+            await batch.commit();
             
+            // Limpa local
             carrinho = {};
             document.querySelectorAll('.qty-val').forEach(el => el.innerText = '0');
             document.querySelectorAll('.drink-card').forEach(el => el.classList.remove('selected'));
@@ -361,9 +399,11 @@
             if (usuario.isBalcao) {
                 alert("Pedido Balcão Enviado! ✅");
             }
+            // Se for usuário App, o listener vai jogar pra tela de status
             
         } catch (e) {
-            alert("Erro ao enviar: " + e.message);
+            console.error(e);
+            alert("Erro ao enviar pedido. Tente novamente.");
         }
     };
 </script>

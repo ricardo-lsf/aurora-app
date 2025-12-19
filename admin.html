@@ -1480,6 +1480,7 @@
     // 4. FINALIZAR (A MÁGICA DA INTEGRAÇÃO)
 	// CORREÇÃO: Lógica de Finalização (Loop para Qtd e Salvar Cliente)
 // CORREÇÃO V65: Baixa de Estoque + Registro Financeiro + Histórico
+// CORREÇÃO V68: KDS Apenas Registra Venda (Estoque já foi baixado no Pedido)
     window.finalizarPedido = async (id) => {
         const docRef = doc(db, "eventos", eventoAtivoID, "pedidos", id);
         const snap = await getDoc(docRef);
@@ -1491,26 +1492,22 @@
         const batch = writeBatch(db);
         
         for (const item of pedido.itens) {
-            // 1. Busca dados do drink no cardápio para pegar preço e ID original
+            // Busca dados financeiros (Preço/Custo)
             const qCardapio = query(collection(db, "eventos", eventoAtivoID, "cardapio"), where("nome", "==", item.nome));
             const snapCardapio = await getDocs(qCardapio);
             
             let preco = 0, custo = 0;
-            let cardapioItemRef = null; // Referência para baixar estoque
 
             if(!snapCardapio.empty) {
-                const docCardapio = snapCardapio.docs[0];
-                const dData = docCardapio.data();
+                const dData = snapCardapio.docs[0].data();
                 preco = dData.precoVenda || 0;
                 custo = dData.precoCusto || 0;
-                cardapioItemRef = docCardapio.ref;
             }
 
             const qtdInt = parseInt(item.qtd) || 1;
             
-            // 2. Loop para registrar CADA drink individualmente (Melhora estatística)
+            // Registra a VENDA (Dinheiro e Gráfico)
             for (let i = 0; i < qtdInt; i++) {
-                // A. Registra a Venda
                 const vendaRef = doc(collection(db, "eventos", eventoAtivoID, "vendas"));
                 batch.set(vendaRef, {
                     drink: item.nome,
@@ -1521,19 +1518,15 @@
                     hora: new Date(),
                     origem: 'KDS'
                 });
-
-                // B. Baixa no Estoque (Se achou o item no cardápio)
-                if (cardapioItemRef) {
-                    batch.update(cardapioItemRef, { estoque: increment(-1) });
-                }
             }
+
+            // REMOVIDO: Não baixamos mais estoque aqui, pois já foi baixado na criação do pedido.
         }
         
-        // 3. Marca pedido como entregue
+        // Marca como Entregue
         batch.update(docRef, { status: 'Entregue', entregueEm: new Date() });
 
         await batch.commit();
-        // Não precisamos de alert aqui para ser mais ágil no fluxo
     };
 
     // GANCHO PARA INICIAR KDS QUANDO CLICAR NO MENU
