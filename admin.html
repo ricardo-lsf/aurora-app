@@ -448,12 +448,13 @@
                 <select id="chartPeriod" style="width:auto; min-width:140px;"><option value="60">Visão: Hora</option><option value="10">Visão: 10 min</option></select>
                 <button onclick="gerarRelatorio()" class="btn-primary">Analisar</button>
                 <button onclick="baixarExtratoVendas()" class="btn-success">📑 Extrato</button>
+				<button onclick="exportarRelatorioCSV()" class="btn-success"> 📥 Baixar Relatório Completo (CSV) </button>				
                 <div style="border-left: 2px solid #ddd; padding-left: 10px; display:flex; gap:5px; align-items:center;">
                     <label for="csvRestore" style="font-size:0.8em; cursor:pointer; color:#e67e22; font-weight:bold;">📂 Restaurar CSV</label>
                     <input type="file" id="csvRestore" accept=".csv" style="display:none" onchange="importarBackupVendas()">
                 </div>
             </div>
-            
+			
             <div class="kpi-grid" style="margin-top:20px;">
                 <div class="kpi-card" style="border-color:gold"><small>Faturamento</small><span class="kpi-val" id="kpi-fat">0</span></div>
                 <div class="kpi-card" style="border-color:red"><small>Custo</small><span class="kpi-val" id="kpi-custo">0</span></div>
@@ -1159,75 +1160,94 @@
 	// CORREÇÃO: Analytics com Histórico de Clientes
 	// RELATÓRIO COM MODO GLOBAL (ALL)
 	// CORREÇÃO FINAL V66: Relatório Global + Gráfico com Valor e Qtd
+// Variável Global
+    window.dadosExportacao = [];
+
+    // CORREÇÃO V70: Relatório com Data e Hora separadas
     window.gerarRelatorio = async () => {
-        const eid = document.getElementById('select-evento-analise').value;
+        const selectEvent = document.getElementById('select-evento-analise');
+        const eid = selectEvent.value;
+        const nomeEventoSelecionado = selectEvent.options[selectEvent.selectedIndex].text;
+        
         if(!eid) return alert("Selecione um evento ou a opção Global!");
         
         const periodo = document.getElementById('chartPeriod').value;
         const filterVal = document.getElementById('filterBartender').value;
 
+        window.dadosExportacao = []; // Limpa anterior
+
         try {
             let q;
-            // 1. LÓGICA DE SELEÇÃO (GLOBAL vs ÚNICO)
             if(eid === 'ALL') {
-                // Busca em TODOS os eventos (Exige Índice de Grupo de Coleções)
                 q = query(collectionGroup(db, "vendas"), orderBy("hora", "desc"));
             } else {
-                // Busca no evento específico
                 q = query(collection(db, "eventos", eid, "vendas"), orderBy("hora", "desc"));
             }
 
             const s = await getDocs(q);
             
-            if(s.empty) return alert("Nenhuma venda encontrada para este filtro.");
+            if(s.empty) return alert("Nenhuma venda encontrada.");
             
             let fat = 0, custo = 0, totalQtd = 0;
             const dc = {}, hc = {}, clientes = {};
-            
-            // Limpa tabela de auditoria se não for global
             const tbodyAudit = document.getElementById('lista-vendas-audit');
             if(tbodyAudit) tbodyAudit.innerHTML = '';
 
             s.forEach(d => {
                 const v = d.data();
-                // Filtro de Bartender (funciona tanto no global quanto no local)
+                
                 if(filterVal === 'all' || v.usuario === filterVal) {
                     const p = parseFloat(v.preco || 0), c = parseFloat(v.custo || 0);
-                    fat += p; 
-                    custo += c; 
-                    totalQtd++;
+                    fat += p; custo += c; totalQtd++;
                     
-                    // Dados para Gráfico de Drinks
-                    if(!dc[v.drink]) dc[v.drink] = {qtd:0, val:0}; 
-                    dc[v.drink].qtd++; 
-                    dc[v.drink].val += p;
-                    
-                    // Dados para Top Clientes
-                    const nomeCliente = v.cliente || 'Balcão/Anônimo';
-                    if(!clientes[nomeCliente]) clientes[nomeCliente] = {qtd:0, val:0}; 
-                    clientes[nomeCliente].qtd++; 
-                    clientes[nomeCliente].val += p;
+                    // --- PREPARAÇÃO CSV (AJUSTADO) ---
+                    // 1. Nome do Evento
+                    let nomeEventoReal = nomeEventoSelecionado;
+                    if(eid === 'ALL') {
+                        const idEventoDoDoc = d.ref.path.split('/')[1]; 
+                        const eventoEncontrado = listaEventosCache.find(e => e.id === idEventoDoDoc);
+                        nomeEventoReal = eventoEncontrado ? eventoEncontrado.nome : `ID: ${idEventoDoDoc}`;
+                    }
 
-                    // Dados para Gráfico de Horário
-                    let date = v.hora && v.hora.toDate ? v.hora.toDate() : new Date(v.hora);
+                    // 2. Separar Data e Hora
+                    let rawDate = v.hora && v.hora.toDate ? v.hora.toDate() : new Date();
+                    let dataStr = rawDate.toLocaleDateString('pt-BR');
+                    let horaStr = rawDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+                    window.dadosExportacao.push({
+                        data: dataStr,
+                        hora: horaStr,  // CAMPO NOVO
+                        evento: nomeEventoReal,
+                        cliente: v.cliente || 'Balcão/Anônimo',
+                        drink: v.drink,
+                        bartender: v.usuario || 'Sistema',
+                        valor: p.toFixed(2).replace('.', ','),
+                        custo: c.toFixed(2).replace('.', ','),
+                        lucro: (p - c).toFixed(2).replace('.', ',')
+                    });
+                    // --- FIM PREPARAÇÃO ---
+
+                    // LÓGICA GRÁFICOS (MANTIDA IGUAL)
+                    if(!dc[v.drink]) dc[v.drink] = {qtd:0, val:0}; dc[v.drink].qtd++; dc[v.drink].val += p;
+                    const nomeCliente = v.cliente || 'Balcão/Anônimo';
+                    if(!clientes[nomeCliente]) clientes[nomeCliente] = {qtd:0, val:0}; clientes[nomeCliente].qtd++; clientes[nomeCliente].val += p;
+                    
                     let hLabel;
                     if(periodo === '10') {
-                        let mm = Math.floor(date.getMinutes()/10)*10;
-                        hLabel = String(date.getHours()).padStart(2,'0') + ':' + String(mm).padStart(2,'0');
+                        let mm = Math.floor(rawDate.getMinutes()/10)*10;
+                        hLabel = String(rawDate.getHours()).padStart(2,'0') + ':' + String(mm).padStart(2,'0');
                     } else {
-                        hLabel = String(date.getHours()).padStart(2,'0') + ':00';
+                        hLabel = String(rawDate.getHours()).padStart(2,'0') + ':00';
                     }
                     hc[hLabel] = (hc[hLabel]||0) + 1;
 
-                    // Auditoria (Apenas para evento único para evitar confusão)
                     if(eid !== 'ALL' && totalQtd <= 50 && tbodyAudit) {
-                        const horaF = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        tbodyAudit.innerHTML += '<tr><td>'+horaF+'</td><td><b>'+v.drink+'</b></td><td>'+(v.usuario||'?')+'</td><td>R$ '+p.toFixed(2)+'</td><td><button onclick="excluirVenda(\''+d.id+'\')" class="btn-trash">🗑️</button></td></tr>';
+                        tbodyAudit.innerHTML += '<tr><td>'+horaStr+'</td><td><b>'+v.drink+'</b></td><td>'+(v.usuario||'?')+'</td><td>R$ '+p.toFixed(2)+'</td><td><button onclick="excluirVenda(\''+d.id+'\')" class="btn-trash">🗑️</button></td></tr>';
                     }
                 }
             });
 
-            // ATUALIZA KPIS
+            // ATUALIZA TELA (Mantido igual)
             document.getElementById('kpi-fat').innerText = 'R$ '+fat.toFixed(2);
             document.getElementById('kpi-custo').innerText = 'R$ '+custo.toFixed(2);
             document.getElementById('kpi-lucro').innerText = 'R$ '+(fat-custo).toFixed(2);
@@ -1235,58 +1255,16 @@
             if(document.getElementById('kpi-qtd')) document.getElementById('kpi-qtd').innerText = totalQtd;
             if(document.getElementById('kpi-ticket')) document.getElementById('kpi-ticket').innerText = 'R$ '+(totalQtd>0 ? (fat/totalQtd).toFixed(2) : '0.00');
 
-            // --- GRÁFICO 1: DRINKS (QTD + VALOR RESTAURADO) ---
             const ctxD = document.getElementById('chartDrinks').getContext('2d');
-            // Importante: Destroi gráfico anterior se existir
             if(window.chartD instanceof Chart) window.chartD.destroy();
-            
             const lbs = Object.keys(dc);
-            window.chartD = new Chart(ctxD, {
-                type: 'bar',
-                data: {
-                    labels: lbs,
-                    datasets: [
-                        { 
-                            label: 'Qtd', 
-                            data: lbs.map(k=>dc[k].qtd), 
-                            backgroundColor: '#2ecc71', 
-                            yAxisID: 'y' 
-                        },
-                        { 
-                            label: 'Valor (R$)', 
-                            data: lbs.map(k=>dc[k].val), 
-                            backgroundColor: '#f1c40f', 
-                            type: 'bar', // Garante que seja barra
-                            yAxisID: 'y1' // Eixo da direita
-                        }
-                    ]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { position: 'left', beginAtZero: true },
-                        y1: { position: 'right', beginAtZero: true, grid: {drawOnChartArea: false} } // Remove grade do eixo 2 para limpar visual
-                    }
-                }
-            });
+            window.chartD = new Chart(ctxD, { type: 'bar', data: { labels: lbs, datasets: [{ label: 'Qtd', data: lbs.map(k=>dc[k].qtd), backgroundColor: '#2ecc71', yAxisID: 'y' }, { label: 'Valor (R$)', data: lbs.map(k=>dc[k].val), backgroundColor: '#f1c40f', type: 'bar', yAxisID: 'y1' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { position: 'left', beginAtZero: true }, y1: { position: 'right', beginAtZero: true, grid: {drawOnChartArea: false} } } } });
 
-            // --- GRÁFICO 2: HORÁRIO ---
             const ctxH = document.getElementById('chartHorario').getContext('2d');
             if(window.chartH instanceof Chart) window.chartH.destroy();
-            
             const sH = Object.keys(hc).sort();
-            window.chartH = new Chart(ctxH, {
-                type: 'line',
-                data: {
-                    labels: sH,
-                    datasets: [{ label: 'Vendas (' + periodo + ' min)', data: sH.map(h=>hc[h]), borderColor: '#3498db', fill: true }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+            window.chartH = new Chart(ctxH, { type: 'line', data: { labels: sH, datasets: [{ label: 'Vendas (' + periodo + ' min)', data: sH.map(h=>hc[h]), borderColor: '#3498db', fill: true }] }, options: { responsive: true, maintainAspectRatio: false } });
 
-            // --- LISTA TOP CLIENTES ---
-            // RENDERIZAR RANKING GLOBAL
             const listaClientes = document.getElementById('lista-top-clientes');
             if(listaClientes) {
                 listaClientes.innerHTML = '';
@@ -1312,15 +1290,7 @@
                 });
             }
 
-        } catch(e) {
-            console.error(e);
-            // Tratamento Específico para Erro de Índice Global
-            if(e.message.includes("requires an index")) {
-                alert("⚠️ ATENÇÃO: Para ver 'TODOS OS EVENTOS', o Firebase exige um índice ESPECIAL.\n\nAbra o Console (F12) agora e clique no link que apareceu lá para criar o índice 'Collection Group'.");
-            } else {
-                alert("Erro ao gerar relatório: " + e.message);
-            }
-        }
+        } catch(e) { console.error(e); if(e.message.includes("requires an index")) alert("⚠️ Crie o índice Global no Firebase (link no Console F12)."); else alert("Erro: " + e.message); }
     };
 	
     window.carregarBartenders=async(eid)=>{if(!eid)return;const s=await getDocs(collection(db,"eventos",eid,"vendas"));const usersSet=new Set();s.forEach(d=>usersSet.add(d.data().usuario||'Desconhecido'));const selBar=document.getElementById('filterBartender');while(selBar.options.length>1)selBar.remove(1);usersSet.forEach(u=>selBar.add(new Option(u,u)));};
@@ -1533,4 +1503,41 @@
     // Adicione isso dentro da sua função window.showView existente ou altere o onclick no HTML:
     // <a onclick="showView('view-kds', this); iniciarKDS();" ...>	
 	
+	// CORREÇÃO V70: Exportar CSV com Coluna HORA
+    window.exportarRelatorioCSV = () => {
+        if (!window.dadosExportacao || window.dadosExportacao.length === 0) {
+            return alert("Por favor, gere o relatório (clique em 'Analisar') antes de exportar.");
+        }
+
+        // 1. Cabeçalho do CSV (Adicionado 'Hora')
+        let csvContent = "Data,Hora,Evento,Cliente,Drink,Bartender,Valor,Custo,Lucro Estimado\n";
+
+        // 2. Preencher Linhas
+        window.dadosExportacao.forEach(row => {
+            const linha = [
+                `"${row.data}"`,
+                `"${row.hora}"`, // Coluna Nova
+                `"${row.evento}"`,
+                `"${row.cliente}"`,
+                `"${row.drink}"`,
+                `"${row.bartender}"`,
+                `"${row.valor}"`,
+                `"${row.custo}"`,
+                `"${row.lucro}"`
+            ].join(",");
+            csvContent += linha + "\n";
+        });
+
+        // 3. Download
+        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        const timestamp = new Date().toISOString().slice(0,19).replace(/:/g,"-");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `relatorio_aurora_${timestamp}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 </script>
