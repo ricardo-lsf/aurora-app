@@ -143,6 +143,31 @@
             .kds-container { height: auto; } /* KDS rola na vertical no mobile */
             .sidebar-overlay.active { display: block; }
         }
+        /* ESTILO DO CATÁLOGO (Refinado) */
+        .catalog-item { 
+            padding: 12px 15px; 
+            border-bottom: 1px solid #eee; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            cursor: pointer; 
+            transition: all 0.2s ease; /* Animação suave */
+            background: white;
+            border-left: 5px solid transparent; /* Prepara a borda */
+        }
+        
+        /* O EFEITO AO PASSAR O MOUSE */
+        .catalog-item:hover { 
+            background-color: #e8f4fd; 
+            padding-left: 20px; /* Pulo para a direita */
+            border-left: 5px solid #3498db; /* Faixa Azul */
+        }
+
+        /* Destacar o texto ao passar o mouse */
+        .catalog-item:hover b {
+            color: #2980b9;
+        }
+        
     </style>
 </head>
 <body>
@@ -300,8 +325,8 @@
                         
                         <h4 style="margin:5px 0;">💰 Precificação</h4>
                         <div class="grid-2">
-                            <div><label>Nº Convidados</label><input type="number" id="orcQtdPessoas" placeholder="0" oninput="calcOrcamento()"></div>
-                            <div><label>Valor por Pessoa (R$)</label><input type="number" id="orcValorPessoa" placeholder="0.00" oninput="calcOrcamento()"></div>
+                            <div><label style="white-space: nowrap;">Nº Convidados</label><input type="number" id="orcQtdPessoas" placeholder="0" oninput="calcOrcamento()"></div>
+                            <div><label style="white-space: nowrap;">Valor por Pessoa (R$)</label><input type="number" id="orcValorPessoa" placeholder="0.00" oninput="calcOrcamento()"></div>
                         </div>
                         <div><label>Taxa Deslocamento / Extra (R$)</label><input type="number" id="orcExtras" placeholder="0.00" oninput="calcOrcamento()"></div>
                         
