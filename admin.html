@@ -478,7 +478,7 @@
             <div class="grid-2">
                 <div class="card" style="border-top: 4px solid #f39c12;">
                     <div class="card-header" style="background:white; padding:0 0 10px 0;">
-                        <h3 style="margin:0; color:#f39c12;">Editor de Drinks</h3>
+                        <h3 style="margin:0; color:#34495e;">1. Editor de Drinks</h3>
                         <button onclick="limparFormDrink()" class="btn-info" style="padding:5px 10px; height:30px; font-size:0.8em;">Limpar / Novo</button>
                     </div>
                     
@@ -523,15 +523,21 @@
                             <select id="selInsumo" style="flex:2"><option>Carregando...</option></select>
                             <input type="number" id="qtdInsumo" placeholder="Qtd" style="width:60px;"><button onclick="addIngrediente()" class="btn-purple">+</button>
                         </div>
-                        <div id="lista-ingredientes" style="margin-top:10px; font-size:0.9em; margin-bottom:10px;"></div>
+                            <div id="lista-ingredientes" style="background:white; border:1px solid #ddd; min-height:80px; max-height:200px; overflow-y:auto; padding:5px;">
+                                </div>
+                            
+                            <div style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+                                
+                            </div>
+
                         <label>Modo de Preparo (Max 500)</label>
                         <textarea id="globalPreparo" rows="4" maxlength="500" placeholder="Descreva o passo a passo..." style="width:100%; box-sizing:border-box;"></textarea>
                     </div>
 
                     <button onclick="salvarDrinkGlobal()" id="btnSalvarDrink" class="btn-save-main">💾 SALVAR NOVO</button>
                 </div>
-                
-                <div class="card"><h3>Catálogo</h3><div id="lista-biblioteca-visual" style="max-height:500px; overflow-y:auto;"></div></div>
+
+                <div class="card"><h3 style="margin: 0 0 5px 0; color: #246caf; line-height: 1; font-size: 1.3em;padding-left: 5px;">2. Lista de Drinks</h3><div id="lista-biblioteca-visual" style="max-height:500px; overflow-y:auto;"></div></div>
             </div>
         </div>
 
@@ -1254,56 +1260,6 @@
         window.fecharModalEntrada();
     };
 
-    // ============================================================
-    // 2. BIBLIOTECA & ORÇAMENTO
-    // ============================================================
-    onSnapshot(collection(db,"drinks"), (s) => {
-        bibliotecaGlobal = []; const l = document.getElementById('lista-biblioteca-visual'); if(l) l.innerHTML = '';
-        s.forEach(doc => {
-            const d = doc.data(); bibliotecaGlobal.push({...d, id: doc.id});
-            if(l) l.innerHTML += `<div class="catalog-item" onclick="loadDrink('${doc.id}')"><div><b>${d.nome}</b></div><button onclick="delDrinkGlob('${doc.id}', event)" class="btn-trash">🗑️</button></div>`;
-        });
-        renderLib();
-        renderLibOrcamento();
-    });
-    
-    // --- LISTA COM TERMINOLOGIA COCKTAIL/MOCKTAIL (V62) ---
-    window.renderLibOrcamento = () => {
-        const d = document.getElementById('orcamento-lista-drinks');
-        if(!d) return;
-        d.innerHTML = '';
-        bibliotecaGlobal.sort((a,b)=>a.nome.localeCompare(b.nome));
-        
-        bibliotecaGlobal.forEach(x => {
-            const isMocktail = x.tipo === 'Mocktail' || x.tipo === 'Sem Álcool';
-            const tag = isMocktail 
-                ? '<span class="tag-alcool tag-sem">Mocktail</span>' 
-                : '<span class="tag-alcool tag-com">Cocktail</span>';
-                
-            d.innerHTML += `
-                <div class="chk-item">
-                    <input type="checkbox" id="orc_chk_${x.id}" value="${x.id}" onchange="countOrcDrinks()" class="chk-drink-orc">
-                    <label for="orc_chk_${x.id}" style="width:100%; cursor:pointer; display:flex; justify-content:space-between;">
-                        <span><b>${x.nome}</b> <small style="color:#666">(${x.tecnica||'-'})</small></span>
-                        ${tag}
-                    </label>
-                </div>`;
-        });
-    };
-
-    window.countOrcDrinks = () => {
-        const count = document.querySelectorAll('.chk-drink-orc:checked').length;
-        document.getElementById('orcCountDrinks').innerText = count;
-    };
-
-    window.calcOrcamento = () => {
-        const qtd = parseInt(document.getElementById('orcQtdPessoas').value) || 0;
-        const valorPorPessoa = parseFloat(document.getElementById('orcValorPessoa').value) || 0;
-        const extras = parseFloat(document.getElementById('orcExtras').value) || 0;
-        const total = (qtd * valorPorPessoa) + extras;
-        document.getElementById('orcTotalDisplay').innerText = formatCurrency(total);
-    };
-    
     // ==========================================
     //  GESTÃO DE ORÇAMENTOS (V62)
     // ==========================================
@@ -1429,141 +1385,224 @@
         }
     };
 
-
-    // --- FUNÇÕES DE DRINK (V62) ---
-    window.loadDrink=(id)=>{
-        const d=bibliotecaGlobal.find(x=>x.id===id); if(d){
-            let h=document.getElementById('drinkId'); if(!h){h=document.createElement('input');h.type='hidden';h.id='drinkId';document.getElementById('globalName').parentNode.appendChild(h);} h.value=d.id;
-            document.getElementById('globalName').value=d.nome; document.getElementById('globalImg').value=d.imagem; 
-            document.getElementById('globalTecnica').value=d.tecnica||'Montado'; 
-            document.getElementById('globalTipoAlcool').value = d.tipo || 'Cocktail'; 
-            document.getElementById('globalClassificacao').value = d.classificacao || 'Inesquecíveis'; 
-            document.getElementById('globalPrice').value=d.precoVenda; document.getElementById('globalCusto').value=d.precoCusto;
-            document.getElementById('globalPreparo').value = d.preparo || ''; 
-            receitaAtual=d.receita||[]; window.atualizarPreview(d.imagem); renderReceita();
-            const b=document.getElementById('btnSalvarDrink'); b.innerText="🔄 ATUALIZAR"; b.className="btn-update-main";
-            if(!document.getElementById('btnLimparDrink')) { const cl=document.createElement('button'); cl.id='btnLimparDrink'; cl.innerText="Limpar"; cl.className="btn-info"; cl.onclick=window.limparFormDrink; document.querySelector('.card-header button').replaceWith(cl); }
-        }
-    };
-    window.limparFormDrink = () => {
-        const h=document.getElementById('drinkId'); if(h)h.value='';
-        ['globalName','globalImg','globalPrice','globalCusto','globalPreparo'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
-        receitaAtual=[]; renderReceita(); window.atualizarPreview('');
-        const b=document.getElementById('btnSalvarDrink'); b.innerText="💾 SALVAR"; b.className="btn-save-main";
-    };
-    window.salvarDrinkGlobal = async () => {
-        const id=document.getElementById('drinkId')?document.getElementById('drinkId').value:null; const nome=document.getElementById('globalName').value;
-        const preparo = document.getElementById('globalPreparo') ? document.getElementById('globalPreparo').value : '';
-        const tipo = document.getElementById('globalTipoAlcool').value;
-        const classificacao = document.getElementById('globalClassificacao').value; 
-        if(!nome) return alert("Nome obrigatório!");
-        const d={ 
-            nome, imagem:document.getElementById('globalImg').value||"./imagens/", 
-            tecnica:document.getElementById('globalTecnica').value, 
-            preparo: preparo, tipo: tipo, classificacao: classificacao, 
-            precoVenda:parseFloat(document.getElementById('globalPrice').value)||0, 
-            precoCusto:parseFloat(document.getElementById('globalCusto').value)||0, 
-            receita:receitaAtual, estoque:0 
-        };
-        try { if(id) await updateDoc(doc(db,"drinks",id),d); else { await addDoc(collection(db,"drinks"),d); } alert("Salvo!"); window.limparFormDrink(); } catch(e){alert(e.message);}
-    };
-    window.delDrinkGlob=async(id,e)=>{e.stopPropagation();if(confirm("Excluir?"))await deleteDoc(doc(db,"drinks",id));};
-    
     // ============================================================
-    // FUNÇÃO CORRIGIDA: ADICIONAR INGREDIENTE À RECEITA
+    // 2. BIBLIOTECA DE DRINKS (CMV, LUCRO E ORDENAÇÃO OK)
     // ============================================================
-    window.addIngrediente = () => {
-        const select = document.getElementById('selInsumo');
-        const qtdInput = document.getElementById('qtdInsumo');
-        
-        const idInsumo = select.value;
-        const qtd = parseFloat(qtdInput.value);
 
-        if (!idInsumo || !qtd || qtd <= 0) {
-            return alert("Selecione um ingrediente e informe a quantidade.");
-        }
+    window.bibliotecaGlobal = [];
+    window.receitaAtual = []; 
+    window.idDrinkEditando = null; 
 
-        // 1. Busca os dados completos no Catálogo Global
-        const itemCatalogo = catalogoGeral.find(i => i.id === idInsumo);
+    // --- CARREGAR DRINKS DO BANCO ---
+    onSnapshot(collection(db, "drinks"), (snap) => {
+        window.bibliotecaGlobal = [];
+        const listaVisual = document.getElementById('lista-biblioteca-visual');
+        if(listaVisual) listaVisual.innerHTML = '';
 
-        if (!itemCatalogo) return alert("Erro: Item não encontrado no catálogo.");
-
-        // 2. Define o Custo
-        // Se o item nunca teve entrada, custoPorVol pode ser undefined ou 0
-        const custoUnitario = itemCatalogo.custoPorVol || 0;
-        const custoTotalIngrediente = custoUnitario * qtd;
-
-        // Alerta educativo se o custo for zero
-        if (custoUnitario === 0) {
-            console.log("⚠️ Atenção: Este item ainda não tem entrada no estoque. O custo será R$ 0,00.");
-        }
-
-        // 3. Adiciona na lista temporária da receita
-        const novoIngrediente = {
-            insumoId: itemCatalogo.id,
-            nome: itemCatalogo.produto,
-            marca: itemCatalogo.marca || '',
-            qtd: qtd,
-            unMedida: itemCatalogo.unMedida || 'ml', // Usa a unidade do cadastro
-            custo: custoTotalIngrediente
-        };
-
-        // Adiciona ao array global de receita (certifique-se que essa variável existe no topo do seu script da biblioteca)
-        if (!window.receitaAtual) window.receitaAtual = [];
-        window.receitaAtual.push(novoIngrediente);
-
-        // 4. Limpa campos e atualiza a tela
-        select.value = "";
-        qtdInput.value = "";
-        select.focus();
-        
-        renderizarListaIngredientes();
-    };
-
-    // Função auxiliar para desenhar a tabelinha da receita
-    window.renderizarListaIngredientes = () => {
-        const divLista = document.getElementById('lista-ingredientes');
-        divLista.innerHTML = '';
-
-        let custoTotalDrink = 0;
-
-        if (!window.receitaAtual || window.receitaAtual.length === 0) {
-            divLista.innerHTML = '<small style="color:#999">Nenhum ingrediente adicionado.</small>';
-            document.getElementById('globalCusto').value = "0.00";
-            return;
-        }
-
-        window.receitaAtual.forEach((item, index) => {
-            custoTotalDrink += item.custo;
-            
-            divLista.innerHTML += `
-                <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #eee; padding:5px 0; font-size:0.9em;">
-                    <span>
-                        <b>${item.qtd}${item.unMedida}</b> ${item.nome} <small>${item.marca}</small>
-                    </span>
-                    <div style="display:flex; gap:10px;">
-                        <span style="color:#7f8c8d;">R$ ${item.custo.toFixed(2)}</span>
-                        <span style="cursor:pointer; color:red;" onclick="removerIngrediente(${index})">×</span>
-                    </div>
-                </div>
-            `;
+        snap.forEach(doc => {
+            const d = doc.data();
+            window.bibliotecaGlobal.push({ ...d, id: doc.id });
         });
 
-        // Atualiza o Input de Custo Total (Campo Vermelho)
-        document.getElementById('globalCusto').value = custoTotalDrink.toFixed(2);
+        // 1. ORDENAÇÃO ALFABÉTICA (Aqui garantimos a ordem)
+        window.bibliotecaGlobal.sort((a,b) => a.nome.localeCompare(b.nome));
+
+        // 2. RENDERIZA A LISTA
+        window.bibliotecaGlobal.forEach(drink => {
+            if(listaVisual) {
+                listaVisual.innerHTML += `
+                    <div class="catalog-item" onclick="carregarDrinkParaEdicao('${drink.id}')" style="cursor:pointer; padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                        <div><b>${drink.nome}</b></div>
+                        <button onclick="excluirDrink('${drink.id}', event)" class="btn-trash" style="border:none; background:none; cursor:pointer;" title="Excluir">🗑️</button>
+                    </div>`;
+            }
+        });
         
-        // Se tiver função de calcular CMV, chama ela
-        if(window.calcCMV) window.calcCMV(); 
+        // Atualiza Orçamento se existir
+        if(typeof window.renderLibOrcamento === 'function') window.renderLibOrcamento();
+    });
+
+    // --- CARREGAR PARA EDIÇÃO ---
+    window.carregarDrinkParaEdicao = (id) => {
+        const drink = window.bibliotecaGlobal.find(x => x.id === id);
+        if(!drink) return;
+
+        window.idDrinkEditando = id; 
+        
+        // Preenche campos
+        const setVal = (id, v) => { const el = document.getElementById(id); if(el) el.value = v; };
+        setVal('globalName', drink.nome);
+        setVal('globalImg', drink.imagem || '');
+        setVal('globalTecnica', drink.tecnica || 'Montado');
+        setVal('globalTipoAlcool', drink.tipo || 'Cocktail');
+        setVal('globalClassificacao', drink.classificacao || 'Inesquecíveis');
+        setVal('globalPrice', drink.precoVenda || '');
+        setVal('globalCusto', drink.precoCusto || '');
+        setVal('globalPreparo', drink.preparo || '');
+
+        // Carrega Receita (Cópia Segura)
+        if (drink.receita && Array.isArray(drink.receita)) {
+            window.receitaAtual = JSON.parse(JSON.stringify(drink.receita));
+        } else {
+            window.receitaAtual = [];
+        }
+
+        if(window.atualizarPreview) window.atualizarPreview(drink.imagem);
+        
+        // Renderiza e Calcula CMV na hora
+        renderizarIngredientesNaTela();
+        window.calcCMV(); 
+
+        const btn = document.getElementById('btnSalvarDrink');
+        if(btn) { btn.innerText = "🔄 ATUALIZAR"; btn.className = "btn-update-main"; }
     };
 
-    window.removerIngrediente = (index) => {
-        window.receitaAtual.splice(index, 1);
-        renderizarListaIngredientes();
+    // --- LIMPAR TELA ---
+    window.limparFormDrink = () => {
+        window.idDrinkEditando = null;
+
+        ['globalName','globalImg','globalPrice','globalCusto','globalPreparo'].forEach(i => {
+            const el = document.getElementById(i); if(el) el.value = '';
+        });
+
+        // Reseta display do CMV
+        const displayCMV = document.getElementById('cmv-display');
+        if(displayCMV) displayCMV.innerHTML = 'CMV: 0.0% | Lucro: R$ 0.00';
+
+        window.receitaAtual = [];
+        renderizarIngredientesNaTela();
+        if(window.atualizarPreview) window.atualizarPreview('');
+
+        const btn = document.getElementById('btnSalvarDrink');
+        if(btn) { btn.innerText = "💾 SALVAR NOVO"; btn.className = "btn-save-main"; }
+        
+        document.getElementById('globalName').focus();
+    };
+    window.novoDrink = window.limparFormDrink; 
+
+    // --- FUNÇÃO DE CÁLCULO DE CMV E LUCRO ---
+    window.calcCMV = () => {
+        const precoVenda = parseFloat(document.getElementById('globalPrice').value) || 0;
+        const custoTotal = parseFloat(document.getElementById('globalCusto').value) || 0;
+        const display = document.getElementById('cmv-display');
+
+        if (!display) return;
+
+        if (precoVenda > 0) {
+            const cmvPercent = (custoTotal / precoVenda) * 100;
+            const lucro = precoVenda - custoTotal;
+            
+            // Define cor baseada na saúde do lucro (Opcional)
+            const corLucro = lucro > 0 ? '#27ae60' : '#c0392b';
+
+            display.innerHTML = `CMV: ${cmvPercent.toFixed(1)}% | Lucro: <span style="color:${corLucro}">R$ ${lucro.toFixed(2)}</span>`;
+        } else {
+            display.innerHTML = `CMV: 0.0% | Lucro: R$ -${custoTotal.toFixed(2)}`;
+        }
     };
 
-    function renderReceita(){let t=0; document.getElementById('lista-ingredientes').innerHTML=receitaAtual.map((i,x)=>{t+=i.custo; return `<div>${i.qtd}${i.un} ${i.nome} (R$ ${i.custo.toFixed(2)}) <a onclick="remIng(${x})" style="color:red;cursor:pointer">x</a></div>`}).join(''); document.getElementById('globalCusto').value=t.toFixed(2); window.calcCMV();}
-    window.remIng=(i)=>{receitaAtual.splice(i,1); renderReceita();};
-    window.calcCMV=()=>{const v=parseFloat(document.getElementById('globalPrice').value)||0, c=parseFloat(document.getElementById('globalCusto').value)||0; if(v>0)document.getElementById('cmv-display').innerText=`CMV: ${((c/v)*100).toFixed(1)}% | Lucro: R$ ${(v-c).toFixed(2)}`;};
+    // --- EXCLUIR DRINK ---
+    window.excluirDrink = async (id, event) => {
+        if(event) event.stopPropagation();
+        if(confirm("Tem certeza que deseja excluir este drink?")) {
+            await deleteDoc(doc(db, "drinks", id));
+            if(window.idDrinkEditando === id) window.limparFormDrink();
+        }
+    };
+
+    // --- SALVAR ---
+    window.salvarDrinkGlobal = async () => {
+        const nomeEl = document.getElementById('globalName');
+        const nome = nomeEl.value.trim();
+        if(!nome) return alert("Nome obrigatório!");
+
+        if (!window.idDrinkEditando) {
+            const duplicado = window.bibliotecaGlobal.some(d => d.nome.toLowerCase() === nome.toLowerCase());
+            if (duplicado) return alert(`⛔ Já existe um drink chamado "${nome}"!`);
+        }
+
+        const dados = {
+            nome: nome,
+            imagem: document.getElementById('globalImg').value || "",
+            tecnica: document.getElementById('globalTecnica').value,
+            tipo: document.getElementById('globalTipoAlcool').value,
+            classificacao: document.getElementById('globalClassificacao').value,
+            preparo: document.getElementById('globalPreparo').value,
+            precoVenda: parseFloat(document.getElementById('globalPrice').value) || 0,
+            precoCusto: parseFloat(document.getElementById('globalCusto').value) || 0,
+            receita: window.receitaAtual,
+            estoque: 0,
+            dataAtt: new Date()
+        };
+
+        try {
+            if (window.idDrinkEditando) {
+                await updateDoc(doc(db, "drinks", window.idDrinkEditando), dados);
+                alert("✅ Drink atualizado!");
+            } else {
+                await addDoc(collection(db, "drinks"), dados);
+                alert("✅ Drink criado!");
+            }
+            window.limparFormDrink();
+        } catch(e) {
+            alert("Erro: " + e.message);
+        }
+    };
+    window.salvarDrink = window.salvarDrinkGlobal;
+
+    // --- ADICIONAR INGREDIENTE ---
+    window.addIngrediente = () => {
+        const sel = document.getElementById('selInsumo');
+        const qtdEl = document.getElementById('qtdInsumo');
+        
+        if(!sel.value || !qtdEl.value) return alert("Preencha insumo e quantidade!");
+
+        if(typeof catalogoGeral === 'undefined') return alert("Erro: Estoque não carregado.");
+        const item = catalogoGeral.find(i => i.id === sel.value);
+        if(!item) return alert("Item não encontrado.");
+
+        const qtd = parseFloat(qtdEl.value);
+        
+        window.receitaAtual.push({
+            insumoId: item.id,
+            nome: item.produto,
+            marca: item.marca||'',
+            qtd: qtd,
+            unMedida: item.unMedida||'ml',
+            custo: (item.custoPorVol||0) * qtd
+        });
+
+        sel.value = ""; qtdEl.value = ""; sel.focus();
+        renderizarIngredientesNaTela();
+    };
+
+    window.renderizarIngredientesNaTela = () => {
+        const div = document.getElementById('lista-ingredientes');
+        if(!div) return;
+        div.innerHTML = '';
+        let total = 0;
+        
+        if(window.receitaAtual.length === 0) div.innerHTML = '<small style="color:#999; padding:5px;">Vazio</small>';
+
+        window.receitaAtual.forEach((item, idx) => {
+            total += item.custo;
+            div.innerHTML += `
+                <div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px dashed #eee; font-size:0.9em;">
+                    <span>${item.qtd}${item.unMedida} ${item.nome}</span>
+                    <span>R$ ${item.custo.toFixed(2)} <b onclick="removerIng(${idx})" style="color:red; cursor:pointer; margin-left:5px;">X</b></span>
+                </div>`;
+        });
+        
+        const elCusto = document.getElementById('globalCusto');
+        if(elCusto) elCusto.value = total.toFixed(2);
+        
+        // CHAMA O CÁLCULO DO CMV A CADA MUDANÇA
+        window.calcCMV();
+    };
+    
+    window.removerIng = (i) => { window.receitaAtual.splice(i, 1); renderizarIngredientesNaTela(); };
+    window.loadDrink = window.carregarDrinkParaEdicao;
+    window.delDrinkGlob = window.excluirDrink;
 
     // ============================================================
     // 3. EVENTOS
