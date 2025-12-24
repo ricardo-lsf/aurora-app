@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aurora Admin V64 (KDS Integrado)</title>
+    <title>Aurora Admin V72 (Estoque Fisico)</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -39,6 +39,18 @@
         
         input, select, textarea { padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; height: 38px; margin-bottom: 5px; font-family: inherit; }
         
+    /* CORREÇÃO: Altura automática para áreas de texto (Modo de Preparo) */
+        textarea {
+            height: auto !important;       /* Libera a altura para crescer */
+            min-height: 120px;             /* Garante uma altura mínima boa (aprox 5 linhas) */
+            padding: 10px;                 /* Espaçamento interno para o texto não colar na borda */
+            resize: vertical;              /* Permite que o usuário puxe a pontinha para aumentar se quiser */
+            line-height: 1.5;              /* Espaçamento entre as linhas para facilitar leitura */
+            font-family: inherit;          /* Mantém a mesma fonte do resto */
+        }
+
+
+
         /* BOTÕES */
         button { cursor: pointer; padding: 0 15px; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; height: 38px; }
         button:hover { opacity: 0.9; }
@@ -94,7 +106,69 @@
         .chk-item:hover { background: #f9f9f9; }
         .chk-item input { width: 18px; height: 18px; margin: 0 12px 0 0; }
         .chk-item.disabled { background-color: #f0f0f0; opacity: 0.6; pointer-events: none; }
+
+    /* ESTILOS DA TABELA DE ESTOQUE (LAYOUT MELHORADO) */
+    .tabela-estoque {
+        width: 100%;
+        border-collapse: separate; /* Permite bordas arredondadas e melhor espaçamento */
+        border-spacing: 0;
+    }
+
+    .tabela-estoque th {
+        cursor: pointer;
+        user-select: none;
+        background-color: #f8f9fa;
+        color: #555;
+        font-weight: bold;
+        transition: background 0.2s;
+        font-size: 0.85em;
+        white-space: nowrap;
         
+        /* CORREÇÃO DO CORTE E ESPAÇAMENTO SUPERIOR */
+        padding: 12px 10px; /* Mais altura (12px) e largura (10px) */
+        border-bottom: 2px solid #ddd; /* Linha de separação mais forte */
+        text-align: left; /* Garante alinhamento à esquerda */
+    }
+
+    /* Dá um respiro extra apenas na primeira coluna para não cortar a letra */
+    .tabela-estoque th:first-child {
+        padding-left: 15px;
+        border-top-left-radius: 6px;
+    }
+    
+    .tabela-estoque th:last-child {
+        padding-right: 15px;
+        border-top-right-radius: 6px;
+    }
+
+    /* Efeito Hover no Cabeçalho */
+    .tabela-estoque th:hover {
+        background-color: #e9ecef;
+        color: #2c3e50;
+    }
+
+    /* Células do corpo da tabela */
+    .tabela-estoque td {
+        font-size: 0.85em;
+        padding: 10px 10px; /* Mais espaço vertical nas linhas */
+        border-bottom: 1px solid #eee;
+        vertical-align: middle;
+        color: #333;
+    }
+
+    /* Linha Zebrada (Opcional, melhora leitura) */
+    .tabela-estoque tr:nth-child(even) {
+        background-color: #fafbfc;
+    }
+
+    /* Sticky Header (Mantém o topo fixo ao rolar) */
+    .tabela-estoque thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Sombra suave para separar */
+    }
+
         /* ESTILOS KDS (NOVO V64) */
         .kds-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; height: calc(100vh - 140px); }
         .kds-column { background: #eef2f7; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
@@ -168,6 +242,31 @@
             color: #2980b9;
         }
         
+        /* CORREÇÃO DO CATÁLOGO E CHECKBOXES */
+        .catalog-row {
+            display: flex; 
+            align-items: center; 
+            padding: 8px 10px; 
+            border-bottom: 1px solid #eee;
+            gap: 10px; /* Espaço entre os elementos */
+        }
+        
+        /* Força o checkbox a ter tamanho normal, ignorando o global 100% */
+        input[type="checkbox"].check-custom {
+            width: auto !important;
+            height: auto !important;
+            margin: 0;
+            cursor: pointer;
+            transform: scale(1.3); /* Um pouquinho maior para facilitar o clique */
+        }
+
+        /* O texto ocupa o espaço que sobrar */
+        .catalog-info-box {
+            flex: 1; 
+            line-height: 1.2;
+            min-width: 0; /* Evita que o texto empurre o layout */
+        }
+
     </style>
 </head>
 <body>
@@ -187,8 +286,8 @@
 			<a onclick="showView('view-kds', this); iniciarKDS()" class="menu-item"><span class="menu-icon">🖥️</span> KDS / Produção</a> <a onclick="showView('view-orcamentos', this)" class="menu-item"><span class="menu-icon">📑</span> Orçamentos</a>
             <a onclick="showView('view-equipe', this)" class="menu-item"><span class="menu-icon">👥</span> Equipe</a>
             <div class="menu-label">Cadastros</div>
-            <a onclick="showView('view-biblioteca', this)" class="menu-item"><span class="menu-icon">🍹</span> Biblioteca & Ficha</a>
-            <a onclick="showView('view-despensa', this)" class="menu-item"><span class="menu-icon">📦</span> Despensa</a>
+            <a onclick="showView('view-biblioteca', this)" class="menu-item"><span class="menu-icon">🍹</span> Biblioteca & Ficha Técnica</a>
+            <a onclick="showView('view-estoque', this)" class="menu-item"><span class="menu-icon">📦</span> Estoque</a>
             <div class="menu-label">Inteligência</div>
             <a onclick="showView('view-analytics', this)" class="menu-item"><span class="menu-icon">📈</span> Estatísticas</a>
         </div>
@@ -436,32 +535,164 @@
             </div>
         </div>
 
-        <div id="view-despensa" class="view-section">
-            <h2>📦 Despensa & Insumos</h2>
-            <div class="grid-2">
-                <div class="card">
-                    <h3>Cadastro de Produtos</h3>
-                    <div style="background:#e8f5e9; padding:10px; border:1px dashed #27ae60; margin-bottom:15px; text-align:center; border-radius:6px;">
-                        <label style="cursor:pointer;">📤 <b>Importar Planilha Excel</b><input type="file" id="excelInput" accept=".xlsx, .xls" style="display:none" onchange="importarExcel()"></label>
-                        <div id="upload-progress" style="display:none; margin-top:5px; font-size:0.8em; color:#27ae60">Lendo...</div>
+        <div id="view-estoque" class="view-section">
+                    <h2>📦 Gestão de Estoque</h2>
+                    
+                    <div class="grid-2">
+                    <div class="card" style="display:flex; flex-direction:column; max-height:85vh; padding:0; overflow:hidden; border-top: 5px solid #e67e22;">
+                    
+                    <div style="padding:15px; border-bottom:1px solid #eee;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <h3 style="margin:0; color:#34495e;">1. Catálogo Geral</h3>
+                            <div style="display:flex; gap:5px;">
+                                <input type="file" id="fileExcel" accept=".xlsx, .xls" style="display:none;" onchange="importarExcelInsumos(this)">
+                                
+                                <button onclick="document.getElementById('fileExcel').click()" class="btn-info" style="font-size:0.8em; background:#27ae60; color:white;">
+                                    📊 Importar Excel
+                                </button>
+                                
+                                <button onclick="toggleNovoItem()" class="btn-info" style="font-size:0.8em;">+ Novo</button>
+                            </div>
+                        </div>
+
+                        <div id="form-novo-insumo" style="display:none; background:#f0f3f6; padding:10px; border-radius:6px; margin-bottom:10px; border:1px solid #ddd;">
+                            <h4 style="margin:0 0 8px 0; color:#2980b9; font-size:0.9em;">Cadastrar Produto</h4>
+                            
+                            <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                                <input type="text" id="insProd" placeholder="Produto (Ex: Gin)" style="flex: 2; padding:5px; font-size:0.85em;">
+                                <input type="text" id="insMarca" placeholder="Marca (Ex: Tanqueray)" style="flex: 1.5; padding:5px; font-size:0.85em;">
+                            </div>
+
+                            <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                                <div style="flex: 1.8; display:flex;">
+                                    <select id="insTipo" style="width:100%; height:30px; border:1px solid #ccc; border-right:none; border-radius:4px 0 0 4px; font-size:0.8em; padding:0 2px;"></select>
+                                    <button onclick="adicionarNovoTipo()" style="width:25px; height:30px; background:#2ecc71; color:white; border:none; border-radius:0 4px 4px 0; font-weight:bold;">+</button>
+                                </div>
+                                <select id="insUnMed" style="flex: 1.2; height:30px; border:1px solid #ccc; border-radius:4px; font-size:0.8em; padding:0 2px;">
+                                    <option value="ml">ml (Líquido)</option>
+                                    <option value="g">g (Peso)</option>
+                                    <option value="un">un (Unidade)</option>
+                                </select>
+                            </div>
+
+                            <div style="background:white; padding:6px; border:1px dashed #aaa; border-radius:4px;">
+                                <small style="display:block; margin-bottom:3px; color:#e67e22; font-weight:bold; font-size:0.75em;">Ref. de Compra (Custo Estimado)</small>
+                                <div style="display:flex; gap:5px;">
+                                    <input type="number" id="insVolRef" placeholder="Vol (Ex: 750)" style="flex:1; padding:4px; font-size:0.85em;">
+                                    <input type="number" id="insPrecoRef" placeholder="Preço (Ex: 120)" style="flex:1; padding:4px; font-size:0.85em;">
+                                </div>
+                            </div>
+
+                            <button onclick="salvarCatalogo()" class="btn-success" style="width:100%; margin-top:8px; padding:5px; font-size:0.9em;">Salvar</button>
+                        </div>
+
+                        <input type="text" id="busca-catalogo" placeholder="🔍 Buscar item..." onkeyup="renderizarCatalogo()" style="width:100%; padding:6px 12px; border-radius:20px; border:1px solid #ccc; outline:none; font-size:0.9em;">
                     </div>
 
-                    <div style="display:grid; gap:10px; background:#f9f9f9; padding:15px; border-radius:6px; border:1px solid #eee;">
-                        <input type="hidden" id="insId">
-                        <div class="grid-form-row">
-                            <div><label>Produto</label><input type="text" id="insProd" placeholder="Ex: Gin"></div>
-                            <div><label>Marca</label><input type="text" id="insMarca" placeholder="Ex: Tanqueray"></div>
-                            <div><label>Tipo</label><select id="insTipo"><option>Destilado</option><option>Aperitivo</option><option>Bitter</option><option>Cocktail Alcoolico</option><option>Complemento</option><option>Frutas</option><option>Guarnição</option><option>Guarnição / Complemento</option><option>Mistura / Condimento</option><option>Soft drink</option><option>Sucos</option><option>Vinhos</option><option>Xarope</option></select></div>
-                        </div>
-                        <div class="grid-form-row">
-                            <div><label>Un. Medida</label><select id="insUn"><option value="ml">ml</option><option value="kg">kg</option><option value="g">g</option><option value="bj">bj</option><option value="un">un</option></select></div>
-                            <div><label>Qtde</label><input type="number" id="insQtde" placeholder="750"></div>
-                            <div><label>Valor (R$)</label><input type="number" id="insValor" placeholder="120.00"></div>
-                        </div>
-                        <button onclick="salvarInsumo()" class="btn-success" style="width:100%; margin-top:15px;">💾 Salvar no Estoque</button>
+                    <div style="background:#f9f9f9; padding:8px 15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                        <label style="cursor:pointer; font-size:0.85em; font-weight:bold; display:flex; align-items:center; gap:6px;">
+                            <input type="checkbox" id="check-all-catalogo" onchange="toggleSelecionarTudo(this)" style="width: auto !important; height: auto !important; transform: scale(1.1); margin: 0;"> 
+                            Selecionar Tudo
+                        </label>
+                        <button id="btn-excluir-massa" onclick="excluirSelecionados()" class="btn-trash" style="display:none; font-size:0.8em; padding:2px 8px;">🗑️ Excluir</button>
+                    </div>
+
+                    <div id="lista-catalogo" style="overflow-y:auto; flex:1; background:white;"></div>
+                </div>
+
+                <div class="card" style="display:flex; flex-direction:column; max-height:85vh; padding:0; overflow:hidden; border-top: 5px solid #246caf;">
+                    
+                    <div class="card-header" style="padding: 20px 20px 15px 20px; border-bottom: 1px solid #eee; background-color: #fff;">
+                        <h3 style="margin: 0 0 5px 0; color: #246caf; line-height: 3; font-size: 1.3em;padding-left: 15px;">
+                            2. Itens em Estoque (Físico)
+                        </h3>
+                        <small style="color: #7f8c8d;">
+                            Clique nos títulos da tabela para ordenar
+                        </small>
+                    </div>
+                    
+                    <div class="table-responsive" style="overflow-y:auto; flex:1;">
+                        <table class="tabela-estoque" style="width:100%; border-collapse:separate; border-spacing:0;">
+                            <thead style="position:sticky; top:0; background:#f8f9fa; z-index:5; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                <tr>
+                                    <th onclick="ordenarEstoque('produto')" style="padding-left: 20px;">Produto ↕</th>
+                                    <th onclick="ordenarEstoque('marca')">Marca ↕</th>
+                                    <th onclick="ordenarEstoque('tipo')">Tipo ↕</th>
+                                    <th onclick="ordenarEstoque('estoqueAtual')">Saldo ↕</th>
+                                    <th onclick="ordenarEstoque('custoPorVol')" title="Custo Unitário">Custo Unit. ↕</th>
+                                    <th onclick="ordenarEstoque('custoTotal')" title="Valor Total">Custo Total ↕</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-estoque-fisico">
+                                </tbody>
+                        </table>
+                    </div>
+                    
+                    <div style="padding: 15px 20px; background:#e8f5e9; text-align:right; border-top:1px solid #c8e6c9;">
+                        <span style="color:#2c3e50; font-size:0.9em;">Valor Total em Estoque:</span> 
+                        <strong id="total-valor-estoque" style="color:#27ae60; font-size:1.2em; margin-left:10px;">R$ 0,00</strong>
                     </div>
                 </div>
-                <div class="card"><h3>Estoque Atual</h3><div class="table-responsive"><table><thead><tr><th>Tipo</th><th>Produto / Marca</th><th>Volume</th><th>Custo Total</th><th>Custo Unit.</th><th>Ações</th></tr></thead><tbody id="lista-insumos"></tbody></table></div></div>
+                            
+                            <div style="padding:10px; background:#e8f5e9; text-align:right; font-weight:bold; color:#27ae60; border-top:1px solid #c8e6c9;">
+                                Total em Estoque: <span id="total-valor-estoque">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+        <div id="modalEntradaEstoque" class="modal-overlay">
+            <div class="modal" style="max-width: 500px;">
+                <span class="close-modal" onclick="fecharModalEntrada()">×</span>
+                <h3 style="border-bottom: 2px solid #2ecc71; padding-bottom:10px; color:#27ae60;">📥 Entrada de Estoque</h3>
+                
+                <h4 id="titulo-entrada-item" style="margin: 0 0 15px 0; color:#555;">Produto Selecionado</h4>
+                <input type="hidden" id="id-entrada-item">
+
+                <div style="background:#e8f5e9; padding:15px; border-radius:8px; border:1px solid #c8e6c9;">
+                    
+                    <label>Como você comprou?</label>
+                    <select id="calc-tipo" onchange="toggleCalcMode()" style="margin-bottom:10px; font-weight:bold;">
+                        <option value="fardo">📦 Embalagem Fechada (Fardo/Caixa)</option>
+                        <option value="unidade">🍾 Unidade Avulsa (Garrafa Única)</option>
+                    </select>
+
+                    <div class="grid-2">
+                        <div>
+                            <label id="lbl-qtd-emb">Qtd. Caixas/Fardos</label>
+                            <input type="number" id="calc-qtd-emb" value="1" oninput="calcularPrevia()">
+                        </div>
+                        <div id="div-und-emb">
+                            <label>Unidades por Caixa</label>
+                            <input type="number" id="calc-und-emb" value="6" placeholder="Ex: 6, 12, 24" oninput="calcularPrevia()">
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div>
+                            <label>Volume Unitário</label>
+                            <div class="split-input">
+                                <input type="number" id="calc-vol-und" placeholder="Ex: 350" oninput="calcularPrevia()">
+                                <select id="calc-un-med" style="width:70px;" onchange="calcularPrevia()">
+                                    <option value="ml">ml</option>
+                                    <option value="g">g</option>
+                                    <option value="un">un</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label>Valor Total da Nota (R$)</label>
+                            <input type="number" id="calc-valor-total" placeholder="0.00" oninput="calcularPrevia()">
+                        </div>
+                    </div>
+
+                    <div style="margin-top:15px; border-top:1px dashed #aaa; padding-top:10px; text-align:right;">
+                        <div style="font-size:0.9em; color:#555;">Volume Total a Adicionar: <b id="res-vol-total" style="color:#2980b9; font-size:1.2em;">0 ml</b></div>
+                        <div style="font-size:0.8em; color:#888;">Custo Calculado: <span id="res-custo-ml">R$ 0,000 / ml</span></div>
+                    </div>
+                </div>
+
+                <button onclick="confirmarEntradaEstoque()" class="btn-success" style="width:100%; margin-top:15px; padding:12px; font-size:1.1em;">CONFIRMAR ENTRADA</button>
             </div>
         </div>
 
@@ -590,46 +821,438 @@
     let chartD = null, chartH = null;
     let listaComprasCache = []; 
 
-    // 1. DESPENSA & IMPORTADOR
-    onSnapshot(collection(db,"insumos"), (snap) => {
-        insumosCache = []; const l = document.getElementById('lista-insumos'), s = document.getElementById('selInsumo');
-        if(l) l.innerHTML=''; if(s) s.innerHTML='<option value="">Selecione...</option>';
-        let temp = []; snap.forEach(doc => { temp.push({...doc.data(), id: doc.id}); });
-        temp.sort((a,b) => a.produto.localeCompare(b.produto));
-        temp.forEach(i => {
-            i.custoUnit = i.qtde > 0 ? (i.preco / i.qtde) : 0; insumosCache.push(i);
-            const custoF = i.custoUnit < 0.01 ? i.custoUnit.toFixed(4) : i.custoUnit.toFixed(2);
-            if(l) l.innerHTML += `<tr><td><span class="stock-tag">${i.tipo||'-'}</span></td><td><b>${i.produto}</b> <small>${i.marca||''}</small></td><td>${i.qtde} ${i.un_med}</td><td>R$ ${i.preco}</td><td style="color:#e74c3c">R$ ${custoF}/${i.un_med}</td><td><button onclick="delInsumo('${i.id}')" class="btn-trash">🗑️</button></td></tr>`;
-            if(s) s.appendChild(new Option(`${i.produto} ${i.marca||''} (${i.un_med})`, i.id));
+    // ============================================================
+    // 3. GESTÃO DE ESTOQUE (CORRIGIDA E BLINDADA)
+    // ============================================================
+    
+    const TIPOS_PADRAO = ["Aperitivo", "Destilado", "Xarope", "Frutas", "Soft drink", "Outros"];
+    let catalogoGeral = [];
+    let listaTiposCache = []; 
+
+    // --- CARREGAMENTO DO BANCO ---
+    onSnapshot(collection(db, "insumos"), (snap) => {
+        catalogoGeral = [];
+        snap.forEach(doc => {
+            catalogoGeral.push({ ...doc.data(), id: doc.id });
         });
+        
+        // Tenta renderizar, mas protege contra erro se a tela não estiver pronta
+        if(document.getElementById('lista-catalogo')) {
+            renderizarCatalogo();
+            renderizarEstoqueFisico(); 
+        }
+        
+        // Atualiza combo da Ficha Técnica se existir
+        if(window.atualizarSelectFichaTecnica) window.atualizarSelectFichaTecnica();
     });
 
-    const parseMoneyExcel = (val) => { if (!val) return 0; if (typeof val === 'number') return val; return parseFloat(val.toString().replace(/[R$\s.]/g, '').replace(',', '.')) || 0; };
-    window.importarExcel = () => {
-        const file = document.getElementById('excelInput').files[0];
-        if(!file) return alert("Selecione o arquivo!");
-        const reader = new FileReader(); const prog = document.getElementById('upload-progress'); prog.style.display='block'; prog.innerText="Lendo...";
-        reader.onload = async (e) => {
-            try {
-                const data = new Uint8Array(e.target.result); const wb = XLSX.read(data, {type:'array'}); const ws = wb.Sheets[wb.SheetNames[0]]; const json = XLSX.utils.sheet_to_json(ws);
-                let count = 0;
-                for (const r of json) {
-                    const d = { produto: r['Produto']||r['produto']||'Sem Nome', marca: r['Marca']||r['marca']||'', tipo: r['Tipo']||r['tipo']||'Outro', un_med: r['Unidade']||r['unidade']||'un', qtde: parseMoneyExcel(r['Qtde']||r['qtde']), preco: parseMoneyExcel(r['Valor']||r['valor']) };
-                    const exists = insumosCache.find(i => i.produto===d.produto && i.marca===d.marca);
-                    if(!exists && d.qtde > 0) { await addDoc(collection(db,"insumos"), d); count++; }
-                }
-                prog.innerText = `Sucesso! ${count} importados.`; setTimeout(()=>prog.style.display='none', 4000);
-            } catch(er){ console.error(er); alert("Erro na planilha!"); }
-        };
-        reader.readAsArrayBuffer(file);
+    // --- CARREGAR TIPOS ---
+    async function carregarTipos() {
+        const select = document.getElementById('insTipo');
+        if(!select) return; // Proteção extra
+
+        try {
+            const docRef = doc(db, "config", "tipos_insumos");
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) listaTiposCache = docSnap.data().lista;
+            else {
+                listaTiposCache = [...TIPOS_PADRAO];
+                await setDoc(docRef, { lista: listaTiposCache });
+            }
+            
+            listaTiposCache.sort();
+            select.innerHTML = listaTiposCache.map(t => `<option value="${t}">${t}</option>`).join('');
+        } catch (e) {
+            console.log("Usando tipos padrão fallback");
+            select.innerHTML = TIPOS_PADRAO.map(t => `<option value="${t}">${t}</option>`).join('');
+        }
+    }
+    // Chama a cada 2s para garantir que pegue o elemento HTML
+    setTimeout(carregarTipos, 1000);
+
+
+    // --- RENDERIZAR LISTA (AQUI ESTAVA O ERRO, AGORA CORRIGIDO) ---
+    window.renderizarCatalogo = () => {
+        const inputBusca = document.getElementById('busca-catalogo');
+        const lista = document.getElementById('lista-catalogo');
+        
+        // SE NÃO ACHAR O INPUT, ABORTA A MISSÃO (EVITA O CRASH)
+        if (!inputBusca || !lista) return;
+
+        const termo = inputBusca.value.toLowerCase();
+        lista.innerHTML = '';
+
+        const filtrados = catalogoGeral
+            .filter(i => (i.produto + ' ' + i.marca).toLowerCase().includes(termo))
+            .sort((a,b) => a.produto.localeCompare(b.produto));
+
+        filtrados.forEach(item => {
+            const nomeCompleto = `${item.produto} ${item.marca || ''}`;
+            
+            lista.innerHTML += `
+                <div class="catalog-row" style="display:flex; align-items:center; padding:10px; border-bottom:1px solid #eee; gap:10px;">
+                    <input type="checkbox" class="check-item-catalogo check-custom" value="${item.id}" onchange="atualizarBotaoExclusao()">
+                    
+                    <div class="catalog-info-box" style="flex:1;">
+                        <b style="color:#2c3e50;">${item.produto}</b> <small>${item.marca||''}</small>
+                        <br><span class="catalog-badge" style="font-size:0.75em; background:#eee; padding:2px 6px; border-radius:4px;">${item.tipo}</span>
+                        <span style="font-size:0.75em; color:#e67e22; margin-left:5px;">(Ref: R$ ${(item.custoPorVol*1000).toFixed(2)}/L)</span>
+                    </div>
+
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="abrirModalEntrada('${item.id}', '${nomeCompleto}')" class="btn-success" style="padding:4px 10px; font-size:0.75em; display:flex; align-items:center; gap:4px;">➕ Entrada</button>
+                        <button onclick="excluirItemCatalogo('${item.id}', '${nomeCompleto}')" class="btn-trash" style="padding:4px 8px;">🗑️</button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        const checkMaster = document.getElementById('check-all-catalogo');
+        if(checkMaster) checkMaster.checked = false;
+        atualizarBotaoExclusao();
     };
 
-    window.salvarInsumo = async () => {
-        const d = { produto: document.getElementById('insProd').value, marca: document.getElementById('insMarca').value, tipo: document.getElementById('insTipo').value, un_med: document.getElementById('insUn').value, qtde: parseFloat(document.getElementById('insQtde').value), preco: parseFloat(document.getElementById('insValor').value) };
-        if(!d.produto || !d.qtde || !d.preco) return alert("Preencha tudo!");
-        await addDoc(collection(db,"insumos"), d); alert("Salvo!"); ['insProd','insMarca','insQtde','insValor'].forEach(i=>document.getElementById(i).value='');
+
+    // ============================================================
+    // --- SALVAR NOVO PRODUTO (COM CÁLCULO DE CUSTO) ---
+    // SALVAR MANUALMENTE (COM BLOQUEIO DE DUPLICADOS)
+    // ============================================================
+    window.salvarCatalogo = async () => {
+        const prod = document.getElementById('insProd').value.trim();
+        const marca = document.getElementById('insMarca').value.trim();
+        const tipo = document.getElementById('insTipo').value;
+        const unMed = document.getElementById('insUnMed').value;
+        
+        const volRef = parseFloat(document.getElementById('insVolRef').value) || 0;
+        const precoRef = parseFloat(document.getElementById('insPrecoRef').value) || 0;
+
+        if(!prod) return alert("Nome do produto é obrigatório!");
+        if(volRef <= 0 || precoRef <= 0) return alert("Preencha Volume e Preço para cálculo de custo!");
+
+        // 1. CHECAGEM DE DUPLICIDADE RIGOROSA (Igual ao Excel)
+        const duplicado = catalogoGeral.some(i => 
+            i.produto.toLowerCase() === prod.toLowerCase() && 
+            i.marca.toLowerCase() === marca.toLowerCase()
+        );
+
+        if (duplicado) {
+            return alert(`⛔ ERRO: O produto "${prod} ${marca}" já existe no catálogo!`);
+        }
+
+        // Calcula Custo Base
+        const custoCalculado = precoRef / volRef;
+
+        try {
+            await addDoc(collection(db, "insumos"), {
+                produto: prod,
+                marca: marca,
+                tipo: tipo,
+                unMedida: unMed,
+                estoqueAtual: 0,
+                custoPorVol: custoCalculado, 
+                refVolume: volRef,
+                refPreco: precoRef,
+                dataCadastro: new Date()
+            });
+            
+            // Limpa form
+            document.getElementById('insProd').value = '';
+            document.getElementById('insMarca').value = '';
+            document.getElementById('insVolRef').value = '';
+            document.getElementById('insPrecoRef').value = '';
+            window.toggleNovoItem();
+            alert("✅ Produto salvo com sucesso!");
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao salvar.");
+        }
     };
-    window.delInsumo = async(id) => { if(confirm("Excluir?")) await deleteDoc(doc(db,"insumos",id)); };
+
+    // --- MANTER AS OUTRAS FUNÇÕES AUXILIARES ---
+    // (Inclua aqui toggleNovoItem, adicionarNovoTipo, renderizarEstoqueFisico, toggleSelecionarTudo, excluirItemCatalogo, etc.)
+    // Se precisar que eu reenvie essas menores, avise. Mas o erro principal está nas acima.
+    
+    window.toggleNovoItem = () => {
+        const el = document.getElementById('form-novo-insumo');
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    };
+    
+    // ... [Inclua o resto da lógica de exclusão e da calculadora que já tínhamos] ...
+    
+    // ============================================================
+    // LÓGICA DE LISTAGEM DE ESTOQUE (ORDENAÇÃO + CÁLCULOS)
+    // ============================================================
+
+    // Estado da Ordenação (Padrão: Produto A-Z)
+    let estoqueSortCol = 'produto';
+    let estoqueSortAsc = true;
+
+    // Função que muda a ordem quando clica no título
+    window.ordenarEstoque = (coluna) => {
+        if (estoqueSortCol === coluna) {
+            estoqueSortAsc = !estoqueSortAsc; // Inverte se clicar no mesmo
+        } else {
+            estoqueSortCol = coluna;
+            estoqueSortAsc = true; // Reseta se trocar de coluna
+        }
+        renderizarEstoqueFisico(); // Redesenha a tela
+    };
+
+    window.renderizarEstoqueFisico = () => {
+        const tbody = document.getElementById('lista-estoque-fisico');
+        const spanTotal = document.getElementById('total-valor-estoque');
+        
+        if(!tbody) return;
+        tbody.innerHTML = '';
+
+        // 1. Filtra apenas quem tem saldo positivo
+        // (Afinal, é uma lista de "Itens EM Estoque")
+        let itensComEstoque = catalogoGeral.filter(i => i.estoqueAtual > 0);
+
+        // 2. Calcula o Valor Total de cada linha para poder ordenar por ele
+        itensComEstoque = itensComEstoque.map(item => {
+            return {
+                ...item,
+                valorTotalEstoque: item.estoqueAtual * (item.custoPorVol || 0)
+            };
+        });
+
+        // 3. Aplica a Ordenação Dinâmica
+        itensComEstoque.sort((a, b) => {
+            let valA = a[estoqueSortCol];
+            let valB = b[estoqueSortCol];
+
+            // Tratamento especial para "custoTotal" que calculamos agora
+            if (estoqueSortCol === 'custoTotal') {
+                valA = a.valorTotalEstoque;
+                valB = b.valorTotalEstoque;
+            }
+
+            // Tratamento para textos (caixa alta/baixa)
+            if (typeof valA === 'string') valA = valA.toLowerCase();
+            if (typeof valB === 'string') valB = valB.toLowerCase();
+
+            if (valA < valB) return estoqueSortAsc ? -1 : 1;
+            if (valA > valB) return estoqueSortAsc ? 1 : -1;
+            return 0;
+        });
+
+        if(itensComEstoque.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#999">Nenhum item com saldo em estoque.</td></tr>';
+            spanTotal.innerText = "R$ 0,00";
+            return;
+        }
+
+        let somaGeral = 0;
+
+        itensComEstoque.forEach(item => {
+            // Formatação do Saldo (ml, L, kg)
+            let volDisplay = `${item.estoqueAtual} ${item.unMedida}`;
+            if(item.unMedida === 'ml' && item.estoqueAtual >= 1000) volDisplay = `${(item.estoqueAtual/1000).toFixed(2)} L`;
+            if(item.unMedida === 'g' && item.estoqueAtual >= 1000) volDisplay = `${(item.estoqueAtual/1000).toFixed(2)} Kg`;
+
+            // Formatação Monetária
+            const custoUnit = item.custoPorVol || 0;
+            const custoTotal = item.valorTotalEstoque;
+            somaGeral += custoTotal;
+
+            tbody.innerHTML += `
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="font-weight:bold; color:#2c3e50;">${item.produto}</td>
+                    <td style="color:#555;">${item.marca || '-'}</td>
+                    <td><span class="catalog-badge">${item.tipo}</span></td>
+                    <td style="color:#2980b9; font-weight:bold;">${volDisplay}</td>
+                    <td style="color:#7f8c8d;">R$ ${custoUnit.toFixed(4)}</td>
+                    <td style="color:#27ae60; font-weight:bold;">R$ ${custoTotal.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+
+        // Atualiza o totalizador no rodapé
+        if(spanTotal) spanTotal.innerText = `R$ ${somaGeral.toFixed(2)}`;
+    };
+
+
+    window.adicionarNovoTipo = async () => {
+        const novo = prompt("Digite o nome do novo Tipo:");
+        if(!novo) return;
+        const novoFormatado = novo.charAt(0).toUpperCase() + novo.slice(1);
+
+        if(listaTiposCache.includes(novoFormatado)) return alert("Já existe!");
+
+        listaTiposCache.push(novoFormatado);
+        try {
+            await setDoc(doc(db, "config", "tipos_insumos"), { lista: listaTiposCache });
+            carregarTipos();
+            alert(`Tipo "${novoFormatado}" adicionado!`);
+        } catch (e) {
+            alert("Erro ao salvar novo tipo.");
+        }
+    };
+
+
+    // --- LÓGICA DE EXCLUSÃO (MASSIVA E INDIVIDUAL) ---
+
+    window.toggleSelecionarTudo = (source) => {
+        const checkboxes = document.querySelectorAll('.check-item-catalogo');
+        checkboxes.forEach(chk => chk.checked = source.checked);
+        atualizarBotaoExclusao();
+    };
+
+    window.atualizarBotaoExclusao = () => {
+        const selecionados = document.querySelectorAll('.check-item-catalogo:checked').length;
+        const btn = document.getElementById('btn-excluir-massa');
+        if (selecionados > 0) {
+            btn.style.display = 'block';
+            btn.innerHTML = `🗑️ Excluir Selecionados (${selecionados})`;
+        } else {
+            btn.style.display = 'none';
+        }
+    };
+
+    // ============================================================
+    // EXCLUSÃO SEGURA (PROTEGE O ESTOQUE)
+    // ============================================================
+
+    // 1. Exclusão Individual
+    window.excluirItemCatalogo = async (id, nome) => {
+        // Busca o item completo na memória para checar o estoque
+        const item = catalogoGeral.find(i => i.id === id);
+
+        if (!item) return;
+
+        // TRAVA DE SEGURANÇA: Se tiver estoque, BLOQUEIA.
+        if (item.estoqueAtual > 0) {
+            return alert(`⛔ AÇÃO BLOQUEADA!\n\nO item "${nome}" possui ${item.estoqueAtual} ${item.unMedida} em estoque físico.\n\nPara excluir o cadastro, primeiro você deve zerar ou consumir este estoque.`);
+        }
+
+        if(confirm(`Tem certeza que deseja excluir "${nome}" do catálogo?\n(O histórico de consumo será mantido, mas o cadastro sumirá)`)) {
+            await deleteDoc(doc(db, "insumos", id));
+        }
+    };
+
+    // 2. Exclusão em Massa (Selecionados)
+    window.excluirSelecionados = async () => {
+        const checkboxes = document.querySelectorAll('.check-item-catalogo:checked');
+        if(checkboxes.length === 0) return;
+
+        // Verifica se algum dos selecionados tem estoque
+        let bloqueados = 0;
+        let listaParaExcluir = [];
+
+        checkboxes.forEach(chk => {
+            const item = catalogoGeral.find(i => i.id === chk.value);
+            if (item && item.estoqueAtual > 0) {
+                bloqueados++;
+            } else {
+                listaParaExcluir.push(chk.value);
+            }
+        });
+
+        // Se houver itens com estoque, avisa e aborta ou pergunta se quer excluir só os vazios
+        if (bloqueados > 0) {
+            alert(`⚠️ AVISO DE PROTEÇÃO\n\n${bloqueados} itens selecionados POSSUEM SALDO EM ESTOQUE e não podem ser excluídos.\n\nSelecione apenas itens com estoque zerado.`);
+            return; 
+        }
+
+        if(!confirm(`⚠️ Excluir definitivamente ${listaParaExcluir.length} produtos zerados?`)) return;
+
+        const batch = writeBatch(db);
+        listaParaExcluir.forEach(id => {
+            batch.delete(doc(db, "insumos", id));
+        });
+
+        await batch.commit();
+        alert("✅ Itens zerados excluídos com sucesso!");
+        
+        const checkMaster = document.getElementById('check-all-catalogo');
+        if(checkMaster) checkMaster.checked = false;
+        atualizarBotaoExclusao();
+    };
+
+
+    // --- LÓGICA DA CALCULADORA E ENTRADA (MANTIDA) ---
+
+    window.abrirModalEntrada = (id, nome) => {
+        document.getElementById('modalEntradaEstoque').style.display = 'flex';
+        document.getElementById('id-entrada-item').value = id;
+        document.getElementById('titulo-entrada-item').innerText = nome;
+        
+        // Reset Inputs
+        document.getElementById('calc-qtd-emb').value = 1;
+        document.getElementById('calc-und-emb').value = 6;
+        document.getElementById('calc-vol-und').value = '';
+        document.getElementById('calc-valor-total').value = '';
+        
+        // Força recalculo zerado
+        window.calcularPrevia();
+    };
+
+    window.fecharModalEntrada = () => {
+        document.getElementById('modalEntradaEstoque').style.display = 'none';
+    };
+
+    window.toggleCalcMode = () => {
+        const mode = document.getElementById('calc-tipo').value;
+        const divUnd = document.getElementById('div-und-emb');
+        const lblQtd = document.getElementById('lbl-qtd-emb');
+
+        if(mode === 'unidade') {
+            divUnd.style.display = 'none';
+            lblQtd.innerText = "Qtd. Garrafas/Unidades";
+            document.getElementById('calc-und-emb').value = 1; 
+        } else {
+            divUnd.style.display = 'block';
+            lblQtd.innerText = "Qtd. Caixas/Fardos";
+            document.getElementById('calc-und-emb').value = 6;
+        }
+        window.calcularPrevia();
+    };
+
+    window.calcularPrevia = () => {
+        const qtdInput = parseFloat(document.getElementById('calc-qtd-emb').value) || 0;
+        const volUnd = parseFloat(document.getElementById('calc-vol-und').value) || 0;
+        const valorTotal = parseFloat(document.getElementById('calc-valor-total').value) || 0;
+        const unMed = document.getElementById('calc-un-med').value;
+        const modo = document.getElementById('calc-tipo').value; 
+
+        // LÓGICA CORRIGIDA (Unitário ignora o campo de fardo)
+        let itensPorEmbalagem = 1; 
+        if (modo === 'fardo') {
+            itensPorEmbalagem = parseFloat(document.getElementById('calc-und-emb').value) || 1;
+        }
+
+        const volumeTotal = qtdInput * itensPorEmbalagem * volUnd;
+        const custoPorVol = volumeTotal > 0 ? (valorTotal / volumeTotal) : 0;
+
+        let textoVolume = `${volumeTotal} ${unMed}`;
+        if(unMed === 'ml' && volumeTotal >= 1000) textoVolume = `${(volumeTotal/1000).toFixed(2)} L`;
+
+        document.getElementById('res-vol-total').innerText = textoVolume;
+        document.getElementById('res-custo-ml').innerText = `R$ ${custoPorVol.toFixed(5)} / ${unMed}`;
+        
+        return { volumeTotal, custoPorVol, unMed };
+    };
+
+    window.confirmarEntradaEstoque = async () => {
+        const id = document.getElementById('id-entrada-item').value;
+        const calculo = window.calcularPrevia();
+
+        if(calculo.volumeTotal <= 0) return alert("Preencha o volume corretamente!");
+
+        const itemRef = doc(db, "insumos", id);
+        
+        await updateDoc(itemRef, {
+            estoqueAtual: increment(calculo.volumeTotal),
+            custoPorVol: calculo.custoPorVol, 
+            unMedida: calculo.unMed,
+            ultimaEntrada: new Date()
+        });
+
+        alert("Entrada realizada com sucesso!");
+        window.fecharModalEntrada();
+    };
 
     // ============================================================
     // 2. BIBLIOTECA & ORÇAMENTO
@@ -845,7 +1468,99 @@
         try { if(id) await updateDoc(doc(db,"drinks",id),d); else { await addDoc(collection(db,"drinks"),d); } alert("Salvo!"); window.limparFormDrink(); } catch(e){alert(e.message);}
     };
     window.delDrinkGlob=async(id,e)=>{e.stopPropagation();if(confirm("Excluir?"))await deleteDoc(doc(db,"drinks",id));};
-    window.addIngrediente=()=>{const id=document.getElementById('selInsumo').value, q=parseFloat(document.getElementById('qtdInsumo').value); if(!id||!q)return; const i=insumosCache.find(x=>x.id===id); receitaAtual.push({nome:`${i.produto} ${i.marca}`, qtd:q, un:i.un_med, custo:i.custoUnit*q, insumoId:id}); renderReceita();};
+    
+    // ============================================================
+    // FUNÇÃO CORRIGIDA: ADICIONAR INGREDIENTE À RECEITA
+    // ============================================================
+    window.addIngrediente = () => {
+        const select = document.getElementById('selInsumo');
+        const qtdInput = document.getElementById('qtdInsumo');
+        
+        const idInsumo = select.value;
+        const qtd = parseFloat(qtdInput.value);
+
+        if (!idInsumo || !qtd || qtd <= 0) {
+            return alert("Selecione um ingrediente e informe a quantidade.");
+        }
+
+        // 1. Busca os dados completos no Catálogo Global
+        const itemCatalogo = catalogoGeral.find(i => i.id === idInsumo);
+
+        if (!itemCatalogo) return alert("Erro: Item não encontrado no catálogo.");
+
+        // 2. Define o Custo
+        // Se o item nunca teve entrada, custoPorVol pode ser undefined ou 0
+        const custoUnitario = itemCatalogo.custoPorVol || 0;
+        const custoTotalIngrediente = custoUnitario * qtd;
+
+        // Alerta educativo se o custo for zero
+        if (custoUnitario === 0) {
+            console.log("⚠️ Atenção: Este item ainda não tem entrada no estoque. O custo será R$ 0,00.");
+        }
+
+        // 3. Adiciona na lista temporária da receita
+        const novoIngrediente = {
+            insumoId: itemCatalogo.id,
+            nome: itemCatalogo.produto,
+            marca: itemCatalogo.marca || '',
+            qtd: qtd,
+            unMedida: itemCatalogo.unMedida || 'ml', // Usa a unidade do cadastro
+            custo: custoTotalIngrediente
+        };
+
+        // Adiciona ao array global de receita (certifique-se que essa variável existe no topo do seu script da biblioteca)
+        if (!window.receitaAtual) window.receitaAtual = [];
+        window.receitaAtual.push(novoIngrediente);
+
+        // 4. Limpa campos e atualiza a tela
+        select.value = "";
+        qtdInput.value = "";
+        select.focus();
+        
+        renderizarListaIngredientes();
+    };
+
+    // Função auxiliar para desenhar a tabelinha da receita
+    window.renderizarListaIngredientes = () => {
+        const divLista = document.getElementById('lista-ingredientes');
+        divLista.innerHTML = '';
+
+        let custoTotalDrink = 0;
+
+        if (!window.receitaAtual || window.receitaAtual.length === 0) {
+            divLista.innerHTML = '<small style="color:#999">Nenhum ingrediente adicionado.</small>';
+            document.getElementById('globalCusto').value = "0.00";
+            return;
+        }
+
+        window.receitaAtual.forEach((item, index) => {
+            custoTotalDrink += item.custo;
+            
+            divLista.innerHTML += `
+                <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #eee; padding:5px 0; font-size:0.9em;">
+                    <span>
+                        <b>${item.qtd}${item.unMedida}</b> ${item.nome} <small>${item.marca}</small>
+                    </span>
+                    <div style="display:flex; gap:10px;">
+                        <span style="color:#7f8c8d;">R$ ${item.custo.toFixed(2)}</span>
+                        <span style="cursor:pointer; color:red;" onclick="removerIngrediente(${index})">×</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Atualiza o Input de Custo Total (Campo Vermelho)
+        document.getElementById('globalCusto').value = custoTotalDrink.toFixed(2);
+        
+        // Se tiver função de calcular CMV, chama ela
+        if(window.calcCMV) window.calcCMV(); 
+    };
+
+    window.removerIngrediente = (index) => {
+        window.receitaAtual.splice(index, 1);
+        renderizarListaIngredientes();
+    };
+
     function renderReceita(){let t=0; document.getElementById('lista-ingredientes').innerHTML=receitaAtual.map((i,x)=>{t+=i.custo; return `<div>${i.qtd}${i.un} ${i.nome} (R$ ${i.custo.toFixed(2)}) <a onclick="remIng(${x})" style="color:red;cursor:pointer">x</a></div>`}).join(''); document.getElementById('globalCusto').value=t.toFixed(2); window.calcCMV();}
     window.remIng=(i)=>{receitaAtual.splice(i,1); renderReceita();};
     window.calcCMV=()=>{const v=parseFloat(document.getElementById('globalPrice').value)||0, c=parseFloat(document.getElementById('globalCusto').value)||0; if(v>0)document.getElementById('cmv-display').innerText=`CMV: ${((c/v)*100).toFixed(1)}% | Lucro: R$ ${(v-c).toFixed(2)}`;};
@@ -1484,6 +2199,7 @@
 
         if(!confirm('Confirmar entrega para ' + pedido.cliente + '?')) return;
 
+        
         const batch = writeBatch(db);
         
         for (const item of pedido.itens) {
@@ -1565,4 +2281,204 @@
         link.click();
         document.body.removeChild(link);
     };
+
+    // ============================================================
+    // MOTOR DE BAIXA TÉCNICA (INTEGRAÇÃO KDS)
+    // ============================================================
+
+    /**
+     * Chama essa função quando o pedido for concluído/entregue.
+     * @param {string} nomeDrink - O nome exato do drink (ex: "Mojito")
+     * @param {number} quantidade - Quantos foram feitos (padrão 1)
+     */
+    window.processarBaixaEstoque = async (nomeDrink, quantidade = 1) => {
+        // 1. Procura a ficha técnica na memória do sistema
+        const ficha = bibliotecaGlobal.find(d => d.nome === nomeDrink);
+        
+        if (!ficha) {
+            console.log(`⚠️ Drink "${nomeDrink}" não encontrado na biblioteca. Estoque mantido.`);
+            return;
+        }
+
+        if (!ficha.receita || ficha.receita.length === 0) {
+            console.log(`ℹ️ Sem receita cadastrada para "${nomeDrink}".`);
+            return;
+        }
+
+        // 2. Prepara o lote de descontos (Batch Write)
+        const batch = writeBatch(db);
+        let temDesconto = false;
+
+        ficha.receita.forEach(item => {
+            if (item.insumoId) {
+                const qtdDescontar = item.qtd * quantidade; // Ex: 50ml * 2 drinks = 100ml
+                
+                // Referência ao insumo na despensa
+                const refInsumo = doc(db, "insumos", item.insumoId);
+                
+                // O increment(-valor) garante que desconte do valor atual, seja ele qual for
+                batch.update(refInsumo, { qtde: increment(-qtdDescontar) });
+                temDesconto = true;
+            }
+        });
+
+        // 3. Executa a baixa no banco de dados
+        if (temDesconto) {
+            await batch.commit();
+            console.log(`✅ Estoque atualizado: ${quantidade}x ${nomeDrink} consumidos.`);
+        }
+    };
+    
+    // ============================================================
+    // FUNÇÃO AUXILIAR: Conecta o Estoque à Ficha Técnica
+    // ============================================================
+    
+    window.atualizarSelectFichaTecnica = () => {
+        const select = document.getElementById('selInsumo');
+        
+        // Proteção: Se não estiver na tela de edição, não faz nada
+        if (!select) return; 
+
+        // Limpa e coloca a opção padrão
+        select.innerHTML = '<option value="">Selecione um ingrediente...</option>';
+
+        // Ordena a lista para ficar bonito (A-Z)
+        // Usamos o 'catalogoGeral' que criamos no módulo de Estoque
+        catalogoGeral.sort((a, b) => a.produto.localeCompare(b.produto));
+
+        // Preenche o combo
+        catalogoGeral.forEach(item => {
+            const nomeCompleto = `${item.produto} ${item.marca || ''}`;
+            // O value é o ID (para o banco) e o texto é o Nome (para o humano)
+            select.innerHTML += `<option value="${item.id}">${nomeCompleto}</option>`;
+        });
+
+        console.log("🔄 Lista de ingredientes da Ficha Técnica atualizada!");
+    };
+
+    // ============================================================
+    // IMPORTAÇÃO VIA EXCEL (.XLSX) - COMPATÍVEL COM SEU ARQUIVO
+    // ============================================================
+    window.importarExcelInsumos = (input) => {
+        const file = input.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        // Usa ArrayBuffer, necessário para ler arquivos .xlsx reais
+        reader.readAsArrayBuffer(file);
+
+        reader.onload = async (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                // Pega a primeira aba da planilha
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+
+                // Converte para JSON
+                const jsonDados = XLSX.utils.sheet_to_json(worksheet);
+
+                if (jsonDados.length === 0) {
+                    alert("A planilha parece estar vazia!");
+                    return;
+                }
+
+                const batch = writeBatch(db);
+                let count = 0;
+                let duplicados = 0;
+
+                // Processa cada linha do Excel
+                jsonDados.forEach(row => {
+                    // Mapeia as colunas EXATAS do seu arquivo (Case sensitive)
+                    // Colunas: Produto, Marca, Tipo, Unidade, Qtde, Valor
+                    
+                    const prod = row['Produto'] ? String(row['Produto']).trim() : null;
+                    if (!prod) return; // Pula linha se não tiver nome do produto
+
+                    const marca = row['Marca'] ? String(row['Marca']).trim() : '';
+                    const tipo = row['Tipo'] ? String(row['Tipo']).trim() : 'Geral';
+                    const unidadeExcel = row['Unidade'] ? String(row['Unidade']).trim() : 'ml';
+                    
+                    let qtdRef = parseFloat(row['Qtde']) || 0;
+                    const valorRef = parseFloat(row['Valor']) || 0;
+
+                    // 1. CHECAGEM DE DUPLICIDADE (Produto + Marca)
+                    const jaExiste = catalogoGeral.some(item => 
+                        item.produto.toLowerCase() === prod.toLowerCase() && 
+                        item.marca.toLowerCase() === marca.toLowerCase()
+                    );
+
+                    if (jaExiste) {
+                        duplicados++;
+                        return; // Pula este item
+                    }
+
+                    // 2. CONVERSÃO DE UNIDADES (Normalização para o Sistema)
+                    // O sistema precisa de 'ml', 'g' ou 'un' para calcular custo de receita pequena
+                    let unFinal = 'ml'; // Padrão
+                    
+                    if (unidadeExcel.toLowerCase() === 'kg') {
+                        unFinal = 'g';
+                        qtdRef = qtdRef * 1000; // Converte 1 Kg para 1000g
+                    } else if (unidadeExcel.toLowerCase() === 'g') {
+                        unFinal = 'g';
+                    } else if (['bnj', 'un', 'unidade'].includes(unidadeExcel.toLowerCase())) {
+                        unFinal = 'un';
+                    } else if (unidadeExcel.toLowerCase() === 'l' || unidadeExcel.toLowerCase() === 'litro') {
+                        unFinal = 'ml';
+                        qtdRef = qtdRef * 1000; // Converte 1 L para 1000ml
+                    }
+
+                    // 3. CÁLCULO DE CUSTO
+                    let custoCalc = 0;
+                    if (qtdRef > 0) {
+                        custoCalc = valorRef / qtdRef;
+                    }
+
+                    // 4. PREPARA O DADO
+                    const docRef = doc(collection(db, "insumos"));
+                    batch.set(docRef, {
+                        produto: prod,
+                        marca: marca,
+                        tipo: tipo,
+                        unMedida: unFinal, // Unidade convertida (ml, g, un)
+                        
+                        estoqueAtual: 0,
+                        
+                        // Dados Financeiros
+                        custoPorVol: custoCalc,
+                        refVolume: qtdRef,      // Quantidade convertida (ex: 1000)
+                        refPreco: valorRef,     // Preço original (ex: 15.00)
+                        unidadeOriginal: unidadeExcel, // Guarda o que veio no Excel só para consulta
+                        
+                        dataCadastro: new Date()
+                    });
+                    count++;
+                });
+
+                if (count > 0) {
+                    await batch.commit();
+                    alert(`✅ Processo Concluído!\n\n${count} itens importados.\n${duplicados} duplicados ignorados.`);
+                    
+                    // Limpa busca se houver
+                    if(document.getElementById('busca-catalogo')) {
+                        document.getElementById('busca-catalogo').value = '';
+                    }
+                } else {
+                    alert(duplicados > 0 
+                        ? `Nenhum item novo importado. ${duplicados} itens já existiam no sistema.` 
+                        : "Erro: Nenhum dado válido encontrado na planilha.");
+                }
+
+            } catch (error) {
+                console.error("Erro Excel:", error);
+                alert("Erro ao processar arquivo. Verifique se é um .xlsx válido.");
+            }
+            
+            input.value = ''; // Limpa input para permitir re-upload
+        };
+    };
+
 </script>
