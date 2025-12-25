@@ -544,7 +544,7 @@
         <div id="view-estoque" class="view-section">
                     <h2>📦 Gestão de Estoque</h2>
                     
-                    <div class="grid-2">
+                    <div class="grid-2" style="grid-template-columns: 35% 1fr;">
                     <div class="card" style="display:flex; flex-direction:column; max-height:85vh; padding:0; overflow:hidden; border-top: 5px solid #e67e22;">
                     
                     <div style="padding:15px; border-bottom:1px solid #eee;">
@@ -627,6 +627,7 @@
                                     <th onclick="ordenarEstoque('estoqueAtual')">Saldo ↕</th>
                                     <th onclick="ordenarEstoque('custoPorVol')" title="Custo Unitário">Custo Unit. ↕</th>
                                     <th onclick="ordenarEstoque('custoTotal')" title="Valor Total">Custo Total ↕</th>
+                                    <th style="width: 80px; text-align:center;">Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="lista-estoque-fisico">
@@ -634,15 +635,12 @@
                         </table>
                     </div>
                     
-                    <div style="padding: 15px 20px; background:#e8f5e9; text-align:right; border-top:1px solid #c8e6c9;">
+                    <div style="padding:10px; background:#e8f5e9; text-align:right; font-weight:bold; color:#27ae60; border-top:1px solid #c8e6c9;">
                         <span style="color:#2c3e50; font-size:0.9em;">Valor Total em Estoque:</span> 
-                        <strong id="total-valor-estoque" style="color:#27ae60; font-size:1.2em; margin-left:10px;">R$ 0,00</strong>
+                        <strong id="total-valor-estoque" style="color:#27ae60; font-size:0.9em; margin-left:10px;">R$ 0,00</strong>
                     </div>
                 </div>
-                            
-                            <div style="padding:10px; background:#e8f5e9; text-align:right; font-weight:bold; color:#27ae60; border-top:1px solid #c8e6c9;">
-                                Total em Estoque: <span id="total-valor-estoque">R$ 0,00</span>
-                            </div>
+                           
                         </div>
                     </div>
                 </div>
@@ -828,96 +826,147 @@
     let listaComprasCache = []; 
 
     // ============================================================
-    // 3. GESTÃO DE ESTOQUE (CORRIGIDA E BLINDADA)
+    // 3. GESTÃO DE ESTOQUE (CORRIGIDO: FUNCIONA COM QUALQUER ID)
     // ============================================================
     
     const TIPOS_PADRAO = ["Aperitivo", "Destilado", "Xarope", "Frutas", "Soft drink", "Outros"];
-    let catalogoGeral = [];
-    let listaTiposCache = []; 
+    window.catalogoGeral = [];
 
     // --- CARREGAMENTO DO BANCO ---
     onSnapshot(collection(db, "insumos"), (snap) => {
-        catalogoGeral = [];
+        window.catalogoGeral = [];
         snap.forEach(doc => {
-            catalogoGeral.push({ ...doc.data(), id: doc.id });
+            window.catalogoGeral.push({ ...doc.data(), id: doc.id });
         });
         
-        // Tenta renderizar, mas protege contra erro se a tela não estiver pronta
-        if(document.getElementById('lista-catalogo')) {
-            renderizarCatalogo();
-            renderizarEstoqueFisico(); 
-        }
+        // Tenta renderizar as listas se os elementos existirem na tela
+        if(document.getElementById('lista-catalogo')) renderizarCatalogo();
         
-        // Atualiza combo da Ficha Técnica se existir
+        // Tenta renderizar o estoque (chama a função corrigida)
+        renderizarEstoqueFisico();
+        
         if(window.atualizarSelectFichaTecnica) window.atualizarSelectFichaTecnica();
     });
 
-    // --- CARREGAR TIPOS ---
-    async function carregarTipos() {
-        const select = document.getElementById('insTipo');
-        if(!select) return; // Proteção extra
-
-        try {
-            const docRef = doc(db, "config", "tipos_insumos");
-            const docSnap = await getDoc(docRef);
-            
-            if (docSnap.exists()) listaTiposCache = docSnap.data().lista;
-            else {
-                listaTiposCache = [...TIPOS_PADRAO];
-                await setDoc(docRef, { lista: listaTiposCache });
-            }
-            
-            listaTiposCache.sort();
-            select.innerHTML = listaTiposCache.map(t => `<option value="${t}">${t}</option>`).join('');
-        } catch (e) {
-            console.log("Usando tipos padrão fallback");
-            select.innerHTML = TIPOS_PADRAO.map(t => `<option value="${t}">${t}</option>`).join('');
-        }
-    }
-    // Chama a cada 2s para garantir que pegue o elemento HTML
-    setTimeout(carregarTipos, 1000);
-
-
-    // --- RENDERIZAR LISTA (AQUI ESTAVA O ERRO, AGORA CORRIGIDO) ---
+    // --- 1. RENDERIZAR CATÁLOGO (CIMA - CARDS) ---
     window.renderizarCatalogo = () => {
         const inputBusca = document.getElementById('busca-catalogo');
         const lista = document.getElementById('lista-catalogo');
         
-        // SE NÃO ACHAR O INPUT, ABORTA A MISSÃO (EVITA O CRASH)
         if (!inputBusca || !lista) return;
 
         const termo = inputBusca.value.toLowerCase();
         lista.innerHTML = '';
 
-        const filtrados = catalogoGeral
-            .filter(i => (i.produto + ' ' + i.marca).toLowerCase().includes(termo))
+        const filtrados = window.catalogoGeral
+            .filter(i => (i.produto + ' ' + (i.marca||'')).toLowerCase().includes(termo))
             .sort((a,b) => a.produto.localeCompare(b.produto));
 
         filtrados.forEach(item => {
             const nomeCompleto = `${item.produto} ${item.marca || ''}`;
-            
             lista.innerHTML += `
                 <div class="catalog-row" style="display:flex; align-items:center; padding:10px; border-bottom:1px solid #eee; gap:10px;">
-                    <input type="checkbox" class="check-item-catalogo check-custom" value="${item.id}" onchange="atualizarBotaoExclusao()">
-                    
-                    <div class="catalog-info-box" style="flex:1;">
+                    <input type="checkbox" class="check-item-catalogo check-custom" value="${item.id}">
+                    <div class="catalog-info-box" style="flex:1; min-width:0;">
                         <b style="color:#2c3e50;">${item.produto}</b> <small>${item.marca||''}</small>
-                        <br><span class="catalog-badge" style="font-size:0.75em; background:#eee; padding:2px 6px; border-radius:4px;">${item.tipo}</span>
-                        <span style="font-size:0.75em; color:#e67e22; margin-left:5px;">(Ref: R$ ${(item.custoPorVol*1000).toFixed(2)}/L)</span>
+                        <br><span class="catalog-badge" style="font-size:0.7em; background:#eee; padding:1px 4px; border-radius:4px;">${item.tipo}</span>
                     </div>
-
-                    <div style="display:flex; gap:5px;">
-                        <button onclick="abrirModalEntrada('${item.id}', '${nomeCompleto}')" class="btn-success" style="padding:4px 10px; font-size:0.75em; display:flex; align-items:center; gap:4px;">➕ Entrada</button>
-                        <button onclick="excluirItemCatalogo('${item.id}', '${nomeCompleto}')" class="btn-trash" style="padding:4px 8px;">🗑️</button>
+                    <div style="display:flex; gap:2px;">
+                        <button onclick="abrirModalEntrada('${item.id}', '${nomeCompleto}')" class="btn-success" style="padding:2px 8px; font-size:0.75em;">➕</button>
+                        <button onclick="excluirDoSistema('${item.id}')" style="border:none; background:transparent; color:#c0392b; cursor:pointer; padding:0 5px;" title="Excluir Definitivamente">🗑️</button>
                     </div>
                 </div>
             `;
         });
-        
-        const checkMaster = document.getElementById('check-all-catalogo');
-        if(checkMaster) checkMaster.checked = false;
-        atualizarBotaoExclusao();
     };
+
+    // --- 2. RENDERIZAR ESTOQUE FÍSICO (BAIXO - TABELA) ---
+    window.renderizarEstoqueFisico = () => {
+        // TENTA ACHAR PELO NOME NOVO OU PELO ANTIGO
+        let tbody = document.getElementById('tabela-estoque-oficial');
+        if (!tbody) tbody = document.getElementById('lista-estoque-fisico');
+
+        // Se não achou de jeito nenhum, avisa no console e para
+        if (!tbody) {
+            console.error("ERRO: Não encontrei a tabela de estoque (nem 'lista-estoque-fisico' nem 'tabela-estoque-oficial')");
+            return;
+        }
+
+        const buscaEl = document.getElementById('busca-catalogo');
+        const termo = buscaEl ? buscaEl.value.toLowerCase() : "";
+        
+        tbody.innerHTML = '';
+
+        const filtrados = window.catalogoGeral
+            .filter(i => (i.produto + ' ' + (i.marca||'')).toLowerCase().includes(termo))
+            .sort((a,b) => a.produto.localeCompare(b.produto));
+
+        filtrados.forEach(item => {
+            const estoque = parseFloat(item.estoque || 0);
+            
+            // FILTRO: Só mostra se tiver saldo positivo
+            if (estoque <= 0) return; 
+
+            const custoUnit = parseFloat(item.refPreco || 0);
+            const custoTotal = estoque * custoUnit;
+
+            tbody.innerHTML += `
+                <tr style="border-bottom: 1px solid #eee; height: 45px;">
+                    <td style="padding:10px;"><b>${item.produto}</b></td>
+                    <td style="padding:10px;">${item.marca || '-'}</td>
+                    <td style="padding:10px;">${item.tipo || '-'}</td>
+                    <td style="padding:10px; font-weight:bold; color:#27ae60">${estoque}</td>
+                    <td style="padding:10px;">R$ ${custoUnit.toFixed(2)}</td>
+                    <td style="padding:10px;">R$ ${custoTotal.toFixed(2)}</td>
+                    
+                    <td style="padding:10px; text-align:center;">
+                        <button onclick="zerarItemEstoque('${item.id}')" title="Remover da lista" style="border:none; background:transparent; color:#c0392b; cursor:pointer; font-size:1.4em; display:block; margin:0 auto;">
+                            🗑️
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        calcularValorTotalEstoque(filtrados);
+    };
+
+    // --- CÁLCULO TOTAL ---
+    window.calcularValorTotalEstoque = (lista) => {
+        const total = lista.reduce((acc, item) => {
+            const qtd = parseFloat(item.estoque)||0;
+            if(qtd <= 0) return acc; // Ignora negativos no cálculo do total visual
+            return acc + (qtd * (parseFloat(item.refPreco)||0));
+        }, 0);
+        const el = document.getElementById('total-valor-estoque');
+        if(el) el.innerText = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    };
+
+    // --- AÇÃO 1: ZERAR SALDO (REMOVE DA TABELA DE BAIXO) ---
+    window.zerarItemEstoque = async (id) => {
+        if(confirm("Deseja remover este item do estoque físico?\n(O saldo será zerado, mas o item continua no catálogo)")) {
+            try {
+                await updateDoc(doc(db, "insumos", id), { estoque: 0 });
+            } catch (e) {
+                alert("Erro: " + e.message);
+            }
+        }
+    };
+
+    // --- AÇÃO 2: EXCLUIR DEFINITIVAMENTE (REMOVE DE TUDO) ---
+    window.excluirDoSistema = async (id) => {
+        if(confirm("⚠️ PERIGO: Excluir do CATÁLOGO GERAL?\nIsso apaga o item de todas as receitas e do estoque.")) {
+            try {
+                await deleteDoc(doc(db, "insumos", id));
+            } catch (e) {
+                alert("Erro: " + e.message);
+            }
+        }
+    };
+    
+    // Alias de compatibilidade
+    window.excluirItemCatalogo = window.excluirDoSistema; 
+    window.excluirItemEstoque = window.zerarItemEstoque;
 
 
     // ============================================================
@@ -1258,6 +1307,56 @@
 
         alert("Entrada realizada com sucesso!");
         window.fecharModalEntrada();
+    };
+
+    // ============================================================
+    // BIBLIOTECA & ORÇAMENTO
+    // ============================================================
+    onSnapshot(collection(db,"drinks"), (s) => {
+        bibliotecaGlobal = []; const l = document.getElementById('lista-biblioteca-visual'); if(l) l.innerHTML = '';
+        s.forEach(doc => {
+            const d = doc.data(); bibliotecaGlobal.push({...d, id: doc.id});
+            if(l) l.innerHTML += `<div class="catalog-item" onclick="loadDrink('${doc.id}')"><div><b>${d.nome}</b></div><button onclick="delDrinkGlob('${doc.id}', event)" class="btn-trash">🗑️</button></div>`;
+        });
+        renderLib();
+        renderLibOrcamento();
+    });
+    
+       // --- LISTA COM TERMINOLOGIA COCKTAIL/MOCKTAIL (V62) ---
+    window.renderLibOrcamento = () => {
+        const d = document.getElementById('orcamento-lista-drinks');
+        if(!d) return;
+        d.innerHTML = '';
+        bibliotecaGlobal.sort((a,b)=>a.nome.localeCompare(b.nome));
+        
+        bibliotecaGlobal.forEach(x => {
+            const isMocktail = x.tipo === 'Mocktail' || x.tipo === 'Sem Álcool';
+            const tag = isMocktail 
+                ? '<span class="tag-alcool tag-sem">Mocktail</span>' 
+                : '<span class="tag-alcool tag-com">Cocktail</span>';
+                
+            d.innerHTML += `
+                <div class="chk-item">
+                    <input type="checkbox" id="orc_chk_${x.id}" value="${x.id}" onchange="countOrcDrinks()" class="chk-drink-orc">
+                    <label for="orc_chk_${x.id}" style="width:100%; cursor:pointer; display:flex; justify-content:space-between;">
+                        <span><b>${x.nome}</b> <small style="color:#666">(${x.tecnica||'-'})</small></span>
+                        ${tag}
+                    </label>
+                </div>`;
+        });
+    };
+
+    window.countOrcDrinks = () => {
+        const count = document.querySelectorAll('.chk-drink-orc:checked').length;
+        document.getElementById('orcCountDrinks').innerText = count;
+    };
+
+    window.calcOrcamento = () => {
+        const qtd = parseInt(document.getElementById('orcQtdPessoas').value) || 0;
+        const valorPorPessoa = parseFloat(document.getElementById('orcValorPessoa').value) || 0;
+        const extras = parseFloat(document.getElementById('orcExtras').value) || 0;
+        const total = (qtd * valorPorPessoa) + extras;
+        document.getElementById('orcTotalDisplay').innerText = formatCurrency(total);
     };
 
     // ==========================================
