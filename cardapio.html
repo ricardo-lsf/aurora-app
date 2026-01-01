@@ -34,10 +34,20 @@
         .drink-card.esgotado .drink-img { filter: grayscale(100%); }
         .tag-esgotado { background: #c0392b; color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 4px; margin-top: 2px; display: inline-block; font-weight: bold; }
 
-        .drink-img { width: 70px; height: 70px; border-radius: 8px; object-fit: cover; background: #eee; }
+        /* FOTO E INTERAÇÃO (NOVO) */
+        .img-container { position: relative; width: 70px; height: 70px; border-radius: 8px; overflow: hidden; cursor: pointer; flex-shrink: 0; }
+        .drink-img { width: 100%; height: 100%; object-fit: cover; background: #eee; }
+        
+        /* Badge "Ver Mais" sobre a foto */
+        .ver-mais-badge {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: rgba(0,0,0,0.6); color: white; font-size: 9px;
+            text-align: center; padding: 2px 0; text-transform: uppercase;
+        }
+
         .drink-info { flex: 1; padding: 0 15px; }
         .drink-name { font-weight: bold; font-size: 1.1em; color: #2c3e50; }
-        .stock-info { font-size: 0.75em; color: #7f8c8d; margin-top: 2px; } /* Novo: Info de estoque visual */
+        .stock-info { font-size: 0.75em; color: #7f8c8d; margin-top: 2px; }
         .tag-mocktail { font-size: 0.7em; background: #e8f8f5; color: #27ae60; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px; border: 1px solid #a9dfbf; }
         
         /* CONTROLS (+/-) */
@@ -63,6 +73,32 @@
         .status-desc { color: #7f8c8d; padding: 0 20px; }
         
         @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+
+        /* --- NOVO: ESTILO DO MODAL DE DETALHES --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); display: none;
+            justify-content: center; align-items: center; z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: #fff; width: 90%; max-width: 400px;
+            border-radius: 15px; overflow: hidden; position: relative;
+            animation: zoomIn 0.3s ease;
+        }
+        .modal-header-img { width: 100%; height: 250px; object-fit: cover; }
+        .modal-body { padding: 20px; text-align: center; }
+        .modal-title { margin: 0 0 10px 0; color: #2c3e50; font-family: 'Georgia', serif; }
+        .modal-ingredientes { list-style: none; padding: 0; margin: 15px 0; text-align: left; display: inline-block; width:100%; }
+        .modal-ingredientes li { padding: 8px 0; border-bottom: 1px dashed #eee; color: #555; display:flex; align-items:center; }
+        .modal-ingredientes li::before { content: "🔹"; margin-right:8px; font-size:0.8em; }
+        .btn-fechar-modal {
+            position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.9);
+            border: none; width: 35px; height: 35px; border-radius: 50%;
+            font-weight: bold; font-size: 18px; color: #333; cursor: pointer;
+        }
+        @keyframes zoomIn { from {transform: scale(0.8); opacity: 0;} to {transform: scale(1); opacity: 1;} }
+
     </style>
 </head>
 <body>
@@ -84,7 +120,7 @@
 
     <div id="view-menu" class="view">
         <div class="menu-grid" id="menu-list">
-            </div>
+        </div>
     </div>
 
     <div id="view-status" class="view">
@@ -112,19 +148,38 @@
         <span style="font-size:1.5em;">➔</span>
     </div>
 
+    <div id="modal-detalhes" class="modal-overlay" onclick="fecharDetalhes(event)">
+        <div class="modal-content">
+            <button class="btn-fechar-modal" onclick="fecharDetalhes(event)">✕</button>
+            <img id="modal-img" src="" class="modal-header-img" alt="Drink">
+            <div class="modal-body">
+                <h2 id="modal-titulo" class="modal-title"></h2>
+                
+                <div style="background:#f8f9fa; padding:15px; border-radius:10px; margin-top:10px; text-align:left;">
+                    <h4 style="margin:0 0 10px 0; color:#e67e22; text-transform:uppercase; font-size:0.8em; border-bottom:1px solid #ddd; padding-bottom:5px;">O que vai:</h4>
+                    <ul id="modal-lista" class="modal-ingredientes"></ul>
+                </div>
+
+                <button onclick="fecharDetalhes(event)" style="margin-top:15px; background:#2c3e50; color:white; border:none; padding:12px; border-radius:8px; width:100%; font-weight:bold;">
+                    Voltar ao Cardápio
+                </button>
+            </div>
+        </div>
+    </div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, onSnapshot, addDoc, doc, getDoc, query, where, orderBy, limit, serverTimestamp, writeBatch, increment} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // ⚠️ COLE SUA CONFIG AQUI ⚠️
-	const firebaseConfig = {
-	  apiKey: "AIzaSyBu8y9RQMv9fbxORcRLAZN4OlA1IEXyZUU",
-	  authDomain: "aurora-bar-system.firebaseapp.com",
-	  projectId: "aurora-bar-system",
-	  storageBucket: "aurora-bar-system.firebasestorage.app",
-	  messagingSenderId: "380441809814",
-	  appId: "1:380441809814:web:ad008f37d30a5b0abe03b7"
-	};
+    const firebaseConfig = {
+      apiKey: "AIzaSyBu8y9RQMv9fbxORcRLAZN4OlA1IEXyZUU",
+      authDomain: "aurora-bar-system.firebaseapp.com",
+      projectId: "aurora-bar-system",
+      storageBucket: "aurora-bar-system.firebasestorage.app",
+      messagingSenderId: "380441809814",
+      appId: "1:380441809814:web:ad008f37d30a5b0abe03b7"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -137,6 +192,7 @@
         isBalcao: localStorage.getItem('aurora_is_balcao') === 'true' 
     };
     let carrinho = {}; 
+    let cardapioCache = []; // NOVO: Guarda os dados para o modal não precisar ir no banco de novo
 
     // --- INICIALIZAÇÃO ---
     window.onload = async () => {
@@ -197,17 +253,22 @@
         }
     }
 
-    // --- CARDÁPIO ---
+    // --- CARDÁPIO (ATUALIZADO COM MODAL) ---
     function carregarCardapio() {
         const lista = document.getElementById('menu-list');
         if(lista.children.length === 0) lista.innerHTML = '<p style="text-align:center">Carregando...</p>';
 
         onSnapshot(collection(db, "eventos", eventoAtivoID, "cardapio"), (snap) => {
             lista.innerHTML = '';
+            cardapioCache = []; // Limpa cache
+            
             snap.forEach(doc => {
                 const d = doc.data();
                 const id = doc.id;
                 
+                // Salva no cache para o modal usar
+                const indexCache = cardapioCache.push(d) - 1;
+
                 const isMocktail = (d.tipo === 'Mocktail' || d.tipo === 'Sem Álcool' || d.nome.toLowerCase().includes('sem álcool')); 
                 
                 // --- LÓGICA DE ESTOQUE ---
@@ -224,10 +285,11 @@
                 let tag = isMocktail ? '<span class="tag-mocktail">Sem Álcool</span>' : '';
                 if(semEstoque) tag = '<span class="tag-esgotado">ESGOTADO</span>';
 
-                // CORREÇÃO: Passando o 'estoqueAtual' na função alterarQtd
+                // CORREÇÃO: Foto clicável
                 div.innerHTML = `
-                    <div style="position:relative">
+                    <div class="img-container" onclick="verDetalhes(${indexCache})">
                         <img src="${d.imagem || './imagens/foto.jpg'}" class="drink-img">
+                        <div class="ver-mais-badge">🔍 Ver Detalhes</div>
                     </div>
                     <div class="drink-info">
                         <div class="drink-name">${d.nome}</div>
@@ -246,6 +308,42 @@
         });
         mostrarView('view-menu');
     }
+
+    // --- LÓGICA DO MODAL DE DETALHES (NOVO) ---
+    window.verDetalhes = (index) => {
+        const item = cardapioCache[index];
+        if(!item) return;
+
+        // Preenche info
+        document.getElementById('modal-titulo').innerText = item.nome;
+        document.getElementById('modal-img').src = item.imagem || './imagens/foto.jpg';
+
+        // Preenche ingredientes
+        const ul = document.getElementById('modal-lista');
+        ul.innerHTML = '';
+
+        // Tenta pegar ingredientes (novo) ou receita (antigo)
+        const receita = item.ingredientes || item.receita;
+
+        if (receita && Array.isArray(receita) && receita.length > 0) {
+            receita.forEach(ing => {
+                const nomeItem = ing.nome || ing.produto || 'Item secreto';
+                ul.innerHTML += `<li>${nomeItem}</li>`;
+            });
+        } else {
+            ul.innerHTML = '<li>Receita Especial da Casa</li>';
+        }
+
+        // Abre
+        document.getElementById('modal-detalhes').style.display = 'flex';
+    };
+
+    window.fecharDetalhes = (e) => {
+        // Só fecha se clicar no overlay escuro ou no botão, não no conteúdo branco
+        if(e.target.id === 'modal-detalhes' || e.target.tagName === 'BUTTON') {
+            document.getElementById('modal-detalhes').style.display = 'none';
+        }
+    };
 
     // CORREÇÃO: Função recebe agora o 'estoqueMax' para validar
     window.alterarQtd = (id, nome, delta, estoqueMax) => {
@@ -346,8 +444,6 @@
     }
 
     // --- ENVIAR PEDIDO ---
-	// CORREÇÃO V68: Enviar Pedido + Baixa de Estoque IMEDIATA (Trava o Gap)
-
     window.enviarPedido = async () => {
         const idsCarrinho = Object.keys(carrinho);
         const itensValidos = idsCarrinho.filter(id => carrinho[id].qtd > 0);
@@ -376,8 +472,6 @@
             });
 
             // 2. DÁ BAIXA NO ESTOQUE IMEDIATAMENTE (Para travar outros clientes)
-            // Só baixa estoque se NÃO for o Balcão (Staff geralmente controla visualmente)
-            // Ou se você quiser que o Staff também baixe estoque, remova o 'if'
             if (!usuario.isBalcao) { 
                 itensValidos.forEach(id => {
                     const itemRef = doc(db, "eventos", eventoAtivoID, "cardapio", id);
@@ -399,7 +493,6 @@
             if (usuario.isBalcao) {
                 alert("Pedido Balcão Enviado! ✅");
             }
-            // Se for usuário App, o listener vai jogar pra tela de status
             
         } catch (e) {
             console.error(e);

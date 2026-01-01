@@ -293,27 +293,54 @@
             atualizarTotais();
         }
 
+    // --- FUNÇÃO DE RECEITA (VERSÃO HÍBRIDA: LÊ FORMATO NOVO E ANTIGO) ---
+// --- FUNÇÃO DE RECEITA (VERSÃO FINAL: LÊ 'unMedida' E 'un') ---
         window.verReceita = async (idOriginal) => {
             if(!idOriginal) return;
             try {
                 const docSnap = await getDoc(doc(db, "drinks", idOriginal));
                 if(docSnap.exists()) {
                     const data = docSnap.data();
+                    
                     document.getElementById('recImg').src = data.imagem || '';
-                    document.getElementById('recNome').innerText = data.nome;
+                    document.getElementById('recNome').innerText = data.nome || 'Sem nome';
                     document.getElementById('recTecnica').innerText = data.tecnica || 'Técnica Padrão';
-                    document.getElementById('recTexto').innerText = data.preparo || 'Sem modo de preparo cadastrado.';
+                    document.getElementById('recTexto').innerText = data.preparo || 'Modo de preparo não informado.';
                     
                     const lista = document.getElementById('recIngredientes');
                     lista.innerHTML = '';
-                    if(data.receita && data.receita.length > 0) {
-                        data.receita.forEach(i => {
-                            lista.innerHTML += `<li><span>${i.nome}</span> ${i.qtd}${i.un}</li>`;
+                    
+                    // Pega lista nova (ingredientes) ou antiga (receita)
+                    const itensReceita = data.ingredientes || data.receita || [];
+
+                    if(itensReceita.length > 0) {
+                        itensReceita.forEach(item => {
+                            let nomeDisplay = '';
+                            let qtdDisplay = '';
+
+                            if (typeof item === 'string') {
+                                nomeDisplay = item;
+                            } else {
+                                nomeDisplay = item.nome || item.produto || 'Ingrediente';
+                                
+                                // CORREÇÃO AQUI: Lê 'unMedida' (novo) OU 'un' (antigo)
+                                const unidade = item.unMedida || item.un || '';
+                                
+                                if(item.qtd) {
+                                    qtdDisplay = `${item.qtd}${unidade}`;
+                                }
+                            }
+
+                            lista.innerHTML += `<li><span>${nomeDisplay}</span> ${qtdDisplay}</li>`;
                         });
-                    } else { lista.innerHTML = '<li>Sem ingredientes cadastrados.</li>'; }
+                    } else { 
+                        lista.innerHTML = '<li>Sem ingredientes cadastrados.</li>'; 
+                    }
                     
                     document.getElementById('modalReceita').style.display = 'flex';
-                } else { alert("Ficha técnica não encontrada no sistema."); }
+                } else { 
+                    alert("Ficha técnica não encontrada."); 
+                }
             } catch(e) { console.error(e); }
         };
 
