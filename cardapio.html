@@ -309,33 +309,69 @@
         mostrarView('view-menu');
     }
 
-    // --- LÓGICA DO MODAL DE DETALHES (NOVO) ---
-    window.verDetalhes = (index) => {
-        const item = cardapioCache[index];
-        if(!item) return;
+    // --- LÓGICA DO MODAL DE DETALHES (SÓ INGREDIENTES, SEM QUANTIDADE) ---
+    window.verDetalhes = async (index) => {
+        const itemLocal = cardapioCache[index];
+        if(!itemLocal) return;
 
-        // Preenche info
-        document.getElementById('modal-titulo').innerText = item.nome;
-        document.getElementById('modal-img').src = item.imagem || './imagens/foto.jpg';
-
-        // Preenche ingredientes
-        const ul = document.getElementById('modal-lista');
-        ul.innerHTML = '';
-
-        // Tenta pegar ingredientes (novo) ou receita (antigo)
-        const receita = item.ingredientes || item.receita;
-
-        if (receita && Array.isArray(receita) && receita.length > 0) {
-            receita.forEach(ing => {
-                const nomeItem = ing.nome || ing.produto || 'Item secreto';
-                ul.innerHTML += `<li>${nomeItem}</li>`;
-            });
-        } else {
-            ul.innerHTML = '<li>Receita Especial da Casa</li>';
-        }
-
-        // Abre
+        // 1. Abre o modal e mostra carregando
         document.getElementById('modal-detalhes').style.display = 'flex';
+        document.getElementById('modal-titulo').innerText = itemLocal.nome;
+        document.getElementById('modal-img').src = itemLocal.imagem || './imagens/foto.jpg';
+        
+        const ul = document.getElementById('modal-lista');
+        ul.innerHTML = '<li style="text-align:center; color:#888;">🔍 Buscando receita...</li>';
+
+        try {
+            let ingredientesFinais = [];
+
+            // CENÁRIO A: Receita Local
+            if (itemLocal.ingredientes && itemLocal.ingredientes.length > 0) {
+                ingredientesFinais = itemLocal.ingredientes;
+            } 
+            // CENÁRIO B: Busca Remota (Biblioteca)
+            else if (itemLocal.idOriginal) {
+                const docRef = doc(db, "drinks", itemLocal.idOriginal);
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    const dadosOriginais = docSnap.data();
+                    itemLocal.ingredientes = dadosOriginais.ingredientes || dadosOriginais.receita || [];
+                    ingredientesFinais = itemLocal.ingredientes;
+                }
+            }
+
+            // 2. Renderiza a Lista
+            ul.innerHTML = ''; 
+
+            if (ingredientesFinais && ingredientesFinais.length > 0) {
+                ingredientesFinais.forEach(ing => {
+                    let nomeItem = "";
+
+                    // Tratamento para pegar apenas o NOME
+                    if (typeof ing === 'object') {
+                        nomeItem = ing.nome || ing.produto || ing.item || "Ingrediente";
+                    } else {
+                        nomeItem = String(ing);
+                    }
+
+                    // Ignora instruções longas (modo de preparo)
+                    if(nomeItem.length > 50) return; 
+
+                    // AQUI ESTÁ A ALTERAÇÃO: Renderiza apenas o nome, sem quantidades
+                    ul.innerHTML += `
+                        <li style="display:flex; align-items:center;">
+                            <span>${nomeItem}</span>
+                        </li>`;
+                });
+            } else {
+                ul.innerHTML = '<li style="color:#999; font-style:italic; text-align:center;">Segredo da casa</li>';
+            }
+
+        } catch (error) {
+            console.error("Erro ao buscar detalhes:", error);
+            ul.innerHTML = '<li style="color:red">Erro ao carregar receita.</li>';
+        }
     };
 
     window.fecharDetalhes = (e) => {
