@@ -143,8 +143,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, increment, query, where, getDocs, getDoc, orderBy, limit, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, increment, query, where, getDocs, getDoc, orderBy, limit, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         // ⚠️ COLE SUA CONFIG AQUI ⚠️
 		const firebaseConfig = {
 		  apiKey: "AIzaSyBu8y9RQMv9fbxORcRLAZN4OlA1IEXyZUU",
@@ -210,6 +209,7 @@
         }
 
         // --- FUNÇÃO MUDAR (Controlador + / -) ---
+        // --- FUNÇÃO MUDAR (ATUALIZADA COM BAIXA DE ESTOQUE) ---
         window.mudar = async (id, q) => {
             if (!eventoID || eventoStatus === 'fechado') return;
             const d = drinks.find(x => x.id === id);
@@ -227,9 +227,13 @@
             if (q > 0) navigator.vibrate(50);
             adicionarLog(d.nome, q);
 
+            // --- AQUI COMEÇA A ATUALIZAÇÃO DO ESTOQUE ---
+            // Chamamos a função sem 'await' para não travar a tela do bartender (roda em segundo plano)
+            gerenciarEstoqueInsumos(d, q).catch(err => console.error("Erro estoque:", err));
+
             try {
                 if (q > 0) {
-                    // ADICIONAR (+): Baixa estoque e Cria Venda
+                    // ADICIONAR (+): Baixa estoque do Evento e Cria Venda
                     await updateDoc(doc(db, "eventos", eventoID, "cardapio", id), { estoque: increment(-1) });
                     await addDoc(collection(db, "eventos", eventoID, "vendas"), {
                         drink: d.nome,
@@ -240,22 +244,17 @@
                     });
                 } else {
                     // REMOVER (-): Estorno Automático
-                    // 1. Busca a última venda deste drink
                     const vendasRef = collection(db, "eventos", eventoID, "vendas");
                     const qEstorno = query(vendasRef, where("drink", "==", d.nome), orderBy("hora", "desc"), limit(1));
                     const snapEstorno = await getDocs(qEstorno);
 
                     if (!snapEstorno.empty) {
-                        // 2. Apaga a venda (corrige financeiro/gráfico)
                         await deleteDoc(snapEstorno.docs[0].ref);
-                        
-                        // 3. Devolve estoque
                         await updateDoc(doc(db, "eventos", eventoID, "cardapio", id), { estoque: increment(1) });
                     }
                 }
             } catch (e) {
                 console.error("Erro ao sincronizar:", e);
-                // Opcional: Reverter contador local em caso de erro crítico
             }
         };
 
@@ -293,8 +292,7 @@
             atualizarTotais();
         }
 
-    // --- FUNÇÃO DE RECEITA (VERSÃO HÍBRIDA: LÊ FORMATO NOVO E ANTIGO) ---
-// --- FUNÇÃO DE RECEITA (VERSÃO FINAL: LÊ 'unMedida' E 'un') ---
+    // --- FUNÇÃO DE RECEITA (VERSÃO FINAL: LÊ 'unMedida' E 'un') ---
         window.verReceita = async (idOriginal) => {
             if(!idOriginal) return;
             try {
@@ -372,6 +370,62 @@
                     }
                 }
             });
+        }
+
+        // --- NOVO: GERENCIADOR DE ESTOQUE GLOBAL (INSUMOS) ---
+        async function gerenciarEstoqueInsumos(drink, operacao) {
+            // operacao: 1 para Venda (Baixar), -1 para Cancelamento (Devolver)
+            // Se vendeu (+1), precisamos tirar do estoque (increment -qtd)
+            // Se cancelou (-1), precisamos devolver (increment +qtd)
+            
+            console.log(`📦 Atualizando estoque físico para: ${drink.nome} (${operacao > 0 ? 'Baixa' : 'Estorno'})`);
+
+            let receita = drink.ingredientes || drink.receita;
+
+            // Se a receita não veio no objeto, busca na biblioteca pelo ID Original
+            if ((!receita || receita.length === 0) && drink.idOriginal) {
+                try {
+                    const snap = await getDoc(doc(db, "drinks", drink.idOriginal));
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        receita = data.ingredientes || data.receita;
+                    }
+                } catch (e) { console.error("Erro ao buscar ficha técnica:", e); }
+            }
+
+            if (!receita || !Array.isArray(receita)) return;
+
+            const batch = writeBatch(db);
+            let itensAfetados = 0;
+
+            receita.forEach(item => {
+                // Pega o ID do insumo (insumoId é o padrão novo, id é o antigo)
+                const idInsumo = item.insumoId || item.id;
+                
+                if (idInsumo) {
+                    const qtdReceita = parseFloat(item.qtd) || 0;
+                    
+                    if (qtdReceita > 0) {
+                        const refInsumo = doc(db, "insumos", idInsumo);
+                        
+                        // A MÁGICA MATEMÁTICA:
+                        // Se operacao é 1 (Venda) -> Multiplicador deve ser -1 (para baixar)
+                        // Se operacao é -1 (Estorno) -> Multiplicador deve ser 1 (para devolver)
+                        const fator = operacao * -1; 
+                        const qtdFinal = qtdReceita * fator;
+
+                        batch.update(refInsumo, { 
+                            estoqueAtual: increment(qtdFinal) 
+                        });
+                        itensAfetados++;
+                    }
+                }
+            });
+
+            if (itensAfetados > 0) {
+                await batch.commit();
+                console.log(`✅ Estoque atualizado! ${itensAfetados} insumos processados.`);
+            }
         }
 
         function adicionarLog(n,q){const i={n,q,h:new Date().toLocaleTimeString().substring(0,5),u:usuarioAtual};localLogs.unshift(i);if(localLogs.length>30)localLogs.pop();localStorage.setItem('logs_ev_'+eventoID,JSON.stringify(localLogs));renderLog(i,true);}
