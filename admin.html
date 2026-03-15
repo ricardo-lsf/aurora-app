@@ -914,7 +914,7 @@
 
 <script type="module">
 	import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, query, orderBy, writeBatch, where, getDocs, limit, getDoc, serverTimestamp, increment, collectionGroup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, query, orderBy, writeBatch, where, getDocs, limit, getDoc, serverTimestamp, increment, collectionGroup, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // ⚠️ COLE SUA CONFIG AQUI ⚠️
 	const firebaseConfig = {
@@ -928,6 +928,24 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
+
+    // A variável db que você já tem no seu código
+    // const db = getFirestore(app); 
+
+    enableIndexedDbPersistence(db)
+    .then(() => {
+        console.log("Persistência offline do Firebase ativada com sucesso!");
+    })
+    .catch((err) => {
+        if (err.code == 'failed-precondition') {
+            console.warn("Múltiplas abas abertas. A persistência só funciona em uma aba por vez.");
+        } else if (err.code == 'unimplemented') {
+            console.warn("O navegador atual não suporta persistência offline.");
+        }
+    });
+
+
 
     // --- UTILS ---
     window.toggleMenu = () => { document.getElementById('mainSidebar').classList.toggle('active'); document.querySelector('.sidebar-overlay').style.display = document.getElementById('mainSidebar').classList.contains('active') ? 'block' : 'none'; };
