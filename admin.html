@@ -912,6 +912,13 @@
     
     <div id="modalEquipe" class="modal-overlay"><div class="modal"><span class="close-modal" onclick="fecharModalEquipe()">×</span><h3 id="eqTitulo">👤 Membro</h3><div style="display:grid; gap:10px"><input type="hidden" id="eqId"><div><label>Nome</label><input type="text" id="eqNome"></div><div class="grid-2"><div><label>Telefone</label><input type="text" id="eqTel" onkeyup="mascaraTelefone(this)"></div><div><label>CPF</label><input type="text" id="eqCPF" onkeyup="mascaraCPF(this)"></div></div><div class="grid-2"><div><label>Data Nasc</label><input type="date" id="eqData" onchange="calcIdade()"></div><div><label>Idade</label><input type="text" id="eqIdade" readonly></div></div><div class="grid-2"><select id="eqSexo"><option value="M">M</option><option value="F">F</option></select><select id="eqFuncao"><option>Bartender</option><option>Barback</option><option>Chefe de Bar</option><option>Garçom</option><option>Copeiro</option><option>Gerente</option></select></div><div class="grid-2"><input type="number" id="eqTaxa" placeholder="Taxa"><input type="number" id="eqAdicional" placeholder="Add"></div><button onclick="salvarEquipe()" class="btn-success" style="margin-top:10px;padding:12px">SALVAR</button></div></div></div>
 
+
+    <div id="status-conexao" style="position: fixed; bottom: 20px; right: 20px; background: #fff; padding: 8px 15px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 8px; font-family: sans-serif; font-size: 13px; z-index: 9999; border: 1px solid #eee; transition: all 0.3s ease;">
+        <div id="bolinha-status" style="width: 12px; height: 12px; border-radius: 50%; background-color: #2ecc71; box-shadow: 0 0 5px #2ecc71;"></div>
+        <span id="texto-status" style="color: #27ae60; font-weight: bold;">Online</span>
+    </div>
+
+
 <script type="module">
 	import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, query, orderBy, writeBatch, where, getDocs, limit, getDoc, serverTimestamp, increment, collectionGroup, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -1965,95 +1972,190 @@
     // 2. NOVA FUNÇÃO: APLICAR ESTOQUE EM MASSA
     window.aplicarEstoqueMassa=async()=>{if(!eventoID) return;const qtd = parseInt(document.getElementById('estoqueMassa').value);if(!qtd || qtd < 0) return alert("Digite um valor válido.");if(!confirm(`ATENÇÃO: Isso vai mudar o estoque de TODOS os drinks deste evento para ${qtd}.\nDeseja continuar?`)) return;const snap = await getDocs(collection(db, "eventos", eventoID, "cardapio"));const batch = writeBatch(db);snap.forEach(doc => {batch.update(doc.ref, { estoque: qtd });});await batch.commit();alert("Estoque atualizado em massa!");};
 	
-// 5.2 LISTA DE COMPRAS (LÓGICA CORRIGIDA + LAYOUT ARRUMADO)
-    window.gerarListaCompras = async () => {
-        if(!eventoID) return alert("Selecione um evento!");
+// 5.2 LISTA DE COMPRAS (COM CÁLCULO ESTIMADO DE CUSTOS E LAYOUT ATUALIZADO)
+window.gerarListaCompras = async () => {
+    if(!eventoID) return alert("Selecione um evento!");
+    
+    // --- 1. LÓGICA DE DADOS ---
+    const snaps = await getDocs(collection(db, "eventos", eventoID, "cardapio"));
+    const totais = {}; 
+
+    // Cálculo inicial de quantidades (Mantido igual)
+    snaps.docs.forEach(doc => {
+        const dE = doc.data(); 
+        const dG = typeof bibliotecaGlobal !== 'undefined' ? bibliotecaGlobal.find(g => g.id === dE.idOriginal) : null;
         
-        // --- 1. LÓGICA DE DADOS (Mantida a correção do undefined) ---
-        const snaps = await getDocs(collection(db, "eventos", eventoID, "cardapio"));
-        const totais = {}; 
+        const receitaUsar = (dG && dG.ingredientes) ? dG.ingredientes : 
+                            (dG && dG.receita) ? dG.receita : 
+                            (dE.ingredientes || dE.receita);
 
-        snaps.docs.forEach(doc => {
-            const dE = doc.data(); 
-            const dG = typeof bibliotecaGlobal !== 'undefined' ? bibliotecaGlobal.find(g => g.id === dE.idOriginal) : null;
-            
-            // Prioridade de Receita
-            const receitaUsar = (dG && dG.ingredientes) ? dG.ingredientes : 
-                                (dG && dG.receita) ? dG.receita : 
-                                (dE.ingredientes || dE.receita);
+        if (receitaUsar && Array.isArray(receitaUsar)) { 
+            receitaUsar.forEach(i => { 
+                const qtdNecessaria = (parseFloat(i.qtd) || 0) * (parseFloat(dE.estoque) || 0); 
+                const nomeChave = (i.nome || i.produto || 'Item').trim();
 
-            if (receitaUsar && Array.isArray(receitaUsar)) { 
-                receitaUsar.forEach(i => { 
-                    const qtdNecessaria = (parseFloat(i.qtd) || 0) * (parseFloat(dE.estoque) || 0); 
-                    
-                    // Chave pelo nome (para manter seu padrão)
-                    const nomeChave = (i.nome || i.produto || 'Item').trim();
-
-                    if (!totais[nomeChave]) {
-                        // Correção da Unidade
-                        const unidade = i.unMedida || i.un || 'ml';
-                        totais[nomeChave] = { qtd: 0, un: unidade }; 
-                    }
-                    totais[nomeChave].qtd += qtdNecessaria; 
-                }); 
-            }
-        });
-
-        // Prepara Cache
-        listaComprasCache = [];
-        Object.keys(totais).forEach(nome => { 
-            let item = totais[nome];
-            let q = item.qtd, u = item.un; 
-            
-            if(u === 'ml' && q >= 1000){ q /= 1000; u = 'L'; } 
-            else if(u === 'g' && q >= 1000){ q /= 1000; u = 'Kg'; } 
-            
-            listaComprasCache.push({ nome: nome, qtd: q.toFixed(2).replace('.00',''), un: u });
-        });
-        listaComprasCache.sort((a,b) => a.nome.localeCompare(b.nome));
-        
-        // --- 2. RENDERIZAÇÃO VISUAL (AQUI ESTÁ A CORREÇÃO DO LAYOUT) ---
-        const container = document.getElementById('lista-revisao-items'); 
-        if(container) {
-            container.innerHTML = '';
-            
-            if (listaComprasCache.length === 0) { 
-                container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Nenhum item calculado.</p>'; 
-            } else {
-                listaComprasCache.forEach((item, index) => {
-                    // Layout mais rígido para evitar deformação
-                    container.innerHTML += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee; background:#fff;">
-                        
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <input type="checkbox" id="chk_compra_${index}" style="width:18px; height:18px; cursor:pointer; margin:0;">
-                            <label for="chk_compra_${index}" style="cursor:pointer; margin:0; font-size:14px; color:#333;">
-                                ${item.nome}
-                            </label>
-                        </div>
-
-                        <div style="font-weight:bold; color:#2980b9; font-size:14px; white-space:nowrap;">
-                            ${item.qtd} ${item.un}
-                        </div>
-
-                    </div>`;
-                });
-            }
-            document.getElementById('modalRevisaoCompras').style.display = 'flex';
+                if (!totais[nomeChave]) {
+                    const unidade = i.unMedida || i.un || 'ml';
+                    totais[nomeChave] = { qtd: 0, un: unidade }; 
+                }
+                totais[nomeChave].qtd += qtdNecessaria; 
+            }); 
         }
-    };
+    });
 
-    window.imprimirListaFinal = () => {
-        let comprar = [], estoque = [];
-        listaComprasCache.forEach((item, index) => { const chk = document.getElementById(`chk_compra_${index}`); if (chk && chk.checked) estoque.push(item); else comprar.push(item); });
-        let msg = `<html><head><title>Lista de Compras</title><style>body{font-family:sans-serif;}h2{border-bottom:2px solid #333;}ul{list-style:none;padding:0;}li{padding:5px 0;border-bottom:1px dotted #ccc;}</style></head><body><h1>🛒 LISTA DE COMPRAS - ${document.getElementById('titulo-evento').innerText}</h1><h2 style="color:#c0392b">🔴 A COMPRAR (Falta)</h2><ul>`;
-        if(comprar.length === 0) msg += "<li>Nada a comprar!</li>"; else comprar.forEach(i => msg += `<li>[ ] <b>${i.nome}</b>: ${i.qtd} ${i.un}</li>`);
-        msg += `</ul><h2 style="color:#27ae60; margin-top:30px;">🟢 EM ESTOQUE (Já tenho)</h2><ul>`;
-        if(estoque.length === 0) msg += "<li>Nada marcado em estoque.</li>"; else estoque.forEach(i => msg += `<li>[ok] <b>${i.nome}</b>: ${i.qtd} ${i.un}</li>`);
-        msg += `</ul></body></html>`;
-        const w = window.open("","_blank"); w.document.write(msg); w.document.close(); w.print();
-        document.getElementById('modalRevisaoCompras').style.display = 'none';
-    };
+// --- 1.5 LÓGICA DE PREÇOS (Cálculo Corrigido por Custo de Volume) ---
+    const insumosSnap = await getDocs(collection(db, "insumos"));
+    const catalogoPrecos = {};
+    
+    insumosSnap.forEach(doc => {
+        const dados = doc.data();
+        const nomeInsumo = (dados.nome || dados.produto || '').trim().toLowerCase();
+        
+        // Pega o custo fracionado (por ml/g) e o preço da garrafa inteira
+        const custoVol = typeof dados.custoPorVol === 'number' ? dados.custoPorVol : (parseFloat(dados.custoPorVol) || 0);
+        const precoGarrafa = typeof dados.refPreco === 'number' ? dados.refPreco : (parseFloat(dados.refPreco) || 0);
+        
+        if(nomeInsumo) {
+            catalogoPrecos[nomeInsumo] = {
+                custoPorVol: custoVol,
+                precoIntegral: precoGarrafa
+            };
+        }
+    });
+
+    // Prepara Cache e calcula os subtotais
+    listaComprasCache = [];
+    let valorTotalGeral = 0;
+
+    Object.keys(totais).forEach(nome => { 
+        let item = totais[nome];
+        
+        // q_raw é a quantidade real em ml ou gramas (ex: 1500)
+        let q_raw = item.qtd; 
+        
+        // q_exibicao é o que vai aparecer na tela (ex: 1.5 L)
+        let q_exibicao = item.qtd; 
+        let u = item.un; 
+        
+        // Busca os dados de preço no nosso dicionário
+        const nomeParaBusca = nome.trim().toLowerCase();
+        const dadosPreco = catalogoPrecos[nomeParaBusca] || { custoPorVol: 0, precoIntegral: 0 };
+        
+        // A MÁGICA ACONTECE AQUI: Multiplica a quantidade bruta (em ml/g) pelo custo de 1 ml/g
+        let subtotal = 0;
+        if (dadosPreco.custoPorVol > 0) {
+            subtotal = q_raw * dadosPreco.custoPorVol;
+        } else {
+            // Se por acaso o custoPorVol for zero, tenta fazer uma conta de segurança usando a garrafa
+            subtotal = q_raw * dadosPreco.precoIntegral; 
+        }
+
+        valorTotalGeral += subtotal;
+        
+        // Só DEPOIS de calcular o dinheiro, convertemos a unidade para exibir bonito na tela
+        if(u === 'ml' && q_exibicao >= 1000){ q_exibicao /= 1000; u = 'L'; } 
+        else if(u === 'g' && q_exibicao >= 1000){ q_exibicao /= 1000; u = 'Kg'; } 
+        
+        listaComprasCache.push({ 
+            nome: nome, 
+            qtd: q_exibicao.toFixed(2).replace('.00',''), 
+            un: u,
+            precoUnit: dadosPreco.precoIntegral, // Mostra o valor da garrafa/pacote fechado na coluna R$ Un.
+            subtotal: subtotal
+        });
+    });
+    listaComprasCache.sort((a,b) => a.nome.localeCompare(b.nome));
+    
+    // --- 2. RENDERIZAÇÃO VISUAL ---
+    const container = document.getElementById('lista-revisao-items'); 
+    if(container) {
+        container.innerHTML = '';
+        
+        if (listaComprasCache.length === 0) { 
+            container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Nenhum item calculado.</p>'; 
+        } else {
+            // Cabeçalho da Tabela
+            container.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 10px; background:#f8f9fa; border-bottom:2px solid #ddd; font-weight:bold; font-size:12px; color:#555;">
+                <div style="flex:2;">Insumo</div>
+                <div style="flex:1; text-align:center;">Qtd</div>
+                <div style="flex:1; text-align:right;">R$ Un.</div>
+                <div style="flex:1; text-align:right;">Subtotal</div>
+            </div>`;
+
+            listaComprasCache.forEach((item, index) => {
+                const precoFormatado = item.precoUnit > 0 ? `R$ ${item.precoUnit.toFixed(2).replace('.', ',')}` : '-';
+                const subtotalFormatado = item.subtotal > 0 ? `R$ ${item.subtotal.toFixed(2).replace('.', ',')}` : '-';
+
+                container.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee; background:#fff; font-size:14px;">
+                    
+                    <div style="flex:2; display:flex; align-items:center; gap:8px; overflow:hidden;">
+                        <input type="checkbox" id="chk_compra_${index}" style="width:16px; height:16px; cursor:pointer; margin:0; flex-shrink:0;">
+                        <label for="chk_compra_${index}" style="cursor:pointer; margin:0; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${item.nome}">
+                            ${item.nome}
+                        </label>
+                    </div>
+
+                    <div style="flex:1; font-weight:bold; color:#2980b9; text-align:center; white-space:nowrap;">
+                        ${item.qtd} <span style="font-size:11px;">${item.un}</span>
+                    </div>
+
+                    <div style="flex:1; color:#7f8c8d; text-align:right; font-size:12px;">
+                        ${precoFormatado}
+                    </div>
+
+                    <div style="flex:1; font-weight:bold; color:#27ae60; text-align:right;">
+                        ${subtotalFormatado}
+                    </div>
+
+                </div>`;
+            });
+
+            // Rodapé com o Total Geral
+            container.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 10px; background:#ecf0f1; border-top:2px solid #bdc3c7; font-size:16px; font-weight:bold;">
+                <div style="color:#2c3e50;">Custo Total Estimado:</div>
+                <div style="color:#c0392b;">R$ ${valorTotalGeral.toFixed(2).replace('.', ',')}</div>
+            </div>`;
+        }
+        document.getElementById('modalRevisaoCompras').style.display = 'flex';
+    }
+};
+
+window.imprimirListaFinal = () => {
+    let comprar = [], estoque = [];
+    let totalComprar = 0, totalEstoque = 0;
+
+    listaComprasCache.forEach((item, index) => { 
+        const chk = document.getElementById(`chk_compra_${index}`); 
+        if (chk && chk.checked) {
+            estoque.push(item); 
+            totalEstoque += item.subtotal;
+        } else {
+            comprar.push(item); 
+            totalComprar += item.subtotal;
+        }
+    });
+
+    let msg = `<html><head><title>Lista de Compras - Orçamento</title><style>body{font-family:sans-serif;}h2{border-bottom:2px solid #333;}ul{list-style:none;padding:0;}li{padding:8px 0;border-bottom:1px dotted #ccc; display:flex; justify-content:space-between;} .sub{color:#555; font-size:14px;} .totais{font-size:18px; font-weight:bold; padding:15px; background:#f4f4f4; margin-top:20px; border-radius:5px;} </style></head><body><h1>🛒 LISTA DE COMPRAS - ${document.getElementById('titulo-evento').innerText}</h1>`;
+    
+    msg += `<h2 style="color:#c0392b">🔴 A COMPRAR (Falta)</h2><ul>`;
+    if(comprar.length === 0) msg += "<li>Nada a comprar!</li>"; 
+    else comprar.forEach(i => msg += `<li><span>[ ] <b>${i.nome}</b> (${i.qtd} ${i.un})</span> <span class="sub">R$ ${i.subtotal.toFixed(2).replace('.', ',')}</span></li>`);
+    msg += `</ul><div style="text-align:right; font-weight:bold; color:#c0392b;">Subtotal a Comprar: R$ ${totalComprar.toFixed(2).replace('.', ',')}</div>`;
+
+    msg += `<h2 style="color:#27ae60; margin-top:30px;">🟢 EM ESTOQUE (Já tenho)</h2><ul>`;
+    if(estoque.length === 0) msg += "<li>Nada marcado em estoque.</li>"; 
+    else estoque.forEach(i => msg += `<li><span>[ok] <b>${i.nome}</b> (${i.qtd} ${i.un})</span> <span class="sub">R$ ${i.subtotal.toFixed(2).replace('.', ',')}</span></li>`);
+    msg += `</ul><div style="text-align:right; font-weight:bold; color:#27ae60;">Subtotal em Estoque: R$ ${totalEstoque.toFixed(2).replace('.', ',')}</div>`;
+    
+    msg += `<div class="totais" style="text-align:right;">ORÇAMENTO TOTAL DO EVENTO: R$ ${(totalComprar + totalEstoque).toFixed(2).replace('.', ',')}</div>`;
+    msg += `</body></html>`;
+    
+    const w = window.open("","_blank"); w.document.write(msg); w.document.close(); w.print();
+    document.getElementById('modalRevisaoCompras').style.display = 'none';
+};
 
     // 5.3 PDF NOTA SERVIÇO (V52/V54 - MANTIDA)
     window.gerarNotaServico = () => {
@@ -3428,5 +3530,29 @@
         document.body.removeChild(link);
     }
 
+    // Monitoramento de Conexão Online/Offline
+function atualizarStatusConexao() {
+    const bolinha = document.getElementById('bolinha-status');
+    const texto = document.getElementById('texto-status');
+    
+    if (navigator.onLine) {
+        bolinha.style.backgroundColor = '#2ecc71'; // Verde
+        bolinha.style.boxShadow = '0 0 5px #2ecc71';
+        texto.innerText = 'Online';
+        texto.style.color = '#27ae60';
+    } else {
+        bolinha.style.backgroundColor = '#e74c3c'; // Vermelho
+        bolinha.style.boxShadow = '0 0 5px #e74c3c';
+        texto.innerText = 'Offline (Salvo no Aparelho)';
+        texto.style.color = '#c0392b';
+    }
+}
+
+    // Verifica o status assim que a página abre
+    window.addEventListener('load', atualizarStatusConexao);
+
+    // Fica escutando se a internet cair ou voltar durante o evento
+    window.addEventListener('online', atualizarStatusConexao);
+    window.addEventListener('offline', atualizarStatusConexao);
 
 </script>
