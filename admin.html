@@ -919,6 +919,44 @@
     </div>
 
 
+<div id="modal-editar-insumo" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background:white; padding:20px; border-radius:8px; width:90%; max-width:400px; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; color:#2c3e50; border-bottom:1px solid #eee; padding-bottom:10px;">✏️ Editar Insumo</h3>
+
+        <input type="hidden" id="editInsId">
+
+        <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+            <input type="text" id="editInsProd" placeholder="Produto (Ex: Gin)" style="flex: 2; padding:5px; font-size:0.85em;">
+            <input type="text" id="editInsMarca" placeholder="Marca (Ex: Tanqueray)" style="flex: 1.5; padding:5px; font-size:0.85em;">
+        </div>
+
+        <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+            <select id="editInsTipo" style="flex: 1.8; height:30px; border:1px solid #ccc; border-radius:4px; font-size:0.8em; padding:0 2px;"></select>
+            <select id="editInsUnMed" style="flex: 1.2; height:30px; border:1px solid #ccc; border-radius:4px; font-size:0.8em; padding:0 2px;">
+                <option value="ml">ml (Líquido)</option>
+                <option value="g">g (Peso)</option>
+                <option value="un">un (Unidade)</option>
+            </select>
+        </div>
+
+        <div style="background:#f9f9f9; padding:6px; border:1px dashed #aaa; border-radius:4px; margin-bottom:10px;">
+            <small style="display:block; margin-bottom:3px; color:#e67e22; font-weight:bold; font-size:0.75em;">Ref. de Compra (Custo Estimado)</small>
+            <div style="display:flex; gap:5px;">
+                <input type="number" id="editInsVolRef" placeholder="Vol (Ex: 750)" style="flex:1; padding:4px; font-size:0.85em;" title="Volume da embalagem">
+                <input type="number" id="editInsPrecoRef" placeholder="Preço (Ex: 120)" style="flex:1; padding:4px; font-size:0.85em;" title="Preço de custo">
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button onclick="document.getElementById('modal-editar-insumo').style.display='none'" style="flex:1; padding:8px; background:#95a5a6; color:white; border:none; border-radius:4px; cursor:pointer;">Cancelar</button>
+            <button onclick="salvarEdicaoInsumo()" style="flex:1; padding:8px; background:#27ae60; color:white; border:none; border-radius:4px; cursor:pointer;">💾 Salvar</button>
+        </div>
+    </div>
+</div>
+
+
+    
+
 <script type="module">
 	import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setDoc, query, orderBy, writeBatch, where, getDocs, limit, getDoc, serverTimestamp, increment, collectionGroup, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -1071,7 +1109,7 @@
     setTimeout(carregarTipos, 1000);
 
 
-    // --- 1.1 RENDERIZAR CATÁLOGO (CIMA - CARDS) ---
+// --- 1.1 RENDERIZAR CATÁLOGO (CIMA - CARDS COM CLIQUE PARA EDITAR) ---
     window.renderizarCatalogo = () => {
         const inputBusca = document.getElementById('busca-catalogo');
         const lista = document.getElementById('lista-catalogo');
@@ -1090,17 +1128,89 @@
                 <div class="catalog-row" style="display:flex; align-items:center; padding:10px; border-bottom:1px solid #eee; gap:10px;">
                     <input type="checkbox" class="check-item-catalogo check-custom" value="${item.id}">
                     <div class="catalog-info-box" style="flex:1; min-width:0;">
-                        <b style="color:#2c3e50;">${item.produto}</b> <small>${item.marca||''}</small>
+                        <a onclick="abrirModalEdicaoInsumo('${item.id}')" style="color:#2980b9; font-weight:bold; cursor:pointer; text-decoration:underline;" title="Clique para editar valores">
+                            ${item.produto}
+                        </a> 
+                        <small>${item.marca||''}</small>
                         <br><span class="catalog-badge" style="font-size:0.7em; background:#eee; padding:1px 4px; border-radius:4px;">${item.tipo}</span>
                     </div>
                     <div style="display:flex; gap:2px;">
                         <button onclick="abrirModalEntrada('${item.id}', '${nomeCompleto}')" class="btn-success" style="padding:2px 8px; font-size:0.75em;">➕</button>
-                        <button onclick="excluirItemCatalogo('${item.id}', '${nomeCompleto}')" class="btn-trash" style="padding:4px 8px;"padding:0 5px;" title="Excluir Definitivamente">🗑️</button>
+                        <button onclick="excluirItemCatalogo('${item.id}', '${nomeCompleto}')" class="btn-trash" style="padding:4px 8px;" title="Excluir Definitivamente">🗑️</button>
                     </div>
                 </div>
             `;
         });
     };
+
+
+// --- FUNÇÃO PARA ABRIR O MODAL E PREENCHER OS DADOS ---
+    window.abrirModalEdicaoInsumo = (id) => {
+        // Procura o item clicado na memória do sistema
+        const item = window.catalogoGeral.find(i => i.id === id);
+        if(!item) return;
+
+        // Copia a lista de tipos do formulário principal para o modal
+        document.getElementById('editInsTipo').innerHTML = document.getElementById('insTipo').innerHTML;
+
+        // Preenche todos os campos com as informações que vieram do banco
+        document.getElementById('editInsId').value = item.id;
+        document.getElementById('editInsProd').value = item.produto || '';
+        document.getElementById('editInsMarca').value = item.marca || '';
+        document.getElementById('editInsTipo').value = item.tipo || '';
+        
+        // Trata o campo de unidade, que pode estar salvo como 'unMedida' ou 'un'
+        document.getElementById('editInsUnMed').value = item.unMedida || item.un || 'ml';
+        
+        document.getElementById('editInsVolRef').value = item.refVolume || '';
+        document.getElementById('editInsPrecoRef').value = item.refPreco || '';
+
+        // Exibe o modal na tela
+        document.getElementById('modal-editar-insumo').style.display = 'flex';
+    };
+
+    // --- FUNÇÃO PARA SALVAR A EDIÇÃO NO FIREBASE ---
+    window.salvarEdicaoInsumo = async () => {
+        const id = document.getElementById('editInsId').value;
+        const produto = document.getElementById('editInsProd').value.trim();
+        const marca = document.getElementById('editInsMarca').value.trim();
+        const tipo = document.getElementById('editInsTipo').value;
+        const unMedida = document.getElementById('editInsUnMed').value;
+        
+        const refVolume = parseFloat(document.getElementById('editInsVolRef').value) || 0;
+        const refPreco = parseFloat(document.getElementById('editInsPrecoRef').value) || 0;
+
+        if(!produto) return alert("O nome do produto é obrigatório!");
+
+        // Recalcula automaticamente o custo por ml/g (Crucial para a nossa lista de compras!)
+        let custoPorVol = 0;
+        if(refVolume > 0 && refPreco > 0) {
+            custoPorVol = refPreco / refVolume;
+        }
+
+        try {
+            // Atualiza apenas os campos específicos do documento no Firebase
+            const itemRef = doc(db, "insumos", id);
+            await updateDoc(itemRef, {
+                produto: produto,
+                marca: marca,
+                tipo: tipo,
+                unMedida: unMedida,
+                refVolume: refVolume,
+                refPreco: refPreco,
+                custoPorVol: custoPorVol // Salva o novo valor fracionado
+            });
+
+            // Fecha o modal. A lista vai atualizar sozinha pelo onSnapshot!
+            document.getElementById('modal-editar-insumo').style.display = 'none';
+            
+        } catch (error) {
+            console.error("Erro ao atualizar insumo:", error);
+            alert("Erro ao salvar as alterações. Verifique sua conexão.");
+        }
+    };
+
+
 
     // --- 1.2 RENDERIZAR ESTOQUE FÍSICO (BAIXO - TABELA COM BOTÃO!) ---
     window.renderizarEstoqueFisico = () => {
